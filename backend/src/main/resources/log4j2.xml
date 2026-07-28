@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{HH:mm:ss.SSS} %-5level [%t] %c{1} - %msg%n"/>
+        </Console>
+    </Appenders>
+    <Loggers>
+        <Logger name="org.tajiro" level="debug" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+        <!-- log4jdbc: 실행 SQL 로그 -->
+        <Logger name="jdbc.sqlonly" level="debug" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+        <Logger name="jdbc.resultsettable" level="info" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+        <Logger name="jdbc.audit" level="warn" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+        <Logger name="jdbc.connection" level="warn" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+        <Root level="info">
+            <AppenderRef ref="Console"/>
+        </Root>
+    </Loggers>
+</Configuration>
