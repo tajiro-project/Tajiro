@@ -1,7 +1,7 @@
 ---
 name: 타지로 issue Template
 about: 타지로 이슈 템플릿입니다.
-title: "## [Feat] 제목"
+title: "[Feat] 제목"
 labels: ''
 assignees: ''
 
