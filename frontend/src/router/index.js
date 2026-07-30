@@ -6,6 +6,11 @@ const routes = [
     name: 'placeholder',
     component: () => import('@/views/PlaceholderView.vue'),
   },
+  {
+    path: '/compare-box',
+    name: 'compare-box',
+    component: () => import('@/views/compare/CompareBoxView.vue'),
+  },
 ];
 
 const router = createRouter({
@@ -17,3 +22,4 @@ const router = createRouter({
 });
 
 export default router;
+
