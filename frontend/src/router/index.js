@@ -27,6 +27,11 @@ const routes = [
     component: () => import('@/views/benefit/BenefitMatchView.vue'),
     props: { initialTab: 'kb' },
   }, // 12-2 KB
+  {
+    path: '/mypage',
+    name: 'mypage',
+    component: () => import('@/views/mypage/MyPageView.vue'),
+  },
 ];
 
 const router = createRouter({
