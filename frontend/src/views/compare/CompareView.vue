@@ -222,12 +222,15 @@
         <p v-if="savedMsg" class="saved-msg">{{ savedMsg }}</p>
       </template>
     </div>
+
+    <AppTabBar active="compare" />
   </div>
 </template>
 
 <script setup>
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import AppTabBar from '@/components/AppTabBar.vue';
 import {
   Chart,
   Filler,
