@@ -27,6 +27,11 @@ const routes = [
     component: () => import('@/views/benefit/BenefitMatchView.vue'),
     props: { initialTab: 'kb' },
   }, // 12-2 KB
+  {
+    path: '/preferences',
+    name: 'preferences',
+    component: () => import('@/views/preferences/PreferenceWizardView.vue'),
+  },
 ];
 
 const router = createRouter({
@@ -38,4 +43,3 @@ const router = createRouter({
 });
 
 export default router;
-
