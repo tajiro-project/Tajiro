@@ -121,7 +121,7 @@ async function removeItem(propertyId) {
 
 function startCompare() {
   if (checkedIds.value.length < 2) return
-  router.push({ path: '/compare', query: { ids: checkedIds.value.join(',') } })
+  router.push({ path: '/compare', query: { propertyIds: checkedIds.value } })
 }
 
 function goBack() {
@@ -149,7 +149,7 @@ function formatArea(areaM2) {
 }
 
 function formatFee(item) {
-  const fee = item.maintenanceFee ?? item.maintenaceFee
+  const fee = item.maintenanceFee
   if (fee === null || fee === undefined || fee === '') return '-'
   return `${Number(fee).toLocaleString('ko-KR')}만`
 }
