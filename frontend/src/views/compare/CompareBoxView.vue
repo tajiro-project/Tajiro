@@ -64,12 +64,15 @@
         비교 시작 ({{ checkedIds.length }}개)
       </button>
     </div>
+
+    <AppTabBar active="compare" />
   </div>
 </template>
 
 <script setup>
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import AppTabBar from '@/components/AppTabBar.vue'
 import client, { withMock } from '@/api/client'
 import { mockCompareBox } from '@/api/mockData'
 
