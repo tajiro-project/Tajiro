@@ -96,6 +96,7 @@ function dotKey(dot) {
 }
 
 function fitToPoints(points) {
+  const points = rawPoints.filter((p) => p.lat != null && p.lng != null);
   if (!map || points.length === 0) return;
 
   if (points.length === 1) {
@@ -130,6 +131,7 @@ function redraw() {
   dotElements = new Map();
 
   props.markers.forEach((marker) => {
+    if (marker.lat == null || marker.lng == null) return;
     const latlng = new window.kakao.maps.LatLng(marker.lat, marker.lng);
     const overlay = new window.kakao.maps.CustomOverlay({
       position: latlng,
@@ -142,6 +144,7 @@ function redraw() {
   });
 
   props.dots.forEach((dot) => {
+    if (dot.lat == null || dot.lng == null) return;
     const latlng = new window.kakao.maps.LatLng(dot.lat, dot.lng);
     const element = createDotElement(dot);
     const dotElement = element.querySelector('.infra-dot');
@@ -252,7 +255,6 @@ onUnmounted(() => {
   display: block;
   cursor: pointer;
   filter: drop-shadow(0 2px 3px rgba(102, 77, 0, 0.35));
-  z-index: 10;
 }
 
 :deep(.property-pin svg) {
@@ -268,28 +270,16 @@ onUnmounted(() => {
   border-radius: 50%;
   border: 2px solid #fff;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
 }
 
 :deep(.infra-dot svg) {
   display: block;
 }
 
-:deep(.infra-dot) {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  border: 2px solid #fff;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
-  cursor: pointer;
-}
-
 :deep(.infra-dot--active) {
   box-shadow:
     0 0 0 3px rgba(136, 136, 136, 0.75),
     0 1px 4px rgba(0, 0, 0, 0.3);
-  cursor: pointer;
 }
 </style>
