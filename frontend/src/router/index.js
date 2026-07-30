@@ -1,32 +1,38 @@
-import { createRouter, createWebHistory } from 'vue-router';
+import { createRouter, createWebHistory } from "vue-router";
 
 const routes = [
   {
-    path: '/',
-    name: 'placeholder',
-    component: () => import('@/views/PlaceholderView.vue'),
+    path: "/",
+    name: "placeholder",
+    component: () => import("@/views/PlaceholderView.vue"),
   },
   {
-    path: '/compare-box',
-    name: 'compare-box',
-    component: () => import('@/views/compare/CompareBoxView.vue'),
+    path: "/compare-box",
+    name: "compare-box",
+    component: () => import("@/views/compare/CompareBoxView.vue"),
   },
   {
-    path: '/home',
-    name: 'home',
-    component: () => import('@/views/home/HomeView.vue'),
+    path: "/home",
+    name: "home",
+    component: () => import("@/views/home/HomeView.vue"),
   },
   {
-    path: '/benefits/policies',
-    name: 'policy-match',
-    component: () => import('@/views/benefit/BenefitMatchView.vue'),
+    path: "/benefits/policies",
+    name: "policy-match",
+    component: () => import("@/views/benefit/BenefitMatchView.vue"),
   }, // 12-1 / 12-2
   {
-    path: '/benefits/kb',
-    name: 'kb-match',
-    component: () => import('@/views/benefit/BenefitMatchView.vue'),
-    props: { initialTab: 'kb' },
+    path: "/benefits/kb",
+    name: "kb-match",
+    component: () => import("@/views/benefit/BenefitMatchView.vue"),
+    props: { initialTab: "kb" },
   }, // 12-2 KB
+
+  {
+    path: "/properties/:id",
+    name: "property-detail",
+    component: () => import("@/views/property/PropertyDetailView.vue"),
+  }, // 09
 ];
 
 const router = createRouter({
@@ -38,4 +44,3 @@ const router = createRouter({
 });
 
 export default router;
-
