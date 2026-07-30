@@ -16,6 +16,17 @@ const routes = [
     name: 'home',
     component: () => import('@/views/home/HomeView.vue'),
   },
+  {
+    path: '/benefits/policies',
+    name: 'policy-match',
+    component: () => import('@/views/benefit/BenefitMatchView.vue'),
+  }, // 12-1 / 12-2
+  {
+    path: '/benefits/kb',
+    name: 'kb-match',
+    component: () => import('@/views/benefit/BenefitMatchView.vue'),
+    props: { initialTab: 'kb' },
+  }, // 12-2 KB
 ];
 
 const router = createRouter({
