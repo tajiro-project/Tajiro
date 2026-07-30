@@ -3,7 +3,8 @@
 </template>
 
 <script setup>
-import { onMounted, ref, watch, computed } from 'vue';
+import { onMounted, onUnmounted, ref, watch, computed } from 'vue';
+import { loadKakaoSdk } from '@/utils/kakaoSdk';
 import {
   infraColor,
   infraIconSvg,
@@ -20,6 +21,7 @@ const props = defineProps({
   dots: { type: Array, default: () => [] },
   center: { type: Object, default: () => ({ lat: 37.5563, lng: 126.9723 }) }, // default : 서울역
   activeDotKey: { type: String, default: null },
+  level: { type: Number, default: 5 },
 });
 
 const emit = defineEmits([
@@ -30,7 +32,6 @@ const emit = defineEmits([
 ]);
 
 const mapElement = ref(null);
-const KAKAO_API_KEY = import.meta.env.VITE_KAKAO_MAP_KEY;
 
 const DEFAULT_DOT_ICON =
   '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="1.5"><circle cx="8" cy="8" r="2.5"/></svg>';
@@ -155,7 +156,7 @@ function redraw() {
 
     const overlay = new window.kakao.maps.CustomOverlay({
       position: latlng,
-      content: createDotElement(dot),
+      content: element,
       zIndex: 3,
     });
 
@@ -213,23 +214,29 @@ watch(
   },
 );
 
-onMounted(() => {
-  const script = document.createElement('script');
-  script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_API_KEY}&autoload=false`;
-  script.onload = () => {
-    window.kakao.maps.load(() => {
-      map = new window.kakao.maps.Map(mapElement.value, {
-        center: new window.kakao.maps.LatLng(
-          props.center.lat,
-          props.center.lng,
-        ),
-        level: 5,
-      });
-      window.kakao.maps.event.addListener(map, 'idle', handleIdle);
-      redraw();
+onMounted(async () => {
+  try {
+    await loadKakaoSdk();
+    map = new window.kakao.maps.Map(mapElement.value, {
+      center: new window.kakao.maps.LatLng(props.center.lat, props.center.lng),
+      level: props.level,
     });
-  };
-  document.head.appendChild(script);
+    window.kakao.maps.event.addListener(map, 'idle', handleIdle);
+    redraw();
+  } catch (e) {
+    console.warn('[KakaoMap]', e.message);
+  }
+});
+
+onUnmounted(() => {
+  overlays.forEach((o) => o.setMap(null));
+  overlays = [];
+  dotElements.clear();
+  if (map) {
+    window.kakao.maps.event.removeListener(map, 'idle', handleIdle);
+    map = null;
+  }
+  boundsFit = false;
 });
 </script>
 
@@ -267,12 +274,6 @@ onMounted(() => {
   display: block;
 }
 
-:deep(.infra-dot--active) {
-  box-shadow:
-    0 0 0 3px rgba(255, 188, 0, 0.75),
-    0 1px 4px rgba(0, 0, 0, 0.3);
-}
-
 :deep(.infra-dot) {
   display: flex;
   align-items: center;
@@ -282,6 +283,13 @@ onMounted(() => {
   border-radius: 50%;
   border: 2px solid #fff;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+}
+
+:deep(.infra-dot--active) {
+  box-shadow:
+    0 0 0 3px rgba(136, 136, 136, 0.75),
+    0 1px 4px rgba(0, 0, 0, 0.3);
   cursor: pointer;
 }
 </style>
