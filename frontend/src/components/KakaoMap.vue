@@ -10,6 +10,8 @@ const props = defineProps({
   center: { type: Object, default: () => ({ lat: 37.5563, lng: 126.9723 }) }, // default : 서울역
 });
 
+const emit = defineEmits(['marker-click']);
+
 const mapElement = ref(null);
 const KAKAO_API_KEY = import.meta.env.VITE_KAKAO_MAP_KEY;
 
@@ -20,7 +22,7 @@ let boundsFit = false;
 function pinSvg(selected) {
   return `<svg width="30" height="37" viewBox="0 0 26 32" fill="none">
     <path d="M13 0C5.8 0 0 5.7 0 12.8 0 22.4 13 32 13 32s13-9.6 13-19.2C26 5.7 20.2 0 13 0z"
-          fill="${selected ? '#f0a800' : '#ffbc00'}"/>
+          fill="${selected ? '#fe7b00' : '#ffbc00'}"/>
     <circle cx="13" cy="12.5" r="5" fill="#fff"/>
   </svg>`;
 }
@@ -29,6 +31,10 @@ function createPinElement(marker) {
   const element = document.createElement('div');
   element.className = 'property-pin';
   element.innerHTML = pinSvg(marker.selected);
+  element.addEventListener('click', (e) => {
+    e.stopPropagation();
+    emit('marker-click', marker);
+  });
   return element;
 }
 
@@ -94,6 +100,10 @@ onMounted(() => {
   display: block;
   cursor: pointer;
   filter: drop-shadow(0 2px 3px rgba(102, 77, 0, 0.35));
+}
+
+:deep(.property-pin--selected) {
+  z-index: 10;
 }
 
 :deep(.property-pin svg) {
