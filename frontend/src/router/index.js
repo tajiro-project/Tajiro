@@ -11,8 +11,12 @@ const routes = [
     name: 'compare-box',
     component: () => import('@/views/compare/CompareBoxView.vue'),
   },
-
-    {
+  {
+    path: '/home',
+    name: 'home',
+    component: () => import('@/views/home/HomeView.vue'),
+  },
+  {
     path: '/benefits/policies',
     name: 'policy-match',
     component: () => import('@/views/benefit/BenefitMatchView.vue'),
