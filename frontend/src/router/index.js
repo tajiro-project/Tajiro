@@ -11,6 +11,11 @@ const routes = [
     name: 'compare-box',
     component: () => import('@/views/compare/CompareBoxView.vue'),
   },
+  {
+    path: '/home',
+    name: 'home',
+    component: () => import('@/views/home/HomeView.vue'),
+  },
 ];
 
 const router = createRouter({
