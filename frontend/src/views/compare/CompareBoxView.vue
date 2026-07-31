@@ -92,7 +92,8 @@ async function loadCompareBox() {
 
   try {
     const data = await withMock(() => client.get('/users/me/compare'), mockCompareBox)
-    const nextItems = Array.isArray(data) ? data : data?.items ?? []
+    const payload = data?.data ?? data
+    const nextItems = Array.isArray(payload) ? payload : payload?.items ?? []
     items.value = nextItems.slice(0, 3)
     checkedIds.value = items.value.slice(0, 3).map((item) => item.propertyId)
   } catch (error) {
@@ -152,7 +153,7 @@ function formatArea(areaM2) {
 }
 
 function formatFee(item) {
-  const fee = item.maintenanceFee
+  const fee = item.maintenanceFee ?? item.maintenaceFee
   if (fee === null || fee === undefined || fee === '') return '-'
   return `${Number(fee).toLocaleString('ko-KR')}만`
 }
