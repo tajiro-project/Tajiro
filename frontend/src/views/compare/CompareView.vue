@@ -377,20 +377,26 @@ const safetyRows = computed(() => {
     },
     {
       label: '경찰·지구대',
-      values: metrics.value.map((m) => m.policeCountWithin2000m ?? 0),
+      values: metrics.value.map((m) => m.policeCountWithin500m ?? 0),
       fmt: (v) => `${v}곳`,
       better: 'max',
     },
     {
-      label: '어린이 보호구역',
-      values: metrics.value.map((m) => m.childrenCountWithin500m ?? 0),
+      label: '보안등',
+      values: metrics.value.map((m) => m.safetyLightCountWithin500m ?? 0),
       fmt: (v) => `${v}곳`,
-      better: 'min',
+      better: 'max',
     },
     {
       label: '안전 비상벨',
       values: metrics.value.map((m) => m.bellCountWithin500m ?? 0),
       fmt: (v) => `${v}개`,
+      better: 'max',
+    },
+    {
+      label: '아동안전지킴이집',
+      values: metrics.value.map((m) => m.childrenCountWithin500m ?? 0),
+      fmt: (v) => `${v}곳`,
       better: 'max',
     },
   ];
@@ -456,16 +462,26 @@ async function loadComparison() {
       ? selectedIds.value
       : mockCompareBox.slice(0, 3).map((item) => item.propertyId);
     const propertyIds = requestedIds.slice(0, 3);
-    // 서버에서 비교 결과를 가져옴 (실제 서버 있으면 API 호출, 없으면 Mock 데이터 사용)
-    const dto = await withMock(
-      () =>
-        client.get('/comparisons/result', {
-          params: toPropertyIdParams(propertyIds),
-        }),
-      () => createMockComparisonResultDto(propertyIds),
+    const metricsDto = unwrapApiData(
+      await withMock(
+        () =>
+          client.get('/comparisons/metrics', {
+            params: toPropertyIdParams(propertyIds),
+          }),
+        () => createMockComparisonResultDto(propertyIds).metrics,
+      ),
     );
-    // 받아온 데이터 적용 (items, metrics, coaching 채우기)
-    applyComparisonResult(dto, propertyIds);
+    const coachingDto = unwrapApiData(
+      await withMock(
+        () => client.post('/comparisons/analyze', { propertyIds }),
+        () => createMockComparisonResultDto(propertyIds).coaching,
+      ),
+    );
+
+    applyComparisonResult(
+      { metrics: metricsDto, coaching: coachingDto },
+      propertyIds,
+    );
   } catch (error) {
     errorMessage.value = error?.message ?? '비교 결과를 불러오지 못했어요.';
   } finally {
@@ -473,6 +489,9 @@ async function loadComparison() {
   }
 }
 
+function unwrapApiData(payload) {
+  return payload?.data && payload?.statusCode ? payload.data : payload;
+}
 function toPropertyIdParams(propertyIds) {
   const params = new URLSearchParams();
   propertyIds.forEach((id) => params.append('propertyIds', id));
@@ -601,7 +620,8 @@ async function saveReport() {
           aiPropertySummaryText: coaching.value?.aiPropertySummaryText,
           aiSummary: coaching.value?.aiSummary,
           aiRecommendedPropertyId: coaching.value?.aiRecommendedPropertyId,
-          saved_aiAtp: coaching.value?.aiAtp,
+          saved: true,
+          aiAtp: coaching.value?.aiAtp,
         }),
       { reportId: `R-${Date.now()}`, createdAt: new Date().toISOString() },
     );
@@ -618,7 +638,9 @@ function shortName(title) {
 }
 
 function feeValue(item) {
-  return Number(item.maintenanceFee ?? 0);
+  return Number(
+    item.maintenanceFee ?? item.maintainanceFee ?? item.maintenaceFee ?? 0,
+  );
 }
 
 function goBack() {
