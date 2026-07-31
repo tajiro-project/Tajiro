@@ -50,8 +50,6 @@ import {
 } from '@/constants/safetyIcons';
 
 // mock data
-
-// GET /api/properties 응답 형태 — 건물 정보가 매물마다 붙어서 온다
 const RAW_PROPERTIES = [
   {
     propertyId: 'P01',
@@ -439,7 +437,6 @@ const dots = computed(() => {
 });
 
 function onMarkerClick(marker) {
-  // console.log('marker-click: ' + marker);
   if (selectedBuildingId.value === marker.id) {
     selectedBuildingId.value = null;
     selectedPropertyId.value = null;
@@ -464,7 +461,6 @@ function onBoundsChange(b) {
 }
 
 function onDotClick(dot) {
-  // activeDot.value = dot;
   pinnedDot.value = keyOf(pinnedDot.value) === keyOf(dot) ? null : dot;
 }
 
