@@ -95,7 +95,7 @@ function dotKey(dot) {
   return `${dot.lat},${dot.lng}`;
 }
 
-function fitToPoints(points) {
+function fitToPoints(rawPoints) {
   const points = rawPoints.filter((p) => p.lat != null && p.lng != null);
   if (!map || points.length === 0) return;
 
@@ -167,8 +167,8 @@ function redraw() {
     overlays.push(overlay);
   });
 
-  if (!boundsFit && props.markers.length > 0) {
-    fitAllMarkers();
+  if (!boundsFit && (props.markers.length > 0 || props.dots.length > 0)) {
+    fitToPoints([...props.markers, ...props.dots]);
     boundsFit = true;
   }
 }
