@@ -84,15 +84,12 @@ function createDotElement(dot) {
   element.addEventListener('click', (e) => {
     e.stopPropagation();
     emit('dot-click', dot);
-    // console.log('click');
   });
   element.addEventListener('mouseenter', () => {
     emit('dot-hover', dot);
-    // console.log('hover on');
   });
   element.addEventListener('mouseleave', () => {
     emit('dot-hover', null);
-    // console.log('hover leave');
   });
   return element;
 }
