@@ -33,6 +33,11 @@ const routes = [
     props: { initialTab: 'kb' },
   }, // 12-2 KB
   {
+    path: '/preferences',
+    name: 'preferences',
+    component: () => import('@/views/preferences/PreferenceWizardView.vue'),
+  },
+  {
     path: '/mypage',
     name: 'mypage',
     component: () => import('@/views/mypage/MyPageView.vue'),
