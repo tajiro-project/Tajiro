@@ -41,11 +41,17 @@ let overlays = [];
 let boundsFit = false;
 let dotElements = new Map();
 
-function pinSvg(selected) {
+function pinSvg(selected, count) {
+  const label =
+    count > 1
+      ? `<text x="13" y="16" text-anchor="middle" font-size="10" font-weight="700" fill="#33302a">${count}</text>`
+      : '';
+
   return `<svg width="30" height="37" viewBox="0 0 26 32" fill="none">
     <path d="M13 0C5.8 0 0 5.7 0 12.8 0 22.4 13 32 13 32s13-9.6 13-19.2C26 5.7 20.2 0 13 0z"
           fill="${selected ? '#fe7b00' : '#ffbc00'}"/>
-    <circle cx="13" cy="12.5" r="5" fill="#fff"/>
+    <circle cx="13" cy="12.5" r="7" fill="#fff"/>
+    ${label}
   </svg>`;
 }
 
@@ -62,7 +68,7 @@ function dotColor(category) {
 function createPinElement(marker) {
   const element = document.createElement('div');
   element.className = 'property-pin';
-  element.innerHTML = pinSvg(marker.selected);
+  element.innerHTML = pinSvg(marker.selected, marker.count);
   element.addEventListener('click', (e) => {
     e.stopPropagation();
     emit('marker-click', marker);
