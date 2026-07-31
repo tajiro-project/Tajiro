@@ -32,7 +32,7 @@
             >
             <p class="t-name">{{ item.title }}</p>
             <p class="t-price">{{ item.deposit }}/{{ item.monthlyRent }}</p>
-            <span v-if="recommendedId === item.propertyId" class="t-badge"
+            <span v-if="hasAiRecommendation && recommendedId === item.propertyId" class="t-badge"
               >AI 추천</span
             >
           </div>
@@ -48,14 +48,15 @@
             </svg>
             AI 의사결정 코치
           </p>
-          <p class="ai-p">{{ coachIntro }}</p>
-          <p class="ai-p">
+
+          <p v-if="coachingError" class="ai-p error">{{ coachingError }}</p>
+          <p v-else class="ai-p">
             {{
               coaching?.aiPropertySummaryText ??
               '비교 코칭을 불러오는 중이에요...'
             }}
           </p>
-          <p class="ai-p">{{ coaching?.aiSummary }}</p>
+          <p v-if="!coachingError" class="ai-p">{{ coaching?.aiSummary }}</p>
         </section>
 
         <p v-if="warningText" class="warn">
@@ -270,6 +271,7 @@ const metrics = ref([]);
 
 // AI 코칭 정보
 const coaching = ref(null);
+const coachingError = ref('');
 
 const loading = ref(false);
 const saving = ref(false);
@@ -288,20 +290,14 @@ const selectedIds = computed(() =>
     .slice(0, 3),
 );
 // AI가 추천한 매물 ID를 결정
-const recommendedId = computed(() => {
-  // AI 추천 매물이 비교 대상에 포함되어 있으면 그 ID를 반환
-  const aiRecommendedId = coaching.value?.aiRecommendedPropertyId;
+const hasAiRecommendation = computed(() =>
+  items.value.some(
+    (item) => item.propertyId === coaching.value?.aiRecommendedPropertyId,
+  ),
+);
 
-  if (items.value.some((item) => item.propertyId === aiRecommendedId)) {
-    return aiRecommendedId;
-  }
-
-  // AI 추천 매물이 비교 대상에 없으면, 점수가 가장 높은 매물 ID를 반환
-  return getBestScoredPropertyId() ?? items.value[0]?.propertyId ?? '';
-});
-
-const coachIntro = computed(
-  () => "사용자 가치관 1순위인 '직주근접' 기준으로 비교했어요.",
+const recommendedId = computed(() =>
+  hasAiRecommendation.value ? coaching.value.aiRecommendedPropertyId : '',
 );
 
 const warningText = computed(() => {
@@ -434,15 +430,6 @@ const winCounts = computed(() => {
   return counts;
 });
 
-function getBestScoredPropertyId() {
-  if (!items.value.length || !seriesScores.value.length) return '';
-  const sums = seriesScores.value.map((scores) =>
-    scores.reduce((acc, score) => acc + score, 0),
-  );
-  const bestIndex = sums.indexOf(Math.max(...sums));
-  return items.value[bestIndex]?.propertyId ?? '';
-}
-
 onMounted(loadComparison);
 watch(seriesScores, () => nextTick(scheduleRenderChart), { deep: true });
 watch(showOverall, (open) => {
@@ -457,29 +444,28 @@ async function loadComparison() {
   loading.value = true;
   errorMessage.value = '';
   try {
-    // 선택된 매물 ID가 있으면 그 ID를 사용하고, 없으면 Mock 데이터에서 3개의 매물 ID를 가져옴
-    const requestedIds = selectedIds.value.length
-      ? selectedIds.value
-      : mockCompareBox.slice(0, 3).map((item) => item.propertyId);
-    const propertyIds = requestedIds.slice(0, 3);
-    const metricsDto = unwrapApiData(
-      await withMock(
-        () =>
-          client.get('/comparisons/metrics', {
-            params: toPropertyIdParams(propertyIds),
-          }),
-        () => createMockComparisonResultDto(propertyIds).metrics,
-      ),
-    );
-    const coachingDto = unwrapApiData(
-      await withMock(
-        () => client.post('/comparisons/analyze', { propertyIds }),
-        () => createMockComparisonResultDto(propertyIds).coaching,
-      ),
-    );
+    if (!selectedIds.value.length) {
+      router.replace('/compare-box');
+      return;
+    }
+
+    const propertyIds = selectedIds.value.slice(0, 3);
+    const metricsResult = await getMetricsWithFallback(propertyIds);
+    let coachingDto = null;
+    coachingError.value = '';
+
+    if (metricsResult.mocked) {
+      coachingDto = createMockComparisonResultDto(propertyIds).coaching;
+    } else {
+      try {
+        coachingDto = await getCoaching(propertyIds);
+      } catch (error) {
+        coachingError.value = error.message;
+      }
+    }
 
     applyComparisonResult(
-      { metrics: metricsDto, coaching: coachingDto },
+      { metrics: metricsResult.data, coaching: coachingDto },
       propertyIds,
     );
   } catch (error) {
@@ -491,6 +477,35 @@ async function loadComparison() {
 
 function unwrapApiData(payload) {
   return payload?.data && payload?.statusCode ? payload.data : payload;
+}
+
+async function getMetricsWithFallback(propertyIds) {
+  try {
+    const response = await client.get('/comparisons/metrics', {
+      params: toPropertyIdParams(propertyIds),
+    });
+    return { data: unwrapApiData(response.data), mocked: false };
+  } catch (error) {
+    if (import.meta.env.DEV) {
+      console.warn('[api] mock fallback:', error.config?.url ?? error.message);
+    }
+    return {
+      data: createMockComparisonResultDto(propertyIds).metrics,
+      mocked: true,
+    };
+  }
+}
+
+async function getCoaching(propertyIds) {
+  try {
+    const response = await client.post('/comparisons/analyze', { propertyIds });
+    return unwrapApiData(response.data);
+  } catch (error) {
+    const message =
+      error.response?.data?.message ??
+      'AI 비교 코칭을 불러오지 못했어요. 잠시 후 다시 시도해주세요.';
+    throw new Error(message);
+  }
 }
 function toPropertyIdParams(propertyIds) {
   const params = new URLSearchParams();
@@ -506,9 +521,14 @@ function createMockComparisonResultDto(propertyIds) {
     ? selectedItems
     : mockCompareBox.slice(0, 3);
   const fallbackIds = fallbackItems.map((item) => item.propertyId);
-  const metricItems = (mockComparisonMetrics.items ?? []).filter((metric) =>
-    fallbackIds.includes(metric.propertyId),
-  );
+  const metricItems = fallbackIds.map((id) => {
+    const item = fallbackItems.find((property) => property.propertyId === id) ?? {};
+    const metric =
+      (mockComparisonMetrics.items ?? []).find(
+        (candidate) => candidate.propertyId === id,
+      ) ?? { propertyId: id };
+    return { ...item, ...metric };
+  });
 
   const recommendedPropertyId = fallbackIds.includes(
     mockAiCoaching.aiRecommendedPropertyId,
@@ -530,22 +550,44 @@ function createMockComparisonResultDto(propertyIds) {
 
 // 서버에서 받아온 비교 결과를 화면에 적용하는 함수
 function applyComparisonResult(dto, requestedIds) {
-  const nextItems = Array.isArray(dto?.items) ? dto.items.slice(0, 3) : [];
   const fallbackDto = createMockComparisonResultDto(requestedIds);
-  items.value = nextItems.length ? nextItems : fallbackDto.items;
-
-  const propertyIds = items.value.map((item) => item.propertyId);
   const rawMetrics = Array.isArray(dto?.metrics?.items)
     ? dto.metrics.items
     : fallbackDto.metrics.items;
+  const rawItems = Array.isArray(dto?.items) ? dto.items : fallbackDto.items;
 
-  metrics.value = propertyIds.map(
-    (id) =>
-      rawMetrics.find((metric) => metric.propertyId === id) ?? {
-        propertyId: id,
-      },
-  );
-  coaching.value = dto?.coaching ?? fallbackDto.coaching;
+  metrics.value = rawMetrics.slice(0, 3);
+  items.value = metrics.value
+    .map((metric) =>
+      createComparisonItem(
+        metric,
+        rawItems.find((item) => item.propertyId === metric.propertyId),
+      ),
+    )
+    .filter((item) => item.propertyId)
+    .slice(0, 3);
+
+  if (!items.value.length) {
+    items.value = fallbackDto.items;
+    metrics.value = fallbackDto.metrics.items;
+  }
+
+  coaching.value = dto?.coaching ?? null;
+}
+
+function createComparisonItem(metric, fallbackItem = {}) {
+  return {
+    ...fallbackItem,
+    propertyId: metric.propertyId ?? fallbackItem.propertyId,
+    title: metric.title ?? fallbackItem.title ?? metric.propertyId,
+    propertyType: metric.propertyType ?? fallbackItem.propertyType,
+    tradeType: metric.tradeType ?? fallbackItem.tradeType,
+    deposit: metric.deposit ?? fallbackItem.deposit ?? 0,
+    monthlyRent: metric.monthlyRent ?? fallbackItem.monthlyRent ?? 0,
+    maintenanceFee: metric.maintenanceFee ?? fallbackItem.maintenanceFee,
+    areaM2: metric.areaM2 ?? fallbackItem.areaM2,
+    floorInfo: metric.floorInfo ?? fallbackItem.floorInfo,
+  };
 }
 
 function normalize(values, invert = false) {
@@ -617,8 +659,8 @@ async function saveReport() {
         client.post('/comparison-reports', {
           title: `${items.value[0]?.title ?? '비교 리포트'} 외 ${Math.max(items.value.length - 1, 0)}건`,
           comparedPropertyIds: propertyIds,
-          aiPropertySummaryText: coaching.value?.aiPropertySummaryText,
-          aiSummary: coaching.value?.aiSummary,
+          aiPropertySummaryText: getReportAiText(),
+          aiSummary: getReportAiText(),
           aiRecommendedPropertyId: coaching.value?.aiRecommendedPropertyId,
           saved: true,
           aiAtp: coaching.value?.aiAtp,
@@ -633,13 +675,22 @@ async function saveReport() {
   }
 }
 
+function getReportAiText() {
+  return (
+    coaching.value?.aiPropertySummaryText ??
+    coaching.value?.aiSummary ??
+    coachingError.value ??
+    ''
+  );
+}
+
 function shortName(title) {
   return String(title ?? '').split(' ')[0];
 }
 
 function feeValue(item) {
   return Number(
-    item.maintenanceFee ?? item.maintainanceFee ?? item.maintenaceFee ?? 0,
+    item.maintenanceFee ?? 0,
   );
 }
 
@@ -772,6 +823,10 @@ function goBack() {
 }
 .ai-p:last-child {
   margin-bottom: 0;
+}
+.ai-p.error {
+  color: var(--danger);
+  font-weight: 700;
 }
 .warn {
   display: flex;

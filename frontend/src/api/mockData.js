@@ -160,7 +160,7 @@ export const mockCompareBox = mockProperties.slice(0, 3).map((p) => ({
   deposit: p.deposit,
   monthlyRent: p.monthlyRent,
   areaM2: p.areaM2,
-  maintenaceFee: p.maintenanceFee,
+  maintenanceFee: p.maintenanceFee,
   floorInfo: p.floorInfo,
 }))
 
@@ -170,7 +170,7 @@ export const mockComparisonMetrics = {
       propertyId: 'P01',
       commuteMinutes: 48,
       monthlyRent: 45,
-      maintainanceFee: 7,
+      maintenanceFee: 7,
       infraCount: 12,
       areaM2: 26.4,
       evaluationScore: -2.2,
@@ -185,7 +185,7 @@ export const mockComparisonMetrics = {
       propertyId: 'P02',
       commuteMinutes: 62,
       monthlyRent: 45,
-      maintainanceFee: 7,
+      maintenanceFee: 7,
       infraCount: 9,
       areaM2: 26.4,
       evaluationScore: 1.8,
@@ -200,7 +200,7 @@ export const mockComparisonMetrics = {
       propertyId: 'P03',
       commuteMinutes: 55,
       monthlyRent: 45,
-      maintainanceFee: 7,
+      maintenanceFee: 7,
       infraCount: 11,
       areaM2: 26.4,
       evaluationScore: 4.1,
@@ -216,7 +216,7 @@ export const mockComparisonMetrics = {
 
 export const mockAiCoaching = {
   aiPropertySummaryText:
-    'P01 상남동 오피스텔: 직주근접·인프라 우수, 월세 대비 적정 시세. P02 답십리동 원룸: 통근 시간이 가장 길지만 조용한 주거지. P03 왕십리동 원룸: 균형형이나 시세가 다소 높음.',
+    '사용자 가치관 1순위인 직주근접 기준으로 비교했어요. P01 상남동 오피스텔: 직주근접·인프라 우수, 월세 대비 적정 시세. P02 답십리동 원룸: 통근 시간이 가장 길지만 조용한 주거지. P03 왕십리동 원룸: 균형형이나 시세가 다소 높음.',
   aiSummary:
     '직주근접과 가성비를 중시하는 가치관 기준으로 상남동 오피스텔이 가장 적합해요. 통근 왕복 48분으로 가장 짧고, 시세도 주변 중앙값 대비 2.2% 낮아요.',
   aiRecommendedPropertyId: 'P01',

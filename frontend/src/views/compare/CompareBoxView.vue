@@ -153,7 +153,7 @@ function formatArea(areaM2) {
 }
 
 function formatFee(item) {
-  const fee = item.maintenanceFee ?? item.maintenaceFee
+  const fee = item.maintenanceFee
   if (fee === null || fee === undefined || fee === '') return '-'
   return `${Number(fee).toLocaleString('ko-KR')}만`
 }
