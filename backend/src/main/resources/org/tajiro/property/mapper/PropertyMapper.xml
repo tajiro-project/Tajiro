@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.tajiro.property.mapper.PropertyMapper">
+
+    <resultMap id="buildingMap" type="BuildingVO">
+        <id     property="id"        column="id"/>
+        <result property="bldNm"     column="bld_nm"/>
+        <result property="latitude"  column="latitude"/>
+        <result property="longitude" column="longitude"/>
+    </resultMap>
+
+    <resultMap id="propertyMap" type="PropertyVO">
+        <id     property="id"             column="id"/>
+        <result property="buildingId"     column="building_id"/>
+        <result property="title"          column="title"/>
+        <result property="propertyType"   column="property_type"/>
+        <result property="tradeType"      column="trade_type"/>
+        <result property="deposit"        column="deposit"/>
+        <result property="monthlyRent"    column="monthly_rent"/>
+        <result property="maintenanceFee" column="maintenance_fee"/>
+        <result property="areaM2"         column="area_m2"/>
+        <result property="floorInfo"      column="floor_info"/>
+        <result property="address"        column="address"/>
+        <result property="thumbnailUrl"   column="thumbnail_url"/>
+        <association property="buildingVO" resultMap="buildingMap" columnPrefix="b_"/>
+    </resultMap>
+
+    <sql id="floorHead">
+        TRIM(SUBSTRING_INDEX(p.floor_info, '/', 1))
+    </sql>
+
+    <select id="getList" parameterType="PropertySearchRequest" resultMap="propertyMap">
+        SELECT
+        p.id,
+        p.building_id,
+        p.title,
+        p.property_type,
+        p.trade_type,
+        p.deposit,
+        p.monthly_rent,
+        p.maintenance_fee,
+        p.area_m2,
+        p.floor_info,
+        p.address,
+        b.id        AS b_id,
+        b.bld_nm    AS b_bld_nm,
+        b.latitude  AS b_latitude,
+        b.longitude AS b_longitude,
+        (SELECT pi.image_url
+        FROM property_image pi
+        WHERE pi.property_id = p.id
+        ORDER BY pi.sort_order
+        LIMIT 1) AS thumbnail_url
+        FROM property p
+        JOIN building b ON b.id = p.building_id
+        <where>
+            <if test="tradeTypes != null and tradeTypes.size() > 0">
+                AND p.trade_type IN
+                <foreach item="t" collection="tradeTypes" open="(" separator="," close=")">
+                    #{t}
+                </foreach>
+            </if>
+
+            <if test="propertyTypes != null and propertyTypes.size() > 0">
+                AND p.property_type IN
+                <foreach item="t" collection="propertyTypes" open="(" separator="," close=")">
+                    #{t}
+                </foreach>
+            </if>
+
+            <if test="minDeposit != null">
+                AND p.deposit &gt;= #{minDeposit}
+            </if>
+            <if test="maxDeposit != null">
+                AND p.deposit &lt;= #{maxDeposit}
+            </if>
+            <if test="minMonthlyRent != null">
+                AND p.monthly_rent &gt;= #{minMonthlyRent}
+            </if>
+            <if test="maxMonthlyRent != null">
+                AND p.monthly_rent &lt;= #{maxMonthlyRent}
+            </if>
+            <if test="minAreaM2 != null">
+                AND p.area_m2 &gt;= #{minAreaM2}
+            </if>
+            <if test="maxAreaM2 != null">
+                AND p.area_m2 &lt;= #{maxAreaM2}
+            </if>
+            <if test="floorPreference != null and floorPreference.size() > 0">
+                AND (
+                <foreach item="f" collection="floorPreference" separator=" OR ">
+                    <choose>
+                        <when test="f == '지하/반지하'">
+                            <include refid="floorHead"/> REGEXP '^(지하|반지하)'
+                        </when>
+                        <when test="f == '옥탑'">
+                            <include refid="floorHead"/> = '옥탑'
+                        </when>
+                        <when test="f == '1층'">
+                            <include refid="floorHead"/> = '1'
+                        </when>
+                        <when test="f == '2층 이상'">
+                            (<include refid="floorHead"/> REGEXP '^[0-9]+$'
+                            AND CAST(<include refid="floorHead"/> AS UNSIGNED) &gt;= 2)
+                        </when>
+                        <otherwise>
+                            1 = 0
+                        </otherwise>
+                    </choose>
+                </foreach>
+                )
+            </if>
+            <if test="workLat != null and workLng != null and maxWorkplaceDistanceMeters != null">
+                AND 6371000 * ACOS(LEAST(1,
+                COS(RADIANS(#{workLat})) * COS(RADIANS(b.latitude))
+                * COS(RADIANS(b.longitude) - RADIANS(#{workLng}))
+                + SIN(RADIANS(#{workLat})) * SIN(RADIANS(b.latitude))
+                )) &lt;= #{maxWorkplaceDistanceMeters}
+            </if>
+        </where>
+        LIMIT 200
+    </select>
+
+</mapper>

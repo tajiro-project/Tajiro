@@ -8,6 +8,8 @@
         <setting name="jdbcTypeForNull" value="NULL"/>
     </settings>
     <typeAliases>
-        <package name="org.tajiro"/>
+        <typeAlias alias="BuildingVO" type="org.tajiro.property.domain.BuildingVO"/>
+        <typeAlias alias="PropertyVO" type="org.tajiro.property.domain.PropertyVO"/>
+        <typeAlias alias="PropertySearchRequest" type="org.tajiro.property.dto.PropertySearchRequest"/>
     </typeAliases>
 </configuration>
