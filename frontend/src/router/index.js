@@ -1,5 +1,4 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import PropertyListView from '@/views/property/PropertyListView.vue';
 
 const routes = [
   {
@@ -10,7 +9,7 @@ const routes = [
   {
     path: '/properties',
     name: 'property-list',
-    component: PropertyListView,
+    component: () => import('@/views/property/PropertyListView.vue'),
   },
 ];
 
