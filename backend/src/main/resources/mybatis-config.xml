@@ -8,6 +8,7 @@
         <setting name="jdbcTypeForNull" value="NULL"/>
     </settings>
     <typeAliases>
-        <package name="org.tajiro"/>
+        <!--        <package name="org.tajiro"/>-->
+        <typeAlias alias="FinanceVO" type="org.tajiro.finance.domain.FinanceVO"/>
     </typeAliases>
 </configuration>
