@@ -47,30 +47,106 @@
 
       <!-- 청년 정책 리스트 -->
       <ul v-if="tab === 'policy'" class="list">
-        <li v-for="p in filteredPolicies" :key="p.id">
+        <!-- <li v-for="p in filteredPolicies" :key="p.id"> -->
+        <li v-for="p in paginatedPolicies" :key="p.id">
           <button class="item-card" @click="$router.push(`/policies/${p.id}`)">
             <p class="item-title">{{ p.title }}</p>
             <p class="item-amount">{{ shortAmount(p.benefitAmount) }}</p>
           </button>
         </li>
+        <nav
+          v-if="activeItems.length > 0"
+          class="pagination"
+          aria-label="목록 페이지 이동"
+        >
+          <button
+            class="page-arrow"
+            type="button"
+            :disabled="currentPage === 1"
+            aria-label="이전 페이지"
+            @click="movePage(currentPage - 1)"
+          >
+            ‹
+          </button>
+
+          <button
+            v-for="page in visiblePages"
+            :key="page"
+            type="button"
+            class="page-number"
+            :class="{ active: currentPage === page }"
+            :aria-current="currentPage === page ? 'page' : undefined"
+            @click="movePage(page)"
+          >
+            {{ page }}
+          </button>
+
+          <button
+            class="page-arrow"
+            type="button"
+            :disabled="currentPage === totalPages"
+            aria-label="다음 페이지"
+            @click="movePage(currentPage + 1)"
+          >
+            ›
+          </button>
+        </nav>
       </ul>
 
       <!-- KB 금융 상품 리스트 -->
       <ul v-else class="list">
-        <li v-for="f in filteredProducts" :key="f.id">
+        <li v-for="f in paginatedProducts" :key="f.id">
+          <!-- <li v-for="f in filteredProducts" :key="f.id"> -->
           <button
             class="item-card"
             @click="$router.push(`/financial-products/${f.id}`)"
           >
             <p class="item-title">{{ f.productName }}</p>
-            <p class="item-amount">
+            <!-- <p class="item-amount">
               한도 {{ f.maxLimitAmount.toLocaleString() }}만원 · 연
               {{ f.minRate.toFixed(1) }}%
-            </p>
+            </p> -->
             <p class="item-sub">무보증 월세 자금 · 만 19~34세</p>
           </button>
         </li>
       </ul>
+      <nav
+        v-if="activeItems.length > 0"
+        class="pagination"
+        aria-label="목록 페이지 이동"
+      >
+        <button
+          class="page-arrow"
+          type="button"
+          :disabled="currentPage === 1"
+          aria-label="이전 페이지"
+          @click="movePage(currentPage - 1)"
+        >
+          ‹
+        </button>
+
+        <button
+          v-for="page in visiblePages"
+          :key="page"
+          type="button"
+          class="page-number"
+          :class="{ active: currentPage === page }"
+          :aria-current="currentPage === page ? 'page' : undefined"
+          @click="movePage(page)"
+        >
+          {{ page }}
+        </button>
+
+        <button
+          class="page-arrow"
+          type="button"
+          :disabled="currentPage === totalPages"
+          aria-label="다음 페이지"
+          @click="movePage(currentPage + 1)"
+        >
+          ›
+        </button>
+      </nav>
     </div>
 
     <AppTabBar active="home" />
@@ -116,7 +192,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import PageHeader from '@/components/PageHeader.vue';
 import AppTabBar from '@/components/AppTabBar.vue';
 import { financeApi } from '@/api/services';
@@ -130,13 +206,15 @@ const keyword = ref('');
 const policies = ref([]);
 const products = ref([]);
 const needProfile = ref(false);
+const currentPage = ref(1);
+const pageSize = 5;
 
 onMounted(async () => {
-  const profile = await userApi.getProfile();
+  // const profile = await userApi.getProfile();
   // 프로필(지역·생년월일) 미입력 시 12-1 모달 노출
-  if (!profile || !profile.targetRegion || !profile.birthDate)
-    needProfile.value = true;
-  policies.value = (await policyApi.matches()) ?? [];
+  // if (!profile || !profile.targetRegion || !profile.birthDate)
+  //   needProfile.value = true;
+  // policies.value = (await policyApi.matches()) ?? [];
   products.value = (await financeApi.matches()) ?? [];
 });
 
@@ -151,6 +229,48 @@ const filteredProducts = computed(() =>
     (f) => !keyword.value || f.productName.includes(keyword.value),
   ),
 );
+
+const activeItems = computed(() =>
+  tab.value === 'policy' ? filteredPolicies.value : filteredProducts.value,
+);
+
+const totalPages = computed(() =>
+  Math.max(1, Math.ceil(activeItems.value.length / pageSize)),
+);
+
+const visiblePages = computed(() => {
+  const total = totalPages.value;
+  const current = currentPage.value;
+  const start = Math.max(1, Math.min(current - 2, total - 4));
+  const end = Math.min(total, start + 4);
+
+  return Array.from({ length: end - start + 1 }, (_, index) => start + index);
+});
+
+const paginatedPolicies = computed(() => {
+  const start = (currentPage.value - 1) * pageSize;
+  return filteredPolicies.value.slice(start, start + pageSize);
+});
+
+const paginatedProducts = computed(() => {
+  const start = (currentPage.value - 1) * pageSize;
+  return filteredProducts.value.slice(start, start + pageSize);
+});
+
+function movePage(page) {
+  if (page < 1 || page > totalPages.value) return;
+  currentPage.value = page;
+}
+
+watch([tab, keyword], () => {
+  currentPage.value = 1;
+});
+
+watch(totalPages, (total) => {
+  if (currentPage.value > total) {
+    currentPage.value = total;
+  }
+});
 
 function shortAmount(v) {
   const m = String(v).match(/(월\s*)?(최대\s*)?([\d,.]+만\s*원)/);
@@ -306,5 +426,61 @@ function shortAmount(v) {
   background: var(--kb-yellow-header);
   font-size: 13.5px;
   font-weight: 800;
+}
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 24px 0 8px;
+}
+
+.page-number,
+.page-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--white);
+  color: var(--kb-gray);
+  font-size: 13px;
+  font-weight: 700;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.15s ease;
+}
+
+.page-number:hover,
+.page-arrow:not(:disabled):hover {
+  border-color: var(--kb-yellow);
+  background: var(--yellow-tint);
+  transform: translateY(-1px);
+}
+
+.page-number.active {
+  border-color: var(--kb-yellow);
+  background: var(--kb-yellow);
+  color: #302b22;
+  box-shadow: 0 4px 10px rgba(255, 188, 0, 0.25);
+}
+
+.page-arrow {
+  font-size: 21px;
+  font-weight: 500;
+}
+
+.page-arrow:disabled {
+  cursor: default;
+  opacity: 0.35;
+}
+
+.page-number:focus-visible,
+.page-arrow:focus-visible {
+  outline: 2px solid var(--kb-yellow);
+  outline-offset: 2px;
 }
 </style>
