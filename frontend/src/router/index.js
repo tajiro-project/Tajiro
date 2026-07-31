@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from 'vue-router';
+﻿import { createRouter, createWebHistory } from 'vue-router';
 
 const routes = [
   {
@@ -17,6 +17,11 @@ const routes = [
     component: () => import('@/views/home/HomeView.vue'),
   },
   {
+    path: '/compare',
+    name: 'compare',
+    component: () => import('@/views/compare/CompareView.vue'),
+  },
+  {
     path: '/benefits/policies',
     name: 'policy-match',
     component: () => import('@/views/benefit/BenefitMatchView.vue'),
@@ -31,6 +36,11 @@ const routes = [
     path: '/preferences',
     name: 'preferences',
     component: () => import('@/views/preferences/PreferenceWizardView.vue'),
+  },
+  {
+    path: '/mypage',
+    name: 'mypage',
+    component: () => import('@/views/mypage/MyPageView.vue'),
   },
 ];
 

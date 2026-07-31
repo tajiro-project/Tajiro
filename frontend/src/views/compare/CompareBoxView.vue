@@ -64,12 +64,15 @@
         비교 시작 ({{ checkedIds.length }}개)
       </button>
     </div>
+
+    <AppTabBar active="compare" />
   </div>
 </template>
 
 <script setup>
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import AppTabBar from '@/components/AppTabBar.vue'
 import client, { withMock } from '@/api/client'
 import { mockCompareBox } from '@/api/mockData'
 
@@ -89,7 +92,8 @@ async function loadCompareBox() {
 
   try {
     const data = await withMock(() => client.get('/users/me/compare'), mockCompareBox)
-    const nextItems = Array.isArray(data) ? data : data?.items ?? []
+    const payload = data?.data ?? data
+    const nextItems = Array.isArray(payload) ? payload : payload?.items ?? []
     items.value = nextItems.slice(0, 3)
     checkedIds.value = items.value.slice(0, 3).map((item) => item.propertyId)
   } catch (error) {
@@ -121,7 +125,7 @@ async function removeItem(propertyId) {
 
 function startCompare() {
   if (checkedIds.value.length < 2) return
-  router.push({ path: '/compare', query: { ids: checkedIds.value.join(',') } })
+  router.push({ path: '/compare', query: { propertyIds: checkedIds.value } })
 }
 
 function goBack() {
@@ -149,7 +153,7 @@ function formatArea(areaM2) {
 }
 
 function formatFee(item) {
-  const fee = item.maintenanceFee ?? item.maintenaceFee
+  const fee = item.maintenanceFee
   if (fee === null || fee === undefined || fee === '') return '-'
   return `${Number(fee).toLocaleString('ko-KR')}만`
 }
