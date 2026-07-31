@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from 'vue-router';
+﻿import { createRouter, createWebHistory } from 'vue-router';
 
 const routes = [
   {
@@ -15,6 +15,11 @@ const routes = [
     path: '/home',
     name: 'home',
     component: () => import('@/views/home/HomeView.vue'),
+  },
+  {
+    path: '/compare',
+    name: 'compare',
+    component: () => import('@/views/compare/CompareView.vue'),
   },
   {
     path: '/benefits/policies',
@@ -38,4 +43,3 @@ const router = createRouter({
 });
 
 export default router;
-
