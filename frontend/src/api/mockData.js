@@ -17,6 +17,7 @@ export const mockProperties = [
     latitude: 35.2223,
     longitude: 128.6812,
     recommendScore: 92,
+    updatedDate: '2026-07-20T09:00:00',
   },
   {
     propertyId: 'P02',
@@ -34,6 +35,7 @@ export const mockProperties = [
     latitude: 37.5714,
     longitude: 127.0521,
     recommendScore: 88,
+    updatedDate: '2026-07-20T13:20:00',
   },
   {
     propertyId: 'P03',
@@ -51,6 +53,7 @@ export const mockProperties = [
     latitude: 37.5613,
     longitude: 127.0374,
     recommendScore: 85,
+    updatedDate: '2026-07-20T16:10:00',
   },
   {
     propertyId: 'P04',
@@ -68,11 +71,13 @@ export const mockProperties = [
     latitude: 37.5893,
     longitude: 126.9422,
     recommendScore: 81,
+    updatedDate: '2026-07-10T11:00:00',
   },
-]
+];
 
 export const mockPropertyDetail = (id) => {
-  const base = mockProperties.find((p) => p.propertyId === id) ?? mockProperties[0]
+  const base =
+    mockProperties.find((p) => p.propertyId === id) ?? mockProperties[0];
   return {
     id: base.propertyId,
     images: [],
@@ -114,8 +119,8 @@ export const mockPropertyDetail = (id) => {
       open: true,
     },
     matchScore: 92,
-  }
-}
+  };
+};
 
 export const mockSafety = {
   radiusMeters: 500,
@@ -129,28 +134,106 @@ export const mockSafety = {
     { category: 'WOMEN_ZONE', categoryName: '여성 안심 귀갓길', count: 2 },
     { category: 'ACCIDENT', categoryName: '교통사고 다발지', count: 1 },
   ],
-}
+};
 
 export const mockInfras = [
-  { category: 'SUBWAY', name: '상남역 2호선', distanceMeters: 380, walkMinutes: 5, latitude: 35.2231, longitude: 128.6825 },
-  { category: 'BUS', name: '상남시장 정류장', distanceMeters: 120, walkMinutes: 2, latitude: 35.2225, longitude: 128.6809 },
-  { category: 'CONVENIENCE', name: 'GS25 상남점', distanceMeters: 90, walkMinutes: 1, latitude: 35.2221, longitude: 128.6816 },
-  { category: 'MART', name: '홈플러스 상남점', distanceMeters: 650, walkMinutes: 9, latitude: 35.2205, longitude: 128.6841 },
-  { category: 'HOSPITAL', name: '상남연세의원', distanceMeters: 210, walkMinutes: 3, latitude: 35.2228, longitude: 128.6803 },
-  { category: 'PARK', name: '상남공원', distanceMeters: 480, walkMinutes: 7, latitude: 35.2211, longitude: 128.6795 },
-  { category: 'GYM', name: '스포애니 상남점', distanceMeters: 300, walkMinutes: 4, latitude: 35.2219, longitude: 128.6830 },
-  { category: 'CAFE', name: '스타벅스 상남점', distanceMeters: 150, walkMinutes: 2, latitude: 35.2224, longitude: 128.6820 },
-]
+  {
+    category: 'SUBWAY',
+    name: '상남역 2호선',
+    distanceMeters: 380,
+    walkMinutes: 5,
+    latitude: 35.2231,
+    longitude: 128.6825,
+  },
+  {
+    category: 'BUS',
+    name: '상남시장 정류장',
+    distanceMeters: 120,
+    walkMinutes: 2,
+    latitude: 35.2225,
+    longitude: 128.6809,
+  },
+  {
+    category: 'CONVENIENCE',
+    name: 'GS25 상남점',
+    distanceMeters: 90,
+    walkMinutes: 1,
+    latitude: 35.2221,
+    longitude: 128.6816,
+  },
+  {
+    category: 'MART',
+    name: '홈플러스 상남점',
+    distanceMeters: 650,
+    walkMinutes: 9,
+    latitude: 35.2205,
+    longitude: 128.6841,
+  },
+  {
+    category: 'HOSPITAL',
+    name: '상남연세의원',
+    distanceMeters: 210,
+    walkMinutes: 3,
+    latitude: 35.2228,
+    longitude: 128.6803,
+  },
+  {
+    category: 'PARK',
+    name: '상남공원',
+    distanceMeters: 480,
+    walkMinutes: 7,
+    latitude: 35.2211,
+    longitude: 128.6795,
+  },
+  {
+    category: 'GYM',
+    name: '스포애니 상남점',
+    distanceMeters: 300,
+    walkMinutes: 4,
+    latitude: 35.2219,
+    longitude: 128.683,
+  },
+  {
+    category: 'CAFE',
+    name: '스타벅스 상남점',
+    distanceMeters: 150,
+    walkMinutes: 2,
+    latitude: 35.2224,
+    longitude: 128.682,
+  },
+];
 
 export const mockComparables = [
-  { propertyId: 'C01', title: '상남동 오피스텔 A', dealType: '월세', price: '500/43', areaM2: 25.2 },
-  { propertyId: 'C02', title: '상남동 오피스텔 B', dealType: '월세', price: '500/47', areaM2: 27.1 },
-  { propertyId: 'C03', title: '가음동 오피스텔', dealType: '월세', price: '300/50', areaM2: 24.8 },
-]
+  {
+    propertyId: 'C01',
+    title: '상남동 오피스텔 A',
+    dealType: '월세',
+    price: '500/43',
+    areaM2: 25.2,
+  },
+  {
+    propertyId: 'C02',
+    title: '상남동 오피스텔 B',
+    dealType: '월세',
+    price: '500/47',
+    areaM2: 27.1,
+  },
+  {
+    propertyId: 'C03',
+    title: '가음동 오피스텔',
+    dealType: '월세',
+    price: '300/50',
+    areaM2: 24.8,
+  },
+];
 
-export const mockMarketEvaluation = { medianPrice: 46, diffPercent: -2.2 }
+export const mockMarketEvaluation = { medianPrice: 46, diffPercent: -2.2 };
 
-export const mockCommute = { distanceMeters: 2400, minutes: 24, mode: 'TRANSIT' }
+export const mockCommute = {
+  distanceMeters: 2400,
+  minutes: 24,
+  mode: 'TRANSIT',
+};
 
 export const mockCompareBox = mockProperties.slice(0, 3).map((p) => ({
   propertyId: p.propertyId,
@@ -162,7 +245,7 @@ export const mockCompareBox = mockProperties.slice(0, 3).map((p) => ({
   areaM2: p.areaM2,
   maintenanceFee: p.maintenanceFee,
   floorInfo: p.floorInfo,
-}))
+}));
 
 export const mockComparisonMetrics = {
   items: [
@@ -212,7 +295,7 @@ export const mockComparisonMetrics = {
       childrenSafetyZoneCountWithin500m: 1,
     },
   ],
-}
+};
 
 export const mockAiCoaching = {
   aiPropertySummaryText:
@@ -220,35 +303,96 @@ export const mockAiCoaching = {
   aiSummary:
     '직주근접과 가성비를 중시하는 가치관 기준으로 상남동 오피스텔이 가장 적합해요. 통근 왕복 48분으로 가장 짧고, 시세도 주변 중앙값 대비 2.2% 낮아요.',
   aiRecommendedPropertyId: 'P01',
-  aiAtp: '계약 전 관리비 세부 항목(수도·인터넷 포함 여부)과 주차 가능 대수를 꼭 확인하세요.',
-}
+  aiAtp:
+    '계약 전 관리비 세부 항목(수도·인터넷 포함 여부)과 주차 가능 대수를 꼭 확인하세요.',
+};
 
 export const mockFavorites = [
-  { propertyId: 'P01', title: '상남동 오피스텔', tradeType: '월세', deposit: 500, monthlyRent: 45, evaluationScore: -2.2, imageUrl: null },
-  { propertyId: 'P02', title: '답십리동 원룸', tradeType: '월세', deposit: 500, monthlyRent: 45, evaluationScore: 1.8, imageUrl: null },
-  { propertyId: 'P04', title: '홍은동 투룸', tradeType: '월세', deposit: 1000, monthlyRent: 55, evaluationScore: 8.4, imageUrl: null },
-]
+  {
+    propertyId: 'P01',
+    title: '상남동 오피스텔',
+    tradeType: '월세',
+    deposit: 500,
+    monthlyRent: 45,
+    evaluationScore: -2.2,
+    imageUrl: null,
+  },
+  {
+    propertyId: 'P02',
+    title: '답십리동 원룸',
+    tradeType: '월세',
+    deposit: 500,
+    monthlyRent: 45,
+    evaluationScore: 1.8,
+    imageUrl: null,
+  },
+  {
+    propertyId: 'P04',
+    title: '홍은동 투룸',
+    tradeType: '월세',
+    deposit: 1000,
+    monthlyRent: 55,
+    evaluationScore: 8.4,
+    imageUrl: null,
+  },
+];
 
+const createComparedProperties = (propertyIds) =>
+  propertyIds
+    .map((id) => mockProperties.find((property) => property.propertyId === id))
+    .filter(Boolean)
+    .map((property) => ({
+      propertyId: property.propertyId,
+      title: property.title,
+      deposit: property.deposit,
+      monthlyRent: property.monthlyRent,
+      maintenanceFee: property.maintenanceFee,
+      areaM2: property.areaM2,
+      floorInfo: property.floorInfo,
+      updatedDate: property.updatedDate,
+    }));
 export const mockReports = [
   {
     reportId: 'R01',
     title: '상남동 오피스텔 외 2건 비교',
     comparedPropertyIds: ['P01', 'P02', 'P03'],
+    comparedProperties: createComparedProperties(['P01', 'P02', 'P03']),
+    aiPropertySummaryText: mockAiCoaching.aiPropertySummaryText,
+    aiSummary: mockAiCoaching.aiSummary,
+    aiRecommendedPropertyId: 'P01',
+    aiAtp: mockAiCoaching.aiAtp,
     createdAt: '2026-07-21T10:22:00',
   },
   {
     reportId: 'R02',
     title: '답십리동 원룸 외 1건 비교',
-    comparedPropertyIds: ['P02', 'P04'],
+    comparedPropertyIds: ['P02', 'P03'],
+    comparedProperties: createComparedProperties(['P02', 'P03']),
+    aiPropertySummaryText:
+      'P02 답십리동 원룸과 P03 왕십리동 원룸을 직주근접과 주거비 기준으로 비교했어요.',
+    aiSummary:
+      '월세와 관리비 부담은 두 매물이 비슷하지만, 출퇴근 시간을 우선하면 P02를 먼저 검토하는 편이 합리적이에요.',
+    aiRecommendedPropertyId: 'P02',
+    aiAtp: '계약 전 관리비 포함 항목과 실제 통근 경로를 다시 확인하세요.',
     createdAt: '2026-07-14T18:03:00',
   },
-]
+];
+export const mockReportDetail = (reportId) =>
+  mockReports.find((report) => report.reportId === reportId) ?? mockReports[0];
 
 export const mockPolicies = [
-  { id: 'PL01', title: '청년 월세 한시 특별지원', benefitAmount: '월 최대 20만 원 (12개월)' },
-  { id: 'PL02', title: '창원시 청년 전입 지원금', benefitAmount: '최대 100만 원' },
+  {
+    id: 'PL01',
+    title: '청년 월세 한시 특별지원',
+    benefitAmount: '월 최대 20만 원 (12개월)',
+  },
+  {
+    id: 'PL02',
+    title: '창원시 청년 전입 지원금',
+    benefitAmount: '최대 100만 원',
+  },
   { id: 'PL03', title: '청년 이사비 지원 사업', benefitAmount: '최대 40만 원' },
-]
+];
 
 export const mockPolicyDetail = {
   title: '청년 월세 한시 특별지원',
@@ -259,14 +403,39 @@ export const mockPolicyDetail = {
   applicationPeriod: '2026.01.01 ~ 2026.12.31',
   agency: '창원시청 청년정책과',
   applyMethod: '복지로 온라인 신청 또는 주소지 행정복지센터 방문',
-  requiredDocuments: '임대차계약서 사본, 월세 이체 증빙, 가족관계증명서, 소득 증빙 서류',
-}
+  requiredDocuments:
+    '임대차계약서 사본, 월세 이체 증빙, 가족관계증명서, 소득 증빙 서류',
+};
 
 export const mockFinancialProducts = [
-  { id: 'F01', provider: 'KB국민은행', productName: 'KB 청년 전세자금대출', minRate: 3.2, maxRate: 4.1, maxLimitAmount: 20000, loanLimit: '보증금의 90% 이내' },
-  { id: 'F02', provider: 'KB국민은행', productName: 'KB 버팀목 전세자금', minRate: 2.1, maxRate: 2.9, maxLimitAmount: 12000, loanLimit: '보증금의 80% 이내' },
-  { id: 'F03', provider: 'KB국민은행', productName: 'KB 청년 월세대출', minRate: 3.0, maxRate: 3.6, maxLimitAmount: 1200, loanLimit: '월 60만 원 이내' },
-]
+  {
+    id: 'F01',
+    provider: 'KB국민은행',
+    productName: 'KB 청년 전세자금대출',
+    minRate: 3.2,
+    maxRate: 4.1,
+    maxLimitAmount: 20000,
+    loanLimit: '보증금의 90% 이내',
+  },
+  {
+    id: 'F02',
+    provider: 'KB국민은행',
+    productName: 'KB 버팀목 전세자금',
+    minRate: 2.1,
+    maxRate: 2.9,
+    maxLimitAmount: 12000,
+    loanLimit: '보증금의 80% 이내',
+  },
+  {
+    id: 'F03',
+    provider: 'KB국민은행',
+    productName: 'KB 청년 월세대출',
+    minRate: 3.0,
+    maxRate: 3.6,
+    maxLimitAmount: 1200,
+    loanLimit: '월 60만 원 이내',
+  },
+];
 
 export const mockFinancialProductDetail = {
   id: 'F01',
@@ -276,26 +445,65 @@ export const mockFinancialProductDetail = {
   maxRate: 4.1,
   maxLimitAmount: 20000,
   loanLimit: '보증금의 90% 이내',
-  rateDescription: '기준금리(COFIX) + 가산금리, 우대금리 최대 0.9%p (급여이체 0.3%p, 카드실적 0.3%p, 자동이체 0.3%p)',
-  eligibility: '만 19세~34세 무주택 세대주, 연 소득 5천만 원 이하, 임차보증금 3억 원 이하 주택',
-  requiredDocs: '신분증, 확정일자부 임대차계약서, 주민등록등본, 소득 증빙 서류, 보증금 5% 이상 납입 영수증',
+  rateDescription:
+    '기준금리(COFIX) + 가산금리, 우대금리 최대 0.9%p (급여이체 0.3%p, 카드실적 0.3%p, 자동이체 0.3%p)',
+  eligibility:
+    '만 19세~34세 무주택 세대주, 연 소득 5천만 원 이하, 임차보증금 3억 원 이하 주택',
+  requiredDocs:
+    '신분증, 확정일자부 임대차계약서, 주민등록등본, 소득 증빙 서류, 보증금 5% 이상 납입 영수증',
   applicationUrl: 'https://obank.kbstar.com',
   isActive: true,
   referenceDate: '2026-07-01',
   validEndDate: '2026-12-31',
-}
+};
 
 export const mockRegions = [
-  { regionName: '경남 창원시 성산구', legalDongCode: '4812310100', sggCode: '48123', lowerRegionName: '상남동', parentRegionCode: '48' },
-  { regionName: '서울 동대문구', legalDongCode: '1123010100', sggCode: '11230', lowerRegionName: '답십리동', parentRegionCode: '11' },
-  { regionName: '서울 성동구', legalDongCode: '1120010100', sggCode: '11200', lowerRegionName: '왕십리동', parentRegionCode: '11' },
-]
+  {
+    regionName: '경남 창원시 성산구',
+    legalDongCode: '4812310100',
+    sggCode: '48123',
+    lowerRegionName: '상남동',
+    parentRegionCode: '48',
+  },
+  {
+    regionName: '서울 동대문구',
+    legalDongCode: '1123010100',
+    sggCode: '11230',
+    lowerRegionName: '답십리동',
+    parentRegionCode: '11',
+  },
+  {
+    regionName: '서울 성동구',
+    legalDongCode: '1120010100',
+    sggCode: '11200',
+    lowerRegionName: '왕십리동',
+    parentRegionCode: '11',
+  },
+];
 
 export const mockLocations = [
-  { name: 'LG전자 창원1공장', address: '경남 창원시 성산구 완암로 84', latitude: 35.2101, longitude: 128.6733, buildingCode: 'B4812301' },
-  { name: '창원시청', address: '경남 창원시 의창구 중앙대로 151', latitude: 35.2281, longitude: 128.6811, buildingCode: 'B4812101' },
-  { name: '상남동 스타벅스', address: '경남 창원시 성산구 상남로 77', latitude: 35.2226, longitude: 128.6819, buildingCode: 'B4812302' },
-]
+  {
+    name: 'LG전자 창원1공장',
+    address: '경남 창원시 성산구 완암로 84',
+    latitude: 35.2101,
+    longitude: 128.6733,
+    buildingCode: 'B4812301',
+  },
+  {
+    name: '창원시청',
+    address: '경남 창원시 의창구 중앙대로 151',
+    latitude: 35.2281,
+    longitude: 128.6811,
+    buildingCode: 'B4812101',
+  },
+  {
+    name: '상남동 스타벅스',
+    address: '경남 창원시 성산구 상남로 77',
+    latitude: 35.2226,
+    longitude: 128.6819,
+    buildingCode: 'B4812302',
+  },
+];
 
 export const mockDashboard = {
   name: '김민주',
@@ -308,7 +516,7 @@ export const mockDashboard = {
     { criterion: 'COST', priorityOrder: 2 },
     { criterion: 'AMENITY', priorityOrder: 3 },
   ],
-}
+};
 
 export const mockProfile = {
   targetRegion: '경남 창원시',
@@ -317,20 +525,42 @@ export const mockProfile = {
   assetAmount: 1800,
   jobStatus: '재직 중',
   target_sgg_code: '48123',
-}
+};
 
 export const mockTerms = {
-  1: { id: 1, type: 'SERVICE', title: '서비스 이용약관', version: '1.2', content: '제1조(목적)\n이 약관은 타지로(이하 "회사")가 제공하는 서비스의 이용 조건 및 절차, 회사와 회원 간의 권리·의무를 규정함을 목적으로 합니다.\n\n제2조(정의)\n"서비스"란 회사가 제공하는 정착 추천, 매물 비교, 정책·금융 매칭 등 일체의 서비스를 말합니다.\n\n제3조(약관의 효력)\n본 약관은 서비스 화면에 게시하거나 기타 방법으로 공지함으로써 효력이 발생합니다.' },
-  2: { id: 2, type: 'PRIVACY', title: '개인정보 수집·이용 동의', version: '1.1', content: '1. 수집 항목: 이름, 이메일, 생년월일, 소득·자산 정보(선택)\n2. 수집 목적: 회원 관리, 맞춤 매물 추천, 정책·금융상품 매칭\n3. 보유 기간: 회원 탈퇴 시까지(관계 법령에 따라 일정 기간 보관될 수 있음)' },
-  3: { id: 3, type: 'MARKETING', title: '마케팅 정보 수신 동의(선택)', version: '1.0', content: '이벤트, 혜택 등 마케팅 정보를 이메일·푸시로 받아보실 수 있습니다. 동의하지 않아도 서비스 이용에 제한이 없습니다.' },
-}
+  1: {
+    id: 1,
+    type: 'SERVICE',
+    title: '서비스 이용약관',
+    version: '1.2',
+    content:
+      '제1조(목적)\n이 약관은 타지로(이하 "회사")가 제공하는 서비스의 이용 조건 및 절차, 회사와 회원 간의 권리·의무를 규정함을 목적으로 합니다.\n\n제2조(정의)\n"서비스"란 회사가 제공하는 정착 추천, 매물 비교, 정책·금융 매칭 등 일체의 서비스를 말합니다.\n\n제3조(약관의 효력)\n본 약관은 서비스 화면에 게시하거나 기타 방법으로 공지함으로써 효력이 발생합니다.',
+  },
+  2: {
+    id: 2,
+    type: 'PRIVACY',
+    title: '개인정보 수집·이용 동의',
+    version: '1.1',
+    content:
+      '1. 수집 항목: 이름, 이메일, 생년월일, 소득·자산 정보(선택)\n2. 수집 목적: 회원 관리, 맞춤 매물 추천, 정책·금융상품 매칭\n3. 보유 기간: 회원 탈퇴 시까지(관계 법령에 따라 일정 기간 보관될 수 있음)',
+  },
+  3: {
+    id: 3,
+    type: 'MARKETING',
+    title: '마케팅 정보 수신 동의(선택)',
+    version: '1.0',
+    content:
+      '이벤트, 혜택 등 마케팅 정보를 이메일·푸시로 받아보실 수 있습니다. 동의하지 않아도 서비스 이용에 제한이 없습니다.',
+  },
+};
 
 // 안전 거래 가이드 (프론트 목업 — 기능명세 61)
 export const safetyGuideData = {
   intro: {
     title: '전세사기·계약 실수, 미리 막아요',
-    subtitle: '청년 첫 계약을 위한 단계별 체크리스트예요. 하나씩 확인하며 안전하게 진행하세요.',
+    subtitle:
+      '청년 첫 계약을 위한 단계별 체크리스트예요. 하나씩 확인하며 안전하게 진행하세요.',
     total: 16,
   },
   tabs: ['계약', '전세보증보험'],
-}
+};

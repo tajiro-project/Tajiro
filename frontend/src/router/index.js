@@ -1,4 +1,4 @@
-﻿import { createRouter, createWebHistory } from 'vue-router';
+import { createRouter, createWebHistory } from 'vue-router';
 
 const routes = [
   {
@@ -20,6 +20,24 @@ const routes = [
     path: '/compare',
     name: 'compare',
     component: () => import('@/views/compare/CompareView.vue'),
+  },
+  {
+    path: '/reports',
+    name: 'reports',
+    component: () => import('@/views/compare/ReportListView.vue'),
+  },
+  {
+    path: '/reports/:reportId',
+    name: 'report-detail',
+    component: () => import('@/views/compare/CompareView.vue'),
+  },
+  {
+    path: '/comparison-reports/:reportId',
+    redirect: (to) => `/reports/${to.params.reportId}`,
+  },
+  {
+    path: '/comparison-reports',
+    redirect: '/reports',
   },
   {
     path: '/benefits/policies',
