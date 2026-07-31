@@ -76,10 +76,6 @@ public class RootConfig {
         config.setMaximumPoolSize(10);
         config.setMinimumIdle(2);
         config.setPoolName("tajiro-hikari-pool");
-        // [스켈레톤 편의 추가] 참고 프로젝트(backend/)에는 없는 한 줄입니다.
-        // 이게 없으면 MySQL이 떠 있지 않을 때 커넥션 검사에 실패해 서버가 아예 기동되지 않습니다.
-        // DB 세팅을 마쳤다면 지우세요.
-        config.setInitializationFailTimeout(-1);
         return new HikariDataSource(config);
     }
 
