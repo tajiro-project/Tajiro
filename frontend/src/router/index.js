@@ -10,7 +10,7 @@ const routes = [
     path: '/properties',
     name: 'property-list',
     component: () => import('@/views/property/PropertyListView.vue'),
-  }
+  },
   {
     path: '/compare-box',
     name: 'compare-box',
