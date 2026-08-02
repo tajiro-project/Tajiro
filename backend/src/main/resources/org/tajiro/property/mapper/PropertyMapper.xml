@@ -5,25 +5,25 @@
 <mapper namespace="org.tajiro.property.mapper.PropertyMapper">
 
     <resultMap id="buildingMap" type="BuildingVO">
-        <id     property="id"        column="id"/>
-        <result property="bldNm"     column="bld_nm"/>
-        <result property="latitude"  column="latitude"/>
+        <id property="id" column="id"/>
+        <result property="bldNm" column="bld_nm"/>
+        <result property="latitude" column="latitude"/>
         <result property="longitude" column="longitude"/>
     </resultMap>
 
     <resultMap id="propertyMap" type="PropertyVO">
-        <id     property="id"             column="id"/>
-        <result property="buildingId"     column="building_id"/>
-        <result property="title"          column="title"/>
-        <result property="propertyType"   column="property_type"/>
-        <result property="tradeType"      column="trade_type"/>
-        <result property="deposit"        column="deposit"/>
-        <result property="monthlyRent"    column="monthly_rent"/>
+        <id     property="id" column="id"/>
+        <result property="buildingId" column="building_id"/>
+        <result property="title" column="title"/>
+        <result property="propertyType" column="property_type"/>
+        <result property="tradeType" column="trade_type"/>
+        <result property="deposit" column="deposit"/>
+        <result property="monthlyRent" column="monthly_rent"/>
         <result property="maintenanceFee" column="maintenance_fee"/>
-        <result property="areaM2"         column="area_m2"/>
-        <result property="floorInfo"      column="floor_info"/>
-        <result property="address"        column="address"/>
-        <result property="thumbnailUrl"   column="thumbnail_url"/>
+        <result property="areaM2" column="area_m2"/>
+        <result property="floorInfo" column="floor_info"/>
+        <result property="address" column="address"/>
+        <result property="thumbnailUrl" column="thumbnail_url"/>
         <association property="buildingVO" resultMap="buildingMap" columnPrefix="b_"/>
     </resultMap>
 
@@ -44,9 +44,9 @@
         p.area_m2,
         p.floor_info,
         p.address,
-        b.id        AS b_id,
-        b.bld_nm    AS b_bld_nm,
-        b.latitude  AS b_latitude,
+        b.id AS b_id,
+        b.bld_nm AS b_bld_nm,
+        b.latitude AS b_latitude,
         b.longitude AS b_longitude,
         (SELECT pi.image_url
         FROM property_image pi
@@ -120,7 +120,6 @@
                 )) &lt;= #{maxWorkplaceDistanceMeters}
             </if>
         </where>
-        LIMIT 200
     </select>
 
 </mapper>
