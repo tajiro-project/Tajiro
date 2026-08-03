@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.tajiro.comparison.mapper.ComparisonMapper">
+    <select id="findByUserId"
+            resultType="org.tajiro.comparison.dto.ComparePropertyDTO">
+        SELECT cp.property_id,
+               p.title,
+               p.property_type,
+               p.trade_type,
+               p.deposit,
+               p.monthly_rent,
+               p.maintenance_fee,
+               p.area_m2,
+               p.floor_info,
+               b.bld_nm AS building_name,
+               pi.image_url AS thumbnail_url
+        FROM compare_property cp
+        JOIN property p ON p.id = cp.property_id
+        LEFT JOIN building b ON b.id = p.building_id
+        LEFT JOIN property_image pi
+               ON pi.property_id = p.id
+              AND pi.sort_order = (
+                  SELECT MIN(pi2.sort_order)
+                  FROM property_image pi2
+                  WHERE pi2.property_id = p.id
+              )
+        WHERE cp.user_id = #{userId}
+          AND cp.property_status = 1
+        ORDER BY cp.added_at DESC
+    </select>
+    <select id="existsProperty" resultType="boolean">
+        SELECT EXISTS(
+            SELECT 1
+            FROM property
+            WHERE id = #{propertyId}
+        )
+    </select>
+    <select id="existsByUserIdAndPropertyId" resultType="boolean">
+        SELECT EXISTS(
+            SELECT 1
+            FROM compare_property
+            WHERE user_id = #{userId}
+              AND property_id = #{propertyId}
+        )
+    </select>
+    <select id="countByUserId" resultType="int">
+        SELECT COUNT(*)
+        FROM compare_property
+        WHERE user_id = #{userId}
+          AND property_status = 1
+    </select>
+    <insert id="insert">
+        INSERT INTO compare_property (user_id, property_id, property_status, added_at)
+        VALUES (#{userId}, #{propertyId}, 1, NOW())
+    </insert>
+    <delete id="delete">
+        DELETE FROM compare_property
+        WHERE user_id = #{userId}
+          AND property_id = #{propertyId}
+    </delete>
+</mapper>
