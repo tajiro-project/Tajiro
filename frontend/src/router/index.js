@@ -7,6 +7,11 @@ const routes = [
     component: () => import("@/views/PlaceholderView.vue"),
   },
   {
+    path: "/properties",
+    name: "property-list",
+    component: () => import("@/views/property/PropertyListView.vue"),
+  },
+  {
     path: "/compare-box",
     name: "compare-box",
     component: () => import("@/views/compare/CompareBoxView.vue"),
@@ -15,6 +20,11 @@ const routes = [
     path: "/home",
     name: "home",
     component: () => import("@/views/home/HomeView.vue"),
+  },
+  {
+    path: "/compare",
+    name: "compare",
+    component: () => import("@/views/compare/CompareView.vue"),
   },
   {
     path: "/benefits/policies",
@@ -33,6 +43,16 @@ const routes = [
     name: "property-detail",
     component: () => import("@/views/property/PropertyDetailView.vue"),
   }, // 09
+  {
+    path: "/preferences",
+    name: "preferences",
+    component: () => import("@/views/preferences/PreferenceWizardView.vue"),
+  },
+  {
+    path: "/mypage",
+    name: "mypage",
+    component: () => import("@/views/mypage/MyPageView.vue"),
+  },
 ];
 
 const router = createRouter({
