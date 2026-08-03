@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 import org.tajiro.finance.domain.FinanceVO;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 
 @NoArgsConstructor
@@ -30,9 +30,9 @@ public class FinanceDTO {
     private String requiredDocs; // 제출 서류
     private String applicationUrl; // 신청 url
     private Boolean isActive; //판매여부
-    private LocalDate referenceDate; //기준일
-    private LocalDate validEndDate; // 종료일
-    private LocalDate createdAt; // 등록일
+    private LocalDateTime referenceDate; //기준일
+    private LocalDateTime validEndDate; // 종료일
+    private LocalDateTime createdAt; // 등록일
 
 
     // VO  DTO 변환

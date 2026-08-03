@@ -6,6 +6,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
@@ -18,7 +20,7 @@ public class UserProfileVO {
     private Integer mothlyIncome;
     private Integer assetAmount;
     private String jobStatus;
-    private LocalDate updateAt;
+    private LocalDateTime updateAt;
     private String targetSggCode;
 
 }

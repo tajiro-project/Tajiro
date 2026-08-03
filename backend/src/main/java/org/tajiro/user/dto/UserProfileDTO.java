@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 import org.tajiro.user.domain.UserProfileVO;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @NoArgsConstructor
 @AllArgsConstructor
@@ -22,7 +23,7 @@ public class UserProfileDTO {
     private Integer mothlyIncome;
     private Integer assetAmount;
     private String jobStatus;
-    private LocalDate updateAt;
+    private LocalDateTime updatedAt;
     private String targetSggCode;
 
     public static UserProfileDTO of(UserProfileVO vo){
@@ -37,7 +38,7 @@ public class UserProfileDTO {
                 .mothlyIncome(vo.getMothlyIncome())
                 .assetAmount(vo.getAssetAmount())
                 .jobStatus(vo.getJobStatus())
-                .updateAt(vo.getUpdateAt())
+                .updatedAt(vo.getUpdateAt())
                 .targetSggCode(vo.getTargetSggCode())
                 .build();
     }
