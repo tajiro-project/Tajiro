@@ -47,6 +47,11 @@ const routes = [
     name: 'mypage',
     component: () => import('@/views/mypage/MyPageView.vue'),
   },
+  {
+    path: '/login',
+    name: 'login',
+    component: () => import('@/views/auth/LoginView.vue'),
+  },
 ];
 
 const router = createRouter({
