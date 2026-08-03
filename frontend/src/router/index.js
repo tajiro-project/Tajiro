@@ -66,6 +66,11 @@ const routes = [
     component: () => import('@/views/mypage/MyPageView.vue'),
   },
   {
+    path: '/register',
+    name: 'register',
+    component: () => import('@/views/auth/RegisterView.vue'),
+  },
+  {
     path: '/login',
     name: 'login',
     component: () => import('@/views/auth/LoginView.vue'),
