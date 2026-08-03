@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="cbox">
     <header class="local-header">
       <button class="back" type="button" aria-label="뒤로 가기" @click="goBack">‹</button>
@@ -27,7 +27,12 @@
 
           <div class="item-card">
             <span class="thumb">
-              <img v-if="item.thumbnailUrl" :src="item.thumbnailUrl" alt="" />
+              <img
+                v-if="item.thumbnailUrl && !imageErrorIds.includes(item.propertyId)"
+                :src="item.thumbnailUrl"
+                alt=""
+                @error="markImageError(item.propertyId)"
+              />
               <svg v-else width="26" height="26" viewBox="0 0 30 30" fill="none">
                 <path d="M4 13.5L15 5l11 8.5" stroke="#8a8477" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                 <path d="M7 12v12h16V12" stroke="#8a8477" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
@@ -83,6 +88,7 @@ const deletingId = ref('')
 const errorMessage = ref('')
 const items = ref([])
 const checkedIds = ref([])
+const imageErrorIds = ref([])
 
 onMounted(loadCompareBox)
 
@@ -96,6 +102,7 @@ async function loadCompareBox() {
     const nextItems = Array.isArray(payload) ? payload : payload?.items ?? []
     items.value = nextItems.slice(0, 3)
     checkedIds.value = items.value.slice(0, 3).map((item) => item.propertyId)
+    imageErrorIds.value = []
   } catch (error) {
     errorMessage.value = error?.message ?? '비교함을 불러오지 못했어요.'
   } finally {
@@ -120,6 +127,12 @@ async function removeItem(propertyId) {
     errorMessage.value = error?.message ?? '삭제 중 오류가 발생했어요.'
   } finally {
     deletingId.value = ''
+  }
+}
+
+function markImageError(propertyId) {
+  if (!imageErrorIds.value.includes(propertyId)) {
+    imageErrorIds.value.push(propertyId)
   }
 }
 
