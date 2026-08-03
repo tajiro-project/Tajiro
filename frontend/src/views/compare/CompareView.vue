@@ -1,10 +1,10 @@
-﻿<template>
+<template>
   <div class="cmp">
     <header class="local-header">
       <button class="back" type="button" aria-label="뒤로 가기" @click="goBack">
         ‹
       </button>
-      <span>매물 비교</span>
+      <span>{{ isReportMode ? '비교 리포트 상세' : '매물 비교' }}</span>
       <button class="refresh" type="button" @click="loadComparison">
         새로고침
       </button>
@@ -42,7 +42,7 @@
           <p class="ai-head">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <path
-                d="M8 1l1.4 4L14 6l-4 2.2L9.2 13 8 9.5 4 12l1.8-4L2 6l4.6-1L8 1z"
+                d="M8 1L9.9 6.1L15 8L9.9 9.9L8 15L6.1 9.9L1 8L6.1 6.1L8 1Z"
                 fill="#ffbc00"
               />
             </svg>
@@ -213,6 +213,7 @@
         </section>
 
         <button
+          v-if="!isReportMode"
           class="report-btn"
           type="button"
           :disabled="saving"
@@ -225,6 +226,62 @@
     </div>
 
     <AppTabBar active="compare" />
+    <Teleport to="body">
+      <div v-if="showAiRefreshModal" class="modal-overlay">
+        <div
+          class="modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="ai-refresh-title"
+        >
+          <span class="m-icon">
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+              <rect
+                x="5"
+                y="2.5"
+                width="12"
+                height="17"
+                rx="2"
+                stroke="#a8842c"
+                stroke-width="1.6"
+              />
+              <path
+                d="M8.5 7h5M8.5 10.5h5M8.5 14h3"
+                stroke="#a8842c"
+                stroke-width="1.4"
+                stroke-linecap="round"
+              />
+            </svg>
+          </span>
+          <p id="ai-refresh-title" class="m-title">
+            AI 코칭 업데이트가 필요해요
+          </p>
+          <p class="m-text">
+            매물 정보가 저장 이후 변경됐어요.<br />
+            현재 정보에 맞게 AI 코칭을<br />
+            업데이트하시겠어요?
+          </p>
+          <div class="m-actions">
+            <button
+              class="m-later"
+              type="button"
+              :disabled="refreshingCoaching"
+              @click="showAiRefreshModal = false"
+            >
+              다음에
+            </button>
+            <button
+              class="m-go"
+              type="button"
+              :disabled="refreshingCoaching"
+              @click="refreshAiCoaching"
+            >
+              {{ refreshingCoaching ? '업데이트 중...' : '업데이트하기' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -245,6 +302,7 @@ import {
   mockAiCoaching,
   mockCompareBox,
   mockComparisonMetrics,
+  mockReportDetail,
 } from '@/api/mockData';
 
 Chart.register(
@@ -280,15 +338,21 @@ const showOverall = ref(true);
 const showSafety = ref(true);
 const radarEl = ref(null);
 const savedMsg = ref('');
+const currentPropertyIds = ref([]);
+const showAiRefreshModal = ref(false);
+const refreshingCoaching = ref(false);
 let chart = null;
 
 const selectedIds = computed(() =>
   []
     .concat(route.query.propertyIds ?? route.query.ids ?? [])
-    .map((id) => String(id).trim())
+    .flatMap((id) => String(id).split(','))
+    .map((id) => id.trim())
     .filter(Boolean)
     .slice(0, 3),
 );
+const reportId = computed(() => String(route.params.reportId ?? route.query.reportId ?? ''));
+const isReportMode = computed(() => Boolean(reportId.value));
 // AI가 추천한 매물 ID를 결정
 const hasAiRecommendation = computed(() =>
   items.value.some(
@@ -443,18 +507,29 @@ watch(loading, (isLoading) => {
 async function loadComparison() {
   loading.value = true;
   errorMessage.value = '';
+  currentPropertyIds.value = [];
+  showAiRefreshModal.value = false;
   try {
-    if (!selectedIds.value.length) {
+    const savedReport = isReportMode.value
+      ? await getReportDetail(reportId.value)
+      : null;
+    const propertyIds = (savedReport?.comparedPropertyIds ?? selectedIds.value)
+      .slice(0, 3);
+
+    currentPropertyIds.value = propertyIds;
+
+    if (!propertyIds.length) {
       router.replace('/compare-box');
       return;
     }
 
-    const propertyIds = selectedIds.value.slice(0, 3);
     const metricsResult = await getMetricsWithFallback(propertyIds);
     let coachingDto = null;
     coachingError.value = '';
 
-    if (metricsResult.mocked) {
+    if (savedReport) {
+      coachingDto = createReportCoaching(savedReport);
+    } else if (metricsResult.mocked) {
       coachingDto = createMockComparisonResultDto(propertyIds).coaching;
     } else {
       try {
@@ -465,18 +540,73 @@ async function loadComparison() {
     }
 
     applyComparisonResult(
-      { metrics: metricsResult.data, coaching: coachingDto },
+      {
+        metrics: metricsResult.data,
+        coaching: coachingDto,
+      },
       propertyIds,
     );
+
+    if (savedReport && shouldShowAiRefreshModal(savedReport)) {
+      showAiRefreshModal.value = true;
+    }
   } catch (error) {
     errorMessage.value = error?.message ?? '비교 결과를 불러오지 못했어요.';
   } finally {
     loading.value = false;
   }
 }
-
 function unwrapApiData(payload) {
   return payload?.data && payload?.statusCode ? payload.data : payload;
+}
+
+async function getReportDetail(id) {
+  const response = await withMock(
+    () => client.get(`/comparison-reports/${id}`),
+    () => mockReportDetail(id),
+  );
+  return unwrapApiData(response);
+}
+
+function createReportCoaching(report) {
+  return {
+    aiPropertySummaryText:
+      report.aiPropertySummaryText ?? report.aiSummary ?? '',
+    aiSummary: report.aiSummary ?? report.aiPropertySummaryText ?? '',
+    aiRecommendedPropertyId: report.aiRecommendedPropertyId,
+    aiAtp: report.aiAtp,
+  };
+}
+
+function shouldShowAiRefreshModal(report) {
+  return route.query.aiRefresh === '1' || hasUpdatedReportProperty(report);
+}
+
+function hasUpdatedReportProperty(report) {
+  const savedAt = new Date(report?.createdAt);
+  if (Number.isNaN(savedAt.getTime())) return false;
+
+  return (report?.comparedProperties ?? []).some((property) => {
+    const updatedAt = new Date(property.updatedDate);
+    return !Number.isNaN(updatedAt.getTime()) && updatedAt > savedAt;
+  });
+}
+
+async function refreshAiCoaching() {
+  if (!currentPropertyIds.value.length) return;
+
+  refreshingCoaching.value = true;
+  coachingError.value = '';
+  try {
+    coaching.value = await getCoaching(currentPropertyIds.value);
+    showAiRefreshModal.value = false;
+  } catch (error) {
+    coaching.value = null;
+    coachingError.value = error.message;
+    showAiRefreshModal.value = false;
+  } finally {
+    refreshingCoaching.value = false;
+  }
 }
 
 async function getMetricsWithFallback(propertyIds) {
@@ -659,15 +789,15 @@ async function saveReport() {
         client.post('/comparison-reports', {
           title: `${items.value[0]?.title ?? '비교 리포트'} 외 ${Math.max(items.value.length - 1, 0)}건`,
           comparedPropertyIds: propertyIds,
-          aiPropertySummaryText: getReportAiText(),
-          aiSummary: getReportAiText(),
+          aiPropertySummaryText: getReportPropertySummaryText(),
+          aiSummary: getReportSummaryText(),
           aiRecommendedPropertyId: coaching.value?.aiRecommendedPropertyId,
-          saved: true,
           aiAtp: coaching.value?.aiAtp,
         }),
       { reportId: `R-${Date.now()}`, createdAt: new Date().toISOString() },
     );
     savedMsg.value = '리포트를 보관함에 저장했어요.';
+    router.push('/reports');
   } catch (error) {
     savedMsg.value = error?.message ?? '리포트 저장 중 오류가 발생했어요.';
   } finally {
@@ -675,13 +805,13 @@ async function saveReport() {
   }
 }
 
-function getReportAiText() {
-  return (
-    coaching.value?.aiPropertySummaryText ??
-    coaching.value?.aiSummary ??
-    coachingError.value ??
-    ''
-  );
+
+function getReportPropertySummaryText() {
+  return coaching.value?.aiPropertySummaryText ?? coachingError.value ?? '';
+}
+
+function getReportSummaryText() {
+  return coaching.value?.aiSummary ?? coachingError.value ?? '';
 }
 
 function shortName(title) {
@@ -695,7 +825,7 @@ function feeValue(item) {
 }
 
 function goBack() {
-  router.push('/compare-box');
+  router.push(isReportMode.value ? '/reports' : '/compare-box');
 }
 </script>
 
@@ -999,4 +1129,71 @@ function goBack() {
   font-size: 12.5px;
   color: #2f9e69;
 }
-</style>
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(33, 30, 24, 0.5);
+  padding: 24px;
+}
+.modal {
+  width: 100%;
+  max-width: 300px;
+  background: var(--white);
+  border-radius: 20px;
+  padding: 28px 20px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.m-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--yellow-tint);
+}
+.m-title {
+  margin-top: 16px;
+  font-size: 16px;
+  font-weight: 900;
+}
+.m-text {
+  margin-top: 10px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--kb-gray);
+}
+.m-actions {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  margin-top: 20px;
+}
+.m-later {
+  flex: 0 0 84px;
+  height: 44px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--white);
+  font-size: 13.5px;
+  font-weight: 700;
+}
+.m-go {
+  flex: 1;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--kb-yellow-header);
+  font-size: 13.5px;
+  font-weight: 800;
+}
+.m-go:disabled {
+  opacity: 0.55;
+  cursor: default;
+}</style>
