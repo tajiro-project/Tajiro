@@ -12,7 +12,7 @@
 
         <ul class="checklist">
             <li v-for="item in checklistItems" :key="item" class="checklist-item">
-                <img :src="checkImg" alt="" class="check-icon" />
+                <Check :size="13" color="#545045" :stroke-width="2.5" />
                 <span>{{ item }}</span>
             </li>
         </ul>
@@ -26,8 +26,8 @@
 
 <script setup>
 import { useRouter } from 'vue-router';
+import { Check } from 'lucide-vue-next';
 import logoImg from '@/assets/img/logo.png';
-import checkImg from '@/assets/img/check-mark.svg';
 
 const checklistItems = ['매물 추천부터 AI 매물 비교까지', '주변 인프라와 안전 확보', '정책 매칭 및 KB 금융상품 연계'];
 
@@ -102,12 +102,6 @@ const router = useRouter();
     font-size: 12.5px;
     font-weight: 500;
     color: var(--kb-dark-gray);
-}
-
-.check-icon {
-    width: 13px;
-    height: 13px;
-    flex-shrink: 0;
 }
 
 .bottom-group {
