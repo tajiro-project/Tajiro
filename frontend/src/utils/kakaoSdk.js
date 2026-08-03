@@ -15,7 +15,7 @@ export function loadKakaoSdk() {
       return;
     }
     const script = document.createElement('script');
-    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_API_KEY}&autoload=false`;
+    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_API_KEY}&autoload=false&libraries=services`;
     script.onload = () => window.kakao.maps.load(resolve);
     script.onerror = () =>
       reject(new Error('카카오 SDK 로드 실패 — 키·도메인 등록을 확인하세요.'));
