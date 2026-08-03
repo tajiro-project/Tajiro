@@ -99,8 +99,8 @@
             stroke-linecap="round"
           />
         </svg>
-        매물 정보는 현재 시점 기준으로 표시돼요. 매물이 계약 완료되면
-        카드에 표시될 수 있어요.
+        매물 정보는 현재 시점 기준으로 표시돼요. 매물이 계약 완료되면 카드에
+        표시될 수 있어요.
       </p>
 
       <button class="btn-cta" @click="$router.push('/compare-box')">
@@ -131,7 +131,6 @@ const deleteError = ref('');
 onMounted(loadReports);
 
 async function loadReports() {
-  //리포트 가져오는 동안 loading 상태 표시
   loading.value = true;
   errorMessage.value = '';
   deleteError.value = '';
@@ -169,6 +168,7 @@ function propPrice(report, pid) {
   const p = getProperty(report, pid);
   return p ? `${p.deposit}/${p.monthlyRent}` : '';
 }
+// 리포트 저장 날짜 이후 매물 정보가 업데이트됐는지 확인
 function hasUpdatedProperty(report) {
   const savedAt = new Date(report.createdAt);
   if (Number.isNaN(savedAt.getTime())) return false;
@@ -203,6 +203,7 @@ async function removeReport(r) {
     deletingId.value = '';
   }
 }
+//상세 보기 버튼 눌렀을 때 리포트 상세 페이지로 이동
 function openReport(r) {
   router.push({
     path: '/reports/' + r.reportId,
