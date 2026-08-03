@@ -17,6 +17,7 @@ export const mockProperties = [
     latitude: 35.2223,
     longitude: 128.6812,
     recommendScore: 92,
+    updatedDate: "2026-07-20T09:00:00",
   },
   {
     propertyId: "P02",
@@ -34,6 +35,7 @@ export const mockProperties = [
     latitude: 37.5714,
     longitude: 127.0521,
     recommendScore: 88,
+    updatedDate: "2026-07-20T13:20:00",
   },
   {
     propertyId: "P03",
@@ -50,6 +52,7 @@ export const mockProperties = [
     latitude: 37.5613,
     longitude: 127.0374,
     recommendScore: 85,
+    updatedDate: "2026-07-20T16:10:00",
   },
   {
     propertyId: "P04",
@@ -67,6 +70,7 @@ export const mockProperties = [
     latitude: 37.5893,
     longitude: 126.9422,
     recommendScore: 81,
+    updatedDate: "2026-07-10T11:00:00",
   },
   {
     propertyId: "P05",
@@ -349,20 +353,48 @@ export const mockFavorites = [
   },
 ];
 
+const createComparedProperties = (propertyIds) =>
+  propertyIds
+    .map((id) => mockProperties.find((property) => property.propertyId === id))
+    .filter(Boolean)
+    .map((property) => ({
+      propertyId: property.propertyId,
+      title: property.title,
+      deposit: property.deposit,
+      monthlyRent: property.monthlyRent,
+      maintenanceFee: property.maintenanceFee,
+      areaM2: property.areaM2,
+      floorInfo: property.floorInfo,
+      updatedDate: property.updatedDate,
+    }));
 export const mockReports = [
   {
     reportId: "R01",
     title: "상남동 오피스텔 외 2건 비교",
     comparedPropertyIds: ["P01", "P02", "P03"],
+    comparedProperties: createComparedProperties(["P01", "P02", "P03"]),
+    aiPropertySummaryText: mockAiCoaching.aiPropertySummaryText,
+    aiSummary: mockAiCoaching.aiSummary,
+    aiRecommendedPropertyId: "P01",
+    aiAtp: mockAiCoaching.aiAtp,
     createdAt: "2026-07-21T10:22:00",
   },
   {
     reportId: "R02",
     title: "답십리동 원룸 외 1건 비교",
-    comparedPropertyIds: ["P02", "P04"],
+    comparedPropertyIds: ["P02", "P03"],
+    comparedProperties: createComparedProperties(["P02", "P03"]),
+    aiPropertySummaryText:
+      "P02 답십리동 원룸과 P03 왕십리동 원룸을 직주근접과 주거비 기준으로 비교했어요.",
+    aiSummary:
+      "월세와 관리비 부담은 두 매물이 비슷하지만, 출퇴근 시간을 우선하면 P02를 먼저 검토하는 편이 합리적이에요.",
+    aiRecommendedPropertyId: "P02",
+    aiAtp: "계약 전 관리비 포함 항목과 실제 통근 경로를 다시 확인하세요.",
     createdAt: "2026-07-14T18:03:00",
   },
 ];
+export const mockReportDetail = (reportId) =>
+  mockReports.find((report) => report.reportId === reportId) ?? mockReports[0];
 
 export const mockPolicies = [
   {
@@ -535,6 +567,14 @@ export const mockTerms = {
     version: "1.0",
     content:
       "이벤트, 혜택 등 마케팅 정보를 이메일·푸시로 받아보실 수 있습니다. 동의하지 않아도 서비스 이용에 제한이 없습니다.",
+  },
+  4: {
+    id: 4,
+    type: "FINANCE",
+    title: "맞춤 추천을 위한 금융정보 활용",
+    version: "1.0",
+    content:
+      "1. 활용 항목: 월 소득, 보유 자산, 대출·상환 정보(입력 시)\n2. 활용 목적: 정책·KB 금융상품 매칭, 매물 시세 적정성 판정 등 맞춤 추천 정확도 향상\n3. 미동의 시: 일부 맞춤 추천(정책·금융상품 매칭)이 제한될 수 있습니다.",
   },
 };
 
