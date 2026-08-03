@@ -7,6 +7,11 @@ const routes = [
     component: () => import('@/views/PlaceholderView.vue'),
   },
   {
+    path: '/properties',
+    name: 'property-list',
+    component: () => import('@/views/property/PropertyListView.vue'),
+  },
+  {
     path: '/compare-box',
     name: 'compare-box',
     component: () => import('@/views/compare/CompareBoxView.vue'),
