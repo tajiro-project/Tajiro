@@ -98,7 +98,7 @@
           </div>
           <div class="info-row">
             <dt>층수</dt>
-            <dd>{{ p.floorInfo }} / 총 {{ p.totalFloor ?? 12 }}층</dd>
+            <dd>{{ formattedFloor }}</dd>
           </div>
           <div class="info-row">
             <dt>면적</dt>
@@ -152,7 +152,21 @@
           인프라
         </p>
         <p class="mini-value">
-          카페 {{ infraCount("CAFE") }} · 헬스장 {{ infraCount("GYM") }}
+          <template v-if="formattedInfraSummary.length > 0">
+            <span
+              v-for="(item, idx) in formattedInfraSummary"
+              :key="item.category"
+            >
+              {{ item.name }} {{ item.count }}
+              <!-- 마지막 항목이 아닐 때만 구분 점(·) 출력 -->
+              <template v-if="idx < formattedInfraSummary.length - 1">
+                ·
+              </template>
+            </span>
+          </template>
+          <template v-else>
+            <span>주변 인프라 정보가 없습니다.</span>
+          </template>
         </p>
       </div>
 
@@ -234,8 +248,10 @@
           </div>
         </div>
       </section>
+    </div>
 
-      <!-- 하단 액션 (Lucide Heart 아이콘 적용) -->
+    <!-- 4. 하단 액션 바 (찜하기, 비교함 담기) -->
+    <div class="bottom-actions-wrap">
       <div class="bottom-actions">
         <button
           class="fav-btn"
@@ -335,55 +351,143 @@ onMounted(async () => {
   market.value = await propertyApi.marketEvaluation(id);
 });
 
-// --- 거래 유형별 가격 포맷팅 computed ---
+// 인프라 카테고리 이름 매핑
+const CATEGORY_NAMES = {
+  CAFE: "카페",
+  GYM: "헬스장",
+  SPORTS: "체육시설",
+  CONVENIENCE: "편의점",
+  MART: "마트",
+  HOSPITAL: "병원",
+  PHARMACY: "약국",
+  SUBWAY: "지하철역",
+  BUS: "버스정류장",
+  PARK: "공원",
+  BANK: "은행",
+  FOOD: "음식점",
+};
+
+// 숫자를 억/만 단위로만 분리해 주는 헬퍼 함수 (쉼표 제거)
+const formatKoreanMoney = (value) => {
+  if (value === undefined || value === null || isNaN(value)) return "";
+
+  const num = Number(value);
+  if (num === 0) return "0만원";
+
+  const uk = Math.floor(num / 10000); // 억 단위
+  const man = num % 10000; // 만 단위
+
+  if (uk > 0 && man > 0) {
+    return `${uk}억 ${man}만원`;
+  } else if (uk > 0) {
+    return `${uk}억`;
+  } else {
+    return `${man}만원`;
+  }
+};
+
+// 거래 유형별 가격 포맷팅
 const formattedPrice = computed(() => {
   if (!p.value) return "";
   const type = p.value.tradeType;
 
   if (type === "월세") {
-    return `월세 ${p.value.deposit}/${p.value.monthlyRent}`;
+    const deposit = formatKoreanMoney(p.value.deposit).replace("만원", "");
+
+    return `월세 ${deposit}/${p.value.monthlyRent}만원`;
   } else if (type === "전세") {
-    return `전세 ${p.value.jeonsePrice ?? p.value.deposit}`;
+    const price = formatKoreanMoney(p.value.jeonsePrice ?? p.value.deposit);
+
+    return `전세 ${price}`;
   } else if (type === "매매") {
-    return `매매 ${p.value.sellingPrice ?? p.value.deposit}`;
+    const price = formatKoreanMoney(p.value.sellingPrice ?? p.value.deposit);
+
+    return `매매 ${price}`;
   }
-  return `${type} ${p.value.deposit}`;
+
+  return `${type} ${formatKoreanMoney(p.value.deposit)}`;
 });
 
+// 거래 유형별 가격 상세 포맷팅
 const formattedPriceDetail = computed(() => {
   if (!p.value) return "";
   const type = p.value.tradeType;
 
   if (type === "월세") {
-    return `월세 · 보증금 ${p.value.deposit} / 월 ${p.value.monthlyRent}만원`;
+    const deposit = formatKoreanMoney(p.value.deposit).replace("만원", "");
+    const rent = formatKoreanMoney(p.value.monthlyRent);
+
+    return `월세 · ${deposit} / ${rent}`;
   } else if (type === "전세") {
-    return `전세 · ${p.value.jeonsePrice ?? p.value.deposit}만원`;
+    const price = formatKoreanMoney(p.value.jeonsePrice ?? p.value.deposit);
+
+    return `전세 · ${price}`;
   } else if (type === "매매") {
-    return `매매 · ${p.value.sellingPrice ?? p.value.deposit}만원`;
+    const price = formatKoreanMoney(p.value.sellingPrice ?? p.value.deposit);
+
+    return `매매 · ${price}`;
   }
-  return `${type} · ${p.value.deposit}만원`;
+
+  return `${type} · ${formatKoreanMoney(p.value.deposit)}`;
 });
 
+// 층수 포맷팅 함수 (또는 computed로 작성 가능)
+const formatFloorInfo = (floorStr) => {
+  if (!floorStr) return "";
+
+  // '/' 기준 분리 후 공백 제거
+  const parts = floorStr.split("/").map((item) => item.trim());
+
+  if (parts.length < 2) return floorStr; // 예상치 못한 형식이면 그대로 반환
+
+  // 숫자 이외의 문자('층' 등) 제거
+  const currentFloor = parts[0].replace(/[^0-9-]/g, "");
+  const totalFloor = parts[1].replace(/[^0-9]/g, "");
+
+  return `${currentFloor}층 / 총 ${totalFloor}층`;
+};
+
+// 층수 포맷팅
+const formattedFloor = computed(() => {
+  return formatFloorInfo(p.value?.floorInfo);
+});
+
+// 평수 계산 (3.3으로 나누고 반올림)
 const pyeong = computed(() =>
   p.value?.areaM2 ? Math.round(p.value.areaM2 / 3.3) : 0,
 );
+
+// 지역/건물/거래 유형/평수/층수 요약 라인
 const regionLine = computed(() =>
   p.value
-    ? `창원시 성산구 ${p.value.dong || ""} · ${p.value.propertyType || ""} ${pyeong.value}평 · ${p.value.floorInfo || ""}/${p.value.totalFloor || 12}층`
+    ? `창원시 성산구 ${p.value.dong || ""} · ${p.value.propertyType || ""} ${pyeong.value}평 · ${formattedFloor.value}`
     : "",
 );
+
+// 건물명 라인
 const buildingLine = computed(
   () => p.value?.buildingName ?? "상남 오피스텔 (에스하임)",
 );
+
+// 입주 가능일 라인
 const availableLine = computed(() => {
   if (!p.value?.availableDate) return "즉시 입주";
   return `${p.value.availableDate.replaceAll("-", ".")} (${p.value.discussionStatus ?? "협의 가능"})`;
 });
+
+// 시세 평균 가격
 const medianPrice = computed(() => market.value?.medianPrice ?? 47);
 
-function infraCount(cat) {
-  return infras.value.filter((i) => i.category === cat).length;
-}
+// 인프라 카테고리별 개수 계산
+const formattedInfraSummary = computed(() => {
+  if (!p.value?.infraSummary || !Array.isArray(p.value.infraSummary)) return [];
+
+  return p.value.infraSummary.map((item) => ({
+    category: item.category,
+    name: CATEGORY_NAMES[item.category] || item.category, // 맵에 없는 키면 영문 코드 그대로 표기
+    count: item.count ?? 0,
+  }));
+});
 
 const benefits = [
   { id: 1, title: "창원시 청년월세지원", sub: "월 20만원 × 12개월" },
@@ -422,17 +526,20 @@ async function addToCompare() {
 
 <style scoped>
 .pdetail {
-  flex: 1;
   display: flex;
   flex-direction: column;
-  background: #fff;
+  height: 100vh; /* 또는 프레임 고정 높이 */
+  max-width: 430px; /* 화면에 보이는 모바일 레이아웃 너비에 맞게 조절 */
+  margin: 0 auto; /* 중앙 정렬 */
+  position: relative;
+  background-color: #fff;
+  overflow: hidden; /* 영역 밖으로 나가는 요소 잘라내기 */
 }
 .scroll-area {
   flex: 1;
   overflow-y: auto;
-  padding-bottom: 20px;
+  padding-bottom: 20px; /* 하단 간격 */
 }
-
 /* 사진 슬라이더 */
 .photo-slider {
   position: relative;
@@ -779,36 +886,54 @@ async function addToCompare() {
 }
 
 /* 하단 액션 바 */
+.bottom-actions-wrap {
+  position: sticky;
+  bottom: 0;
+  width: 100%;
+  background-color: #ffffff;
+  border-top: 1px solid #f0f0f0;
+  padding: 12px 16px;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05);
+  z-index: 10;
+}
 .bottom-actions {
   display: flex;
+  align-items: center;
   gap: 10px;
-  margin: 16px;
 }
+
+/* 버튼 및 메시지 기본 스타일 */
 .fav-btn {
+  width: 48px;
+  height: 48px;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  background: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 46px;
-  height: 46px;
-  border-radius: 12px;
-  border: 1px solid #eee;
-  background: #fff;
   cursor: pointer;
 }
 .compare-btn {
   flex: 1;
-  height: 46px;
-  border-radius: 12px;
-  border: 1px solid #eee;
-  background: #fff;
-  font-size: 14px;
-  font-weight: 700;
+  height: 48px;
+  background-color: #f7f7f8;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 15px;
   cursor: pointer;
 }
 .compare-msg {
-  margin: -6px 16px 10px;
+  position: absolute;
+  top: -36px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(0, 0, 0, 0.8);
+  color: #fff;
   font-size: 12px;
-  color: #e53935;
-  text-align: center;
+  padding: 6px 12px;
+  border-radius: 16px;
+  white-space: nowrap;
 }
 </style>
