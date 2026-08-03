@@ -9,7 +9,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 
 @NoArgsConstructor
@@ -30,7 +30,7 @@ public class FinanceVO {
     private String requiredDocs; // 제출 서류
     private String applicationUrl; // 신청 url
     private Boolean isActive; //판매여부
-    private LocalDate referenceDate; //기준일
-    private LocalDate validEndDate; // 종료일
-    private LocalDate createdAt; // 등록일
+    private LocalDateTime referenceDate; //기준일
+    private LocalDateTime validEndDate; // 종료일
+    private LocalDateTime createdAt; // 등록일
 }
