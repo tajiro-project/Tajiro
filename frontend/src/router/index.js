@@ -3,8 +3,8 @@ import { createRouter, createWebHistory } from 'vue-router';
 const routes = [
   {
     path: '/',
-    name: 'placeholder',
-    component: () => import('@/views/PlaceholderView.vue'),
+    name: 'splash',
+    component: () => import('@/views/SplashView.vue'),
   },
   {
     path: '/properties',
