@@ -31,12 +31,17 @@
         />
       </div>
       <div class="field">
-        <label class="section-title">희망 통학·통근 거리(단위: m)</label>
-        <input
-          v-model="commuteText"
-          class="field-input"
-          type="text"
-          placeholder="예) 1500m 이내"
+        <label class="section-title">
+          희망 통학·통근 거리
+          <span class="range-value">{{ commuteDistanceLabel }}</span>
+        </label>
+        <SingleSlider
+          v-model="pref.maxCommuteDistanceMeters"
+          :min="0"
+          :max="10000"
+          :step="100"
+          :marks="['0', '2km', '4km', '6km', '8km', '10km']"
+          aria-label="희망 통학·통근 거리"
         />
       </div>
       <div class="field">
@@ -105,6 +110,54 @@
         </div>
       </div>
 
+      <div v-if="pref.tradeTypes.length" class="range-card">
+        <div
+          v-if="
+            pref.tradeTypes.includes('월세') ||
+            pref.tradeTypes.includes('전세')
+          "
+          class="range-group"
+        >
+          <p class="range-title">
+            보증금/전세금
+            <span class="range-value">{{ depositJeonseLabel }}</span>
+          </p>
+          <DualSlider
+            v-model="pref.depositJeonseRange"
+            :min="0"
+            :max="50000"
+            :step="500"
+            :marks="['최소', '1억', '2억', '3억', '4억', '최대']"
+          />
+        </div>
+
+        <div v-if="pref.tradeTypes.includes('월세')" class="range-group">
+          <p class="range-title">
+            월세 <span class="range-value">{{ monthlyRentLabel }}</span>
+          </p>
+          <DualSlider
+            v-model="pref.monthlyRentRange"
+            :min="0"
+            :max="250"
+            :step="5"
+            :marks="['최소', '50만', '100만', '150만', '200만', '최대']"
+          />
+        </div>
+
+        <div v-if="pref.tradeTypes.includes('매매')" class="range-group">
+          <p class="range-title">
+            매매가 <span class="range-value">{{ salePriceLabel }}</span>
+          </p>
+          <DualSlider
+            v-model="pref.salePriceRange"
+            :min="0"
+            :max="400000"
+            :step="5000"
+            :marks="['최소', '10억', '20억', '30억', '최대']"
+          />
+        </div>
+      </div>
+
       <div class="group">
         <p class="section-title">매물 층수</p>
         <div class="chips">
@@ -128,13 +181,15 @@
         <p class="caption">반경 2km 이내만 표시</p>
         <div class="chips wrap">
           <button
-            v-for="c in infraOptions"
-            :key="c"
+            v-for="category in INFRA_CATEGORIES"
+            :key="category.key"
             class="chip"
-            :class="{ on: pref.desiredInfraCategories.includes(c) }"
-            @click="toggle(pref.desiredInfraCategories, c)"
+            :class="{
+              on: pref.desiredInfraCategories.includes(category.key),
+            }"
+            @click="toggle(pref.desiredInfraCategories, category.key)"
           >
-            {{ c }}
+            {{ category.label }}
           </button>
         </div>
       </div>
@@ -143,13 +198,15 @@
         <p class="caption">반경 2km 이내만 표시</p>
         <div class="chips wrap">
           <button
-            v-for="c in amenityOptions"
-            :key="c"
+            v-for="category in AMENITY_CATEGORIES"
+            :key="category.key"
             class="chip"
-            :class="{ on: pref.desireAmenityCategories.includes(c) }"
-            @click="toggle(pref.desireAmenityCategories, c)"
+            :class="{
+              on: pref.desireAmenityCategories.includes(category.key),
+            }"
+            @click="toggle(pref.desireAmenityCategories, category.key)"
           >
-            {{ c }}
+            {{ category.label }}
           </button>
         </div>
       </div>
@@ -181,21 +238,25 @@
       </p>
     </div>
 
-    <!-- 하단 버튼 -->
-    <div class="bottom-bar">
-      <button v-if="step > 1" class="btn-prev" @click="go(step - 1)">
-        이전
-      </button>
-      <button
-        class="btn-cta"
-        :disabled="
-          (step === 1 && !pref.workplace) ||
-          (step === 4 && pref.priorities.length < 1)
-        "
-        @click="onNext"
-      >
-        {{ step === 4 ? '설정 완료' : '다음' }}
-      </button>
+    <div class="fixed-footer">
+      <!-- 하단 버튼 -->
+      <div class="bottom-bar">
+        <button v-if="step > 1" class="btn-prev" @click="go(step - 1)">
+          이전
+        </button>
+        <button
+          class="btn-cta"
+          :disabled="
+            (step === 1 && !pref.workplace) ||
+            (step === 4 && pref.priorities.length < 1)
+          "
+          @click="onNext"
+        >
+          {{ step === 4 ? '설정 완료' : '다음' }}
+        </button>
+      </div>
+
+      <AppTabBar active="property" />
     </div>
 
     <KakaoLocation
@@ -210,17 +271,23 @@
 <script setup>
 import { computed, reactive, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import AppTabBar from '@/components/AppTabBar.vue';
+import DualSlider from '@/components/DualSlider.vue';
 import KakaoLocation from '@/components/KakaoLocation.vue';
 import PageHeader from '@/components/PageHeader.vue';
+import SingleSlider from '@/components/SingleSlider.vue';
 
 const route = useRoute();
 const router = useRouter();
 const pref = reactive({
   workplace: null,
   hasCar: false,
-  maxCommuteMinutes: null,
+  maxCommuteDistanceMeters: 1500,
   housingTypes: [],
   tradeTypes: [],
+  depositJeonseRange: [0, 50000],
+  monthlyRentRange: [0, 250],
+  salePriceRange: [0, 400000],
   floorPreference: [],
   desiredInfraCategories: [],
   desireAmenityCategories: [],
@@ -238,25 +305,34 @@ const stepLabels = [
 const housingOptions = ['원/투룸', '아파트', '주택/빌라', '오피스텔'];
 const tradeOptions = ['월세', '전세', '매매'];
 const floorOptions = ['저층', '1층', '2층 이상', '옥탑'];
-const infraOptions = [
-  '병원',
-  '약국',
-  '학교',
-  '어린이집/유치원',
-  '공공기관',
-  '경찰서',
-  '소방서',
-  '지하철역',
-  '버스정류장',
+const INFRA_CATEGORIES = [
+  { key: 'SUBWAY', label: '지하철' },
+  { key: 'BUS_TERMINAL', label: '버스터미널' },
+  { key: 'TRAIN', label: '기차역' },
+  { key: 'HOSPITAL', label: '병원' },
+  { key: 'PHARMACY', label: '약국' },
+  { key: 'SCHOOL', label: '학교' },
+  { key: 'KINDERGARTEN', label: '유치원' },
+  { key: 'ACADEMY', label: '학원' },
+  { key: 'LIBRARY', label: '도서관' },
+  { key: 'PARK', label: '공원' },
+  { key: 'POLICE', label: '경찰서' },
+  { key: 'FIRE', label: '소방서' },
+  { key: 'GOV_OFFICE', label: '행정복지센터' },
+  { key: 'PUBLIC', label: '관공서' },
+  { key: 'POST_OFFICE', label: '우체국' },
+  { key: 'BANK', label: '은행' },
 ];
-const amenityOptions = [
-  '대형마트',
-  '편의점',
-  '주유소',
-  '은행',
-  '문화시설',
-  '음식점',
-  '카페',
+const AMENITY_CATEGORIES = [
+  { key: 'CONVENIENCE', label: '편의점' },
+  { key: 'MART', label: '마트' },
+  { key: 'CAFE', label: '카페' },
+  { key: 'FOOD', label: '음식점' },
+  { key: 'CULTURE', label: '문화시설' },
+  { key: 'SPORTS', label: '체육시설' },
+  { key: 'SWIMMING', label: '수영장' },
+  { key: 'PARKING', label: '주차장' },
+  { key: 'GAS', label: '주유소' },
 ];
 
 const priorityOptions = [
@@ -292,10 +368,34 @@ const priorityOptions = [
   },
 ];
 
-const commuteText = ref(
-  pref.maxCommuteMinutes ? `${pref.maxCommuteMinutes}분 이내` : '',
-);
 const isLocationPickerOpen = ref(false);
+
+const commuteDistanceLabel = computed(
+  () => `${pref.maxCommuteDistanceMeters.toLocaleString()}m 이내`,
+);
+
+const formatPrice = (value, max) => {
+  if (value <= 0) return '최소';
+  if (value >= max) return '최대';
+  return value >= 10000
+    ? `${(value / 10000).toFixed(2).replace(/\.?0+$/, '')}억`
+    : `${value.toLocaleString()}만`;
+};
+
+const formatRange = (range, max) =>
+  range[0] <= 0 && range[1] >= max
+    ? '전체'
+    : `${formatPrice(range[0], max)} ~ ${formatPrice(range[1], max)}`;
+
+const depositJeonseLabel = computed(() =>
+  formatRange(pref.depositJeonseRange, 50000),
+);
+const monthlyRentLabel = computed(() =>
+  formatRange(pref.monthlyRentRange, 250),
+);
+const salePriceLabel = computed(() =>
+  formatRange(pref.salePriceRange, 400000),
+);
 
 function toggle(list, value) {
   const i = list.indexOf(value);
@@ -350,9 +450,6 @@ function go(n) {
 
 function onNext() {
   if (step.value < 4) {
-    // 통근 거리 텍스트 → 분 단위 추출
-    const m = commuteText.value.match(/\d+/);
-    if (m) pref.maxCommuteMinutes = Number(m[0]);
     go(step.value + 1);
   } else {
     localStorage.setItem('tajiro-preferences', JSON.stringify(pref));
@@ -363,12 +460,17 @@ function onNext() {
 
 <style scoped>
 .pref-wizard {
-  flex: 1;
+  position: relative;
+  flex: 0 0 100dvh;
   display: flex;
   flex-direction: column;
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
   background: var(--white);
 }
 .step-head {
+  flex-shrink: 0;
   padding: 14px 16px 12px;
 }
 .step-line {
@@ -405,11 +507,13 @@ function onNext() {
 }
 .content {
   flex: 1;
+  min-height: 0;
   padding: 10px 16px 24px;
   display: flex;
   flex-direction: column;
   gap: 22px;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 .section-title {
   font-size: 15px;
@@ -481,6 +585,30 @@ function onNext() {
   border-color: var(--kb-yellow);
   font-weight: 700;
 }
+.range-card {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 16px 14px;
+  border-radius: 14px;
+  background: var(--bg);
+}
+.range-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.range-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13.5px;
+  font-weight: 800;
+}
+.range-value {
+  color: var(--kb-gray);
+  font-weight: 500;
+}
 .priority-list {
   display: flex;
   flex-direction: column;
@@ -546,14 +674,20 @@ function onNext() {
   font-size: 12px;
   color: var(--danger);
 }
+.fixed-footer {
+  flex-shrink: 0;
+  width: 100%;
+  background: var(--white);
+}
+.fixed-footer :deep(.tab-bar) {
+  position: static;
+}
 .bottom-bar {
   display: flex;
   gap: 10px;
   padding: 12px 16px 16px;
   border-top: 1px solid var(--border);
   background: var(--white);
-  position: sticky;
-  bottom: 0;
 }
 .btn-prev {
   flex: 0 0 88px;
