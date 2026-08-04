@@ -48,11 +48,17 @@ export const AMENITY_CATEGORIES = [
 
 export const PREFERENCE_SLIDER_CONFIG = {
   COMMUTE_DISTANCE: {
-    min: 0,
+    min: 500,
     max: 10000,
     step: 100,
     defaultValue: 1500,
-    marks: ['0', '2km', '4km', '6km', '8km', '10km'],
+    marks: ['500m', '2.5km', '5km', '7.5km', '10km'],
+  },
+  DEPOSIT_MONTHLY: {
+    min: 0,
+    max: 5000,
+    step: 100,
+    marks: ['최소', '1,000', '2,000', '3,000', '4,000', '최대'],
   },
   DEPOSIT_JEONSE: {
     min: 0,

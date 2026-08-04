@@ -112,7 +112,7 @@
 
         <span v-for="p in priorityChips" :key="p.criterion" class="pchip">
           <b class="pnum">{{ p.priorityOrder }}</b>
-          {{ p.criterion }}
+          {{ criterionLabel(p.criterion) }}
         </span>
       </div>
     </div>
@@ -255,10 +255,10 @@
         </p>
         <DualSlider
           v-model="draft.rent"
-          :min="0"
-          :max="200"
-          :step="5"
-          :marks="['0', '40', '80', '120', '160', '최대']"
+          :min="PREFERENCE_SLIDER_CONFIG.MONTHLY_RENT.min"
+          :max="PREFERENCE_SLIDER_CONFIG.MONTHLY_RENT.max"
+          :step="PREFERENCE_SLIDER_CONFIG.MONTHLY_RENT.step"
+          :marks="PREFERENCE_SLIDER_CONFIG.MONTHLY_RENT.marks"
         />
       </div>
     </div>
@@ -324,10 +324,10 @@
       </div>
       <SingleSlider
         v-model="draft.distance"
-        :min="500"
-        :max="DISTANCE_MAX"
-        :step="500"
-        :marks="['500m', '2.5km', '5km', '7.5km', '10km']"
+        :min="PREFERENCE_SLIDER_CONFIG.COMMUTE_DISTANCE.min"
+        :max="PREFERENCE_SLIDER_CONFIG.COMMUTE_DISTANCE.max"
+        :step="PREFERENCE_SLIDER_CONFIG.COMMUTE_DISTANCE.step"
+        :marks="PREFERENCE_SLIDER_CONFIG.COMMUTE_DISTANCE.marks"
         aria-label="희망 통근 거리"
       />
     </div>
@@ -468,7 +468,7 @@
       >
         <span class="p-icon" v-html="opt.icon" />
         <span class="p-texts">
-          <span class="p-title">{{ opt.criterion }}</span>
+          <span class="p-title">{{ opt.title }}</span>
           <span class="p-sub">{{ opt.sub }}</span>
         </span>
         <span v-if="priorityRank(opt.criterion)" class="p-badge">
@@ -514,6 +514,9 @@ import {
   FLOOR_OPTIONS,
   INFRA_CATEGORIES,
   AMENITY_CATEGORIES,
+  PRIORITY_OPTIONS,
+  MAX_PRIORITY_SELECTIONS,
+  PREFERENCE_SLIDER_CONFIG,
 } from '@/constants/preferenceOptions';
 
 // mock data
@@ -1021,20 +1024,28 @@ const activeDot = computed(() => hoveredDot.value ?? pinnedDot.value);
 const items = ref(RAW_PROPERTIES);
 
 
+const { DEPOSIT_MONTHLY, DEPOSIT_JEONSE, SALE_PRICE, MONTHLY_RENT } =
+  PREFERENCE_SLIDER_CONFIG;
+
 const PRICE_LIMITS = {
-  월세: { deposit: 5000, rent: 200 },
-  전세: { deposit: 50000 },
-  매매: { deposit: 100000 },
+  월세: { deposit: DEPOSIT_MONTHLY.max, rent: MONTHLY_RENT.max },
+  전세: { deposit: DEPOSIT_JEONSE.max },
+  매매: { deposit: SALE_PRICE.max },
 };
 
 const DEPOSIT_MARKS = {
-  5000: ['0', '1,000', '2,000', '3,000', '4,000', '최대'],
-  50000: ['0', '1억', '2억', '3억', '4억', '최대'],
-  100000: ['0', '2억', '4억', '6억', '8억', '최대'],
+  [DEPOSIT_MONTHLY.max]: DEPOSIT_MONTHLY.marks,
+  [DEPOSIT_JEONSE.max]: DEPOSIT_JEONSE.marks,
+  [SALE_PRICE.max]: SALE_PRICE.marks,
 };
 
-const DISTANCE_MAX = 10000;
-const DEFAULT_DISTANCE = 2000;
+const DEPOSIT_STEPS = {
+  [DEPOSIT_MONTHLY.max]: DEPOSIT_MONTHLY.step,
+  [DEPOSIT_JEONSE.max]: DEPOSIT_JEONSE.step,
+  [SALE_PRICE.max]: SALE_PRICE.step,
+};
+
+const DEFAULT_DISTANCE = PREFERENCE_SLIDER_CONFIG.COMMUTE_DISTANCE.defaultValue;
 const PYEONG = 3.3058;
 const AREA_MAX_M2 = 200;
 
@@ -1081,46 +1092,21 @@ const SORT_SPECS = {
 };
 
 const priorityChips = ref([
-  { criterion: '직주근접', priorityOrder: 1 },
-  { criterion: '가성비', priorityOrder: 2 },
-  { criterion: '편의시설', priorityOrder: 3 },
+  { criterion: 'COMMUTE', priorityOrder: 1 },
+  { criterion: 'COST', priorityOrder: 2 },
+  { criterion: 'AMENITY', priorityOrder: 3 },
 ]);
 
-const PRIORITY_OPTIONS = [
-  {
-    criterion: '직주근접',
-    sub: '출퇴근 시간이 가장 중요해요',
-    icon: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7.2" stroke="#545045" stroke-width="1.5"/><path d="M10 6v4l2.6 1.6" stroke="#545045" stroke-width="1.5" stroke-linecap="round"/></svg>',
-  },
-  {
-    criterion: '가성비',
-    sub: '월세·관리비 등 주거비 절약',
-    icon: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7.2" stroke="#545045" stroke-width="1.5"/><path d="M7 8h6M7 10.5h6M9 6.5l2 7" stroke="#545045" stroke-width="1.3" stroke-linecap="round"/></svg>',
-  },
-  {
-    criterion: '편의시설',
-    sub: '카페, 헬스장 등 편의시설',
-    icon: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="3.5" y="6" width="13" height="10" rx="1.5" stroke="#545045" stroke-width="1.5"/><path d="M7 6V4.5A1.5 1.5 0 018.5 3h3A1.5 1.5 0 0113 4.5V6" stroke="#545045" stroke-width="1.5"/></svg>',
-  },
-  {
-    criterion: '인프라',
-    sub: '교육·의료·교통시설',
-    icon: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="4" y="3.5" width="8" height="13" stroke="#545045" stroke-width="1.5"/><path d="M12 8h4v8.5h-4M6.5 7h1.2M6.5 10h1.2M6.5 13h1.2M9.5 7h1.2M9.5 10h1.2M9.5 13h1.2" stroke="#545045" stroke-width="1.2"/></svg>',
-  },
-  {
-    criterion: '매물 면적',
-    sub: '매물의 면적이 가장 중요해요',
-    icon: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="3.5" y="3.5" width="13" height="13" rx="1.5" stroke="#545045" stroke-width="1.5"/><path d="M6.5 12.5v-5h5" stroke="#545045" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.5 7.5v5h-5" stroke="#545045" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-  },
-];
+const criterionLabel = (c) =>
+  PRIORITY_OPTIONS.find((o) => o.criterion === c)?.title ?? c;
 
 const openedSheet = ref(null);
 const isLocationPickerOpen = ref(false);
 
 const draft = reactive({
   tradeTypes: [],
-  deposit: [0, 5000],
-  rent: [0, 200],
+  deposit: [0, DEPOSIT_MONTHLY.max],
+  rent: [0, MONTHLY_RENT.max],
   propertyTypes: [],
   floorPreference: [],
   areaRange: [0, AREA_MAX_M2],
@@ -1298,7 +1284,7 @@ const depositTitle = computed(() =>
 );
 
 const depositMax = computed(() => depositMaxOf(draft.tradeTypes));
-const depositStep = computed(() => (depositMax.value <= 5000 ? 100 : 1000));
+const depositStep = computed(() => DEPOSIT_STEPS[depositMax.value]);
 const depositMarks = computed(() => DEPOSIT_MARKS[depositMax.value]);
 
 const depositValueLabel = computed(() => {
@@ -1363,7 +1349,7 @@ function openSheet(name) {
       filter.minDeposit ?? 0,
       filter.maxDeposit ?? depositMaxOf(draft.tradeTypes),
     ];
-    draft.rent = [filter.minMonthlyRent ?? 0, filter.maxMonthlyRent ?? 200];
+    draft.rent = [filter.minMonthlyRent ?? 0, filter.maxMonthlyRent ?? MONTHLY_RENT.max];
     draft.propertyTypes = [...filter.propertyTypes];
     draft.floorPreference = [...filter.floorPreference];
     draft.areaRange = [filter.minAreaM2 ?? 0, filter.maxAreaM2 ?? AREA_MAX_M2];
@@ -1493,7 +1479,7 @@ function resetInfra() {
 function togglePriority(c) {
   const i = draft.priorities.indexOf(c);
   if (i !== -1) draft.priorities.splice(i, 1);
-  else if (draft.priorities.length < 3) draft.priorities.push(c);
+  else if (draft.priorities.length < MAX_PRIORITY_SELECTIONS) draft.priorities.push(c);
 }
 
 function priorityRank(c) {
