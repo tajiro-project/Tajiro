@@ -106,29 +106,17 @@ export const favoriteApi = {
 
 // ---------- comparison ----------
 export const comparisonApi = {
-  box: () =>
-    withMock(() => client.get("/users/me/compare"), mock.mockCompareBox),
-  addToBox: (propertyId) =>
-    withMock(
-      () => client.post(`/users/me/compare/${propertyId}`),
-      () => true,
-    ),
-  removeFromBox: (propertyId) =>
-    withMock(
-      () => client.delete(`/users/me/compare/${propertyId}`),
-      () => ({}),
-    ),
-  metrics: (propertyIds) =>
-    withMock(
-      () =>
-        client.get("/comparisons/metrics", {
-          params: { propertyIds: [...propertyIds].sort().join(",") },
-        }),
-      mock.mockComparisonMetrics,
-    ),
-  analyze: (propertyIds) =>
-    withMock(
-      () => client.post("/comparisons/analyze", { propertyIds }),
-      mock.mockAiCoaching,
-    ),
+  box: async () => (await client.get("/users/me/compare")).data,
+  addToBox: async (propertyId) =>
+    (await client.post(`/users/me/compare/${propertyId}`)).data,
+  removeFromBox: async (propertyId) =>
+    (await client.delete(`/users/me/compare/${propertyId}`)).data,
+  metrics: async (propertyIds) =>
+    (
+      await client.get("/comparisons/metrics", {
+        params: { propertyIds: [...propertyIds].sort().join(",") },
+      })
+    ).data,
+  analyze: async (propertyIds) =>
+    (await client.post("/comparisons/analyze", { propertyIds })).data,
 };

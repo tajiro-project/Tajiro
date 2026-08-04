@@ -5,12 +5,17 @@
     <!-- STEP 표시 + 진행 바 -->
     <div class="step-head">
       <p class="step-line">
-        <span class="step-no">STEP {{ step }} / 4</span>
+        <span class="step-no">STEP {{ step }} / {{ PREFERENCE_STEP_COUNT }}</span>
         <span class="dot">·</span>
-        <span class="step-label">{{ stepLabels[step - 1] }}</span>
+        <span class="step-label">{{ PREFERENCE_STEP_LABELS[step - 1] }}</span>
       </p>
       <div class="progress">
-        <div v-for="n in 4" :key="n" class="seg" :class="{ on: n <= step }" />
+        <div
+          v-for="n in PREFERENCE_STEP_COUNT"
+          :key="n"
+          class="seg"
+          :class="{ on: n <= step }"
+        />
       </div>
     </div>
 
@@ -37,10 +42,10 @@
         </label>
         <SingleSlider
           v-model="pref.maxCommuteDistanceMeters"
-          :min="0"
-          :max="10000"
-          :step="100"
-          :marks="['0', '2km', '4km', '6km', '8km', '10km']"
+          :min="PREFERENCE_SLIDER_CONFIG.COMMUTE_DISTANCE.min"
+          :max="PREFERENCE_SLIDER_CONFIG.COMMUTE_DISTANCE.max"
+          :step="PREFERENCE_SLIDER_CONFIG.COMMUTE_DISTANCE.step"
+          :marks="PREFERENCE_SLIDER_CONFIG.COMMUTE_DISTANCE.marks"
           aria-label="희망 통학·통근 거리"
         />
       </div>
@@ -85,7 +90,7 @@
         <p class="section-title">매물 유형</p>
         <div class="chips">
           <button
-            v-for="t in housingOptions"
+            v-for="t in HOUSING_OPTIONS"
             :key="t"
             class="chip"
             :class="{ on: pref.housingTypes.includes(t) }"
@@ -99,7 +104,7 @@
         <p class="section-title">희망 주거 형태</p>
         <div class="chips">
           <button
-            v-for="t in tradeOptions"
+            v-for="t in TRADE_OPTIONS"
             :key="t"
             class="chip"
             :class="{ on: pref.tradeTypes.includes(t) }"
@@ -123,10 +128,10 @@
           </p>
           <DualSlider
             v-model="pref.depositJeonseRange"
-            :min="0"
-            :max="50000"
-            :step="500"
-            :marks="['최소', '1억', '2억', '3억', '4억', '최대']"
+            :min="PREFERENCE_SLIDER_CONFIG.DEPOSIT_JEONSE.min"
+            :max="PREFERENCE_SLIDER_CONFIG.DEPOSIT_JEONSE.max"
+            :step="PREFERENCE_SLIDER_CONFIG.DEPOSIT_JEONSE.step"
+            :marks="PREFERENCE_SLIDER_CONFIG.DEPOSIT_JEONSE.marks"
           />
         </div>
 
@@ -136,10 +141,10 @@
           </p>
           <DualSlider
             v-model="pref.monthlyRentRange"
-            :min="0"
-            :max="250"
-            :step="5"
-            :marks="['최소', '50만', '100만', '150만', '200만', '최대']"
+            :min="PREFERENCE_SLIDER_CONFIG.MONTHLY_RENT.min"
+            :max="PREFERENCE_SLIDER_CONFIG.MONTHLY_RENT.max"
+            :step="PREFERENCE_SLIDER_CONFIG.MONTHLY_RENT.step"
+            :marks="PREFERENCE_SLIDER_CONFIG.MONTHLY_RENT.marks"
           />
         </div>
 
@@ -149,10 +154,10 @@
           </p>
           <DualSlider
             v-model="pref.salePriceRange"
-            :min="0"
-            :max="400000"
-            :step="5000"
-            :marks="['최소', '10억', '20억', '30억', '최대']"
+            :min="PREFERENCE_SLIDER_CONFIG.SALE_PRICE.min"
+            :max="PREFERENCE_SLIDER_CONFIG.SALE_PRICE.max"
+            :step="PREFERENCE_SLIDER_CONFIG.SALE_PRICE.step"
+            :marks="PREFERENCE_SLIDER_CONFIG.SALE_PRICE.marks"
           />
         </div>
       </div>
@@ -161,7 +166,7 @@
         <p class="section-title">매물 층수</p>
         <div class="chips">
           <button
-            v-for="f in floorOptions"
+            v-for="f in FLOOR_OPTIONS"
             :key="f"
             class="chip"
             :class="{ on: pref.floorPreference.includes(f) }"
@@ -216,7 +221,7 @@
       <p class="section-title big">주거 가치관 우선순위</p>
       <div class="priority-list">
         <button
-          v-for="opt in priorityOptions"
+          v-for="opt in PRIORITY_OPTIONS"
           :key="opt.criterion"
           class="priority-card"
           :class="{ on: priorityOrder(opt.criterion) }"
@@ -233,7 +238,7 @@
         </button>
       </div>
       <p v-if="maxWarning" class="max-warning">
-        우선순위는 최대 3개까지 선택할 수 있어요.
+        우선순위는 최대 {{ MAX_PRIORITY_SELECTIONS }}개까지 선택할 수 있어요.
       </p>
     </div>
 
@@ -247,11 +252,11 @@
           class="btn-cta"
           :disabled="
             (step === 1 && !pref.workplace) ||
-            (step === 4 && pref.priorities.length < 1)
+            (step === PREFERENCE_STEP_COUNT && pref.priorities.length < 1)
           "
           @click="onNext"
         >
-          {{ step === 4 ? '설정 완료' : '다음' }}
+          {{ step === PREFERENCE_STEP_COUNT ? '설정 완료' : '다음' }}
         </button>
       </div>
 
@@ -275,18 +280,40 @@ import DualSlider from '@/components/DualSlider.vue';
 import KakaoLocation from '@/components/KakaoLocation.vue';
 import PageHeader from '@/components/PageHeader.vue';
 import SingleSlider from '@/components/SingleSlider.vue';
+import {
+  AMENITY_CATEGORIES,
+  FLOOR_OPTIONS,
+  HOUSING_OPTIONS,
+  INFRA_CATEGORIES,
+  MAX_PRIORITY_SELECTIONS,
+  PREFERENCE_SLIDER_CONFIG,
+  PREFERENCE_STEP_COUNT,
+  PREFERENCE_STEP_LABELS,
+  PRIORITY_OPTIONS,
+  TRADE_OPTIONS,
+} from '@/constants/preferenceOptions';
 
 const route = useRoute();
 const router = useRouter();
 const pref = reactive({
   workplace: null,
   hasCar: false,
-  maxCommuteDistanceMeters: 1500,
+  maxCommuteDistanceMeters:
+    PREFERENCE_SLIDER_CONFIG.COMMUTE_DISTANCE.defaultValue,
   housingTypes: [],
   tradeTypes: [],
-  depositJeonseRange: [0, 50000],
-  monthlyRentRange: [0, 250],
-  salePriceRange: [0, 400000],
+  depositJeonseRange: [
+    PREFERENCE_SLIDER_CONFIG.DEPOSIT_JEONSE.min,
+    PREFERENCE_SLIDER_CONFIG.DEPOSIT_JEONSE.max,
+  ],
+  monthlyRentRange: [
+    PREFERENCE_SLIDER_CONFIG.MONTHLY_RENT.min,
+    PREFERENCE_SLIDER_CONFIG.MONTHLY_RENT.max,
+  ],
+  salePriceRange: [
+    PREFERENCE_SLIDER_CONFIG.SALE_PRICE.min,
+    PREFERENCE_SLIDER_CONFIG.SALE_PRICE.max,
+  ],
   floorPreference: [],
   desiredInfraCategories: [],
   desireAmenityCategories: [],
@@ -294,79 +321,6 @@ const pref = reactive({
 });
 
 const step = computed(() => Number(route.params.step) || 1);
-const stepLabels = [
-  '이주·통근 정보',
-  '희망 주거 조건',
-  '인프라·편의시설',
-  '가치관 우선순위',
-];
-
-const housingOptions = ['원/투룸', '아파트', '주택/빌라', '오피스텔'];
-const tradeOptions = ['월세', '전세', '매매'];
-const floorOptions = ['저층', '1층', '2층 이상', '옥탑'];
-const INFRA_CATEGORIES = [
-  { key: 'SUBWAY', label: '지하철' },
-  { key: 'BUS_TERMINAL', label: '버스터미널' },
-  { key: 'TRAIN', label: '기차역' },
-  { key: 'HOSPITAL', label: '병원' },
-  { key: 'PHARMACY', label: '약국' },
-  { key: 'SCHOOL', label: '학교' },
-  { key: 'KINDERGARTEN', label: '유치원' },
-  { key: 'ACADEMY', label: '학원' },
-  { key: 'LIBRARY', label: '도서관' },
-  { key: 'PARK', label: '공원' },
-  { key: 'POLICE', label: '경찰서' },
-  { key: 'FIRE', label: '소방서' },
-  { key: 'GOV_OFFICE', label: '행정복지센터' },
-  { key: 'PUBLIC', label: '관공서' },
-  { key: 'POST_OFFICE', label: '우체국' },
-  { key: 'BANK', label: '은행' },
-];
-const AMENITY_CATEGORIES = [
-  { key: 'CONVENIENCE', label: '편의점' },
-  { key: 'MART', label: '마트' },
-  { key: 'CAFE', label: '카페' },
-  { key: 'FOOD', label: '음식점' },
-  { key: 'CULTURE', label: '문화시설' },
-  { key: 'SPORTS', label: '체육시설' },
-  { key: 'SWIMMING', label: '수영장' },
-  { key: 'PARKING', label: '주차장' },
-  { key: 'GAS', label: '주유소' },
-];
-
-const priorityOptions = [
-  {
-    criterion: 'COMMUTE',
-    title: '직주근접',
-    sub: '출퇴근 시간이 가장 중요해요',
-    icon: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7.2" stroke="#545045" stroke-width="1.5"/><path d="M10 6v4l2.6 1.6" stroke="#545045" stroke-width="1.5" stroke-linecap="round"/></svg>',
-  },
-  {
-    criterion: 'COST',
-    title: '가성비',
-    sub: '월세·관리비 등 주거비 절약',
-    icon: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7.2" stroke="#545045" stroke-width="1.5"/><path d="M7 8h6M7 10.5h6M9 6.5l2 7" stroke="#545045" stroke-width="1.3" stroke-linecap="round"/></svg>',
-  },
-  {
-    criterion: 'INFRA',
-    title: '인프라',
-    sub: '교육시설, 의료시설, 교통시설, 공공기관 등',
-    icon: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="4" y="3.5" width="8" height="13" stroke="#545045" stroke-width="1.5"/><path d="M12 8h4v8.5h-4M6.5 7h1.2M6.5 10h1.2M6.5 13h1.2M9.5 7h1.2M9.5 10h1.2M9.5 13h1.2" stroke="#545045" stroke-width="1.2"/></svg>',
-  },
-  {
-    criterion: 'AMENITY',
-    title: '편의시설',
-    sub: '마트, 편의점, 카페 등',
-    icon: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2.5l6.5 3v5c0 4-2.8 6.4-6.5 7.5-3.7-1.1-6.5-3.5-6.5-7.5v-5l6.5-3z" stroke="#545045" stroke-width="1.5" stroke-linejoin="round"/><path d="M7.2 10l2 2 3.6-3.8" stroke="#545045" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-  },
-  {
-    criterion: 'AREA',
-    title: '매물 면적',
-    sub: '매물의 면적이 가장 중요해요',
-    icon: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7.2" stroke="#545045" stroke-width="1.5"/><path d="M10 6.2v4.6" stroke="#545045" stroke-width="1.6" stroke-linecap="round"/><circle cx="10" cy="13.6" r="0.9" fill="#545045"/></svg>',
-  },
-];
-
 const isLocationPickerOpen = ref(false);
 
 const commuteDistanceLabel = computed(
@@ -387,12 +341,20 @@ const formatRange = (range, max) =>
     : `${formatPrice(range[0], max)} ~ ${formatPrice(range[1], max)}`;
 
 const depositJeonseLabel = computed(() =>
-  formatRange(pref.depositJeonseRange, 50000),
+  formatRange(
+    pref.depositJeonseRange,
+    PREFERENCE_SLIDER_CONFIG.DEPOSIT_JEONSE.max,
+  ),
 );
 const monthlyRentLabel = computed(() =>
-  formatRange(pref.monthlyRentRange, 250),
+  formatRange(
+    pref.monthlyRentRange,
+    PREFERENCE_SLIDER_CONFIG.MONTHLY_RENT.max,
+  ),
 );
-const salePriceLabel = computed(() => formatRange(pref.salePriceRange, 400000));
+const salePriceLabel = computed(() =>
+  formatRange(pref.salePriceRange, PREFERENCE_SLIDER_CONFIG.SALE_PRICE.max),
+);
 
 function toggle(list, value) {
   const i = list.indexOf(value);
@@ -415,7 +377,7 @@ function onTogglePriority(criterion) {
     return;
   }
 
-  const ok = pref.priorities.length < 3;
+  const ok = pref.priorities.length < MAX_PRIORITY_SELECTIONS;
   if (ok) {
     pref.priorities.push({
       criterion,
@@ -446,7 +408,7 @@ function go(n) {
 }
 
 function onNext() {
-  if (step.value < 4) {
+  if (step.value < PREFERENCE_STEP_COUNT) {
     go(step.value + 1);
   } else {
     localStorage.setItem('tajiro-preferences', JSON.stringify(pref));
