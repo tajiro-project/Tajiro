@@ -3,7 +3,7 @@
     <PageHeader title="매물 상세" />
 
     <div class="scroll-area">
-      <!-- 1. 사진 캐러셀 (Lucide 아이콘 적용 & 슬라이더) -->
+      <!-- 1. 사진 캐러셀 -->
       <div
         class="photo-slider"
         @touchstart="handleTouchStart"
@@ -50,7 +50,7 @@
         </div>
       </div>
 
-      <!-- 2. 가격/요약 (거래 유형별 분기 처리) -->
+      <!-- 2. 가격/요약 -->
       <div class="head">
         <h1 class="price">{{ formattedPrice }}</h1>
         <p class="addr">{{ regionLine }}</p>
@@ -62,7 +62,8 @@
           <p class="score-line">
             매물에 대한 <strong>{{ profileName }}</strong
             >님의 주거 가치관 반영 점수는
-            <span class="highlight">{{ p.recommendScore ?? 0 }}점</span> 입니다!
+            <span class="highlight">{{ p.evaluationScore ?? 0 }}점</span>
+            입니다!
           </p>
           <p class="score-line sub">
             비슷한 매물에 대한 매물가 평균은
@@ -83,14 +84,13 @@
             <dt>건물명</dt>
             <dd>{{ buildingLine }}</dd>
           </div>
-          <!-- 거래 방식에 따라 라벨과 금액 분기 -->
           <div class="info-row">
             <dt>거래 · 가격</dt>
             <dd>{{ formattedPriceDetail }}</dd>
           </div>
           <div class="info-row">
             <dt>관리비</dt>
-            <dd>월 {{ p.maintenanceFee }}만원</dd>
+            <dd>월 {{ p.maintenanceFee ?? 0 }}만원</dd>
           </div>
           <div class="info-row">
             <dt>도로명 주소</dt>
@@ -106,7 +106,7 @@
           </div>
           <div class="info-row">
             <dt>방 · 욕실</dt>
-            <dd>{{ p.roomNum }}개 · {{ p.bathroomNum }}개</dd>
+            <dd>{{ p.roomNum ?? 0 }}개 · {{ p.bathroomNum ?? 0 }}개</dd>
           </div>
           <div class="info-row">
             <dt>주차</dt>
@@ -118,18 +118,17 @@
           </div>
           <div class="info-row">
             <dt>사용 승인일</dt>
-            <dd>{{ p.approvedDate ?? "2021.07.12" }}</dd>
+            <dd>{{ p.approvedDate ?? "정보 없음" }}</dd>
           </div>
         </dl>
 
-        <!-- 구분선 추가 -->
         <hr class="section-divider" />
 
         <p class="desc-head">매물 상세 설명</p>
         <p class="desc">{{ p.propertyDescription }}</p>
       </section>
 
-      <!-- 요약 미니카드 (Lucide 아이콘 사용) -->
+      <!-- 요약 미니카드 -->
       <div class="mini-row">
         <div class="mini-card">
           <p class="mini-label">
@@ -143,9 +142,10 @@
             <Clock :size="14" color="#8a8d8f" />
             통근
           </p>
-          <p class="mini-value">{{ p.commuteTime ?? "도보 15분" }}</p>
+          <p class="mini-value">{{ p.commuteTime ?? "정보 없음" }}</p>
         </div>
       </div>
+
       <div class="mini-card wide">
         <p class="mini-label">
           <Building2 :size="14" color="#8a8d8f" />
@@ -158,7 +158,6 @@
               :key="item.category"
             >
               {{ item.name }} {{ item.count }}
-              <!-- 마지막 항목이 아닐 때만 구분 점(·) 출력 -->
               <template v-if="idx < formattedInfraSummary.length - 1">
                 ·
               </template>
@@ -197,7 +196,7 @@
         </button>
       </div>
 
-      <!-- 공인중개사 정보 (Lucide 아이콘 적용) -->
+      <!-- 공인중개사 정보 -->
       <section class="card">
         <p class="card-head">이 매물, 어디에 문의할까요?</p>
         <p class="card-sub">이 매물을 등록·관리하는 인근 공인중개사예요</p>
@@ -212,7 +211,12 @@
           </div>
           <p class="realtor-addr">
             <MapPin :size="12" color="#8a8d8f" />
-            성산구 상남동 · 매물 앞 80m
+            {{
+              p.address
+                ? p.address.split(" ")[0] + " " + p.address.split(" ")[1]
+                : ""
+            }}
+            · 매물 인근
           </p>
           <div class="realtor-actions">
             <button class="rt-btn outline">
@@ -250,7 +254,7 @@
       </section>
     </div>
 
-    <!-- 4. 하단 액션 바 (찜하기, 비교함 담기) -->
+    <!-- 4. 하단 액션 바 -->
     <div class="bottom-actions-wrap">
       <div class="bottom-actions">
         <button
@@ -297,14 +301,16 @@ import {
 } from "lucide-vue-next";
 
 const route = useRoute();
-const compare = useCompareStore();
+const compareStore = useCompareStore();
+const compareMsg = ref("");
 
 const p = ref(null);
 const infras = ref([]);
 const market = ref(null);
 const isFavorite = ref(false);
-const compareMsg = ref("");
 const profileName = ref("홍길동");
+
+const id = route.params.id;
 
 // 이미지 캐러셀 상태
 const currentImgIndex = ref(0);
@@ -334,24 +340,42 @@ function handleTouchEnd(e) {
   }
 }
 
+// API 연동 데이터 로드
 onMounted(async () => {
-  const id = route.params.id;
-  const detailData = await propertyApi.detail(id);
+  if (!id) return;
 
-  if (!detailData.images || detailData.images.length === 0) {
-    detailData.images = [
-      "https://via.placeholder.com/600x400/f5efdb/8a8477?text=Room+Image+1",
-      "https://via.placeholder.com/600x400/e4efe4/2f9e69?text=Room+Image+2",
-    ];
+  try {
+    // 매물 상세 정보 조회
+    const res = await propertyApi.getPropertyDetail(id);
+
+    const detailData = res?.data?.data ?? res?.data ?? res;
+
+    if (detailData) {
+      if (!detailData.images || detailData.images.length === 0) {
+        detailData.images = [
+          "https://via.placeholder.com/600x400/f5efdb/8a8477?text=Room+Image+1",
+        ];
+      }
+
+      p.value = detailData;
+      isFavorite.value = detailData?.isFavorite ?? false;
+    }
+
+    if (propertyApi.infrastructures) {
+      const infraRes = await propertyApi.infrastructures(id);
+      infras.value = infraRes?.data?.data ?? infraRes?.data ?? infraRes ?? [];
+    }
+
+    if (propertyApi.marketEvaluation) {
+      const marketRes = await propertyApi.marketEvaluation(id);
+      market.value = marketRes?.data?.data ?? marketRes?.data ?? marketRes;
+    }
+  } catch (error) {
+    console.error("매물 상세 정보를 불러오는 데 실패했습니다:", error);
   }
-
-  p.value = detailData;
-  isFavorite.value = detailData?.isFavorite ?? false;
-  infras.value = (await propertyApi.infrastructures(id)) ?? [];
-  market.value = await propertyApi.marketEvaluation(id);
 });
 
-// 인프라 카테고리 이름 매핑
+// 전체 인프라 카테고리 이름 매핑
 const CATEGORY_NAMES = {
   CAFE: "카페",
   GYM: "헬스장",
@@ -365,17 +389,30 @@ const CATEGORY_NAMES = {
   PARK: "공원",
   BANK: "은행",
   FOOD: "음식점",
+  ACADEMY: "학원",
+  CULTURE: "문화시설",
+  FIRE: "소방서",
+  GAS: "주유소",
+  GOV_OFFICE: "관공서",
+  KINDERGARTEN: "유치원",
+  LIBRARY: "도서관",
+  PARKING: "주차장",
+  POLICE: "경찰서",
+  POST_OFFICE: "우체국",
+  PUBLIC: "공공기관",
+  SCHOOL: "학교",
+  SWIMMING: "수영장",
 };
 
-// 숫자를 억/만 단위로만 분리해 주는 헬퍼 함수 (쉼표 제거)
+// 숫자를 억/만 단위로 분리해 주는 헬퍼 함수
 const formatKoreanMoney = (value) => {
   if (value === undefined || value === null || isNaN(value)) return "";
 
   const num = Number(value);
   if (num === 0) return "0만원";
 
-  const uk = Math.floor(num / 10000); // 억 단위
-  const man = num % 10000; // 만 단위
+  const uk = Math.floor(num / 10000);
+  const man = num % 10000;
 
   if (uk > 0 && man > 0) {
     return `${uk}억 ${man}만원`;
@@ -393,15 +430,12 @@ const formattedPrice = computed(() => {
 
   if (type === "월세") {
     const deposit = formatKoreanMoney(p.value.deposit).replace("만원", "");
-
     return `월세 ${deposit}/${p.value.monthlyRent}만원`;
   } else if (type === "전세") {
     const price = formatKoreanMoney(p.value.jeonsePrice ?? p.value.deposit);
-
     return `전세 ${price}`;
   } else if (type === "매매") {
     const price = formatKoreanMoney(p.value.sellingPrice ?? p.value.deposit);
-
     return `매매 ${price}`;
   }
 
@@ -416,111 +450,120 @@ const formattedPriceDetail = computed(() => {
   if (type === "월세") {
     const deposit = formatKoreanMoney(p.value.deposit).replace("만원", "");
     const rent = formatKoreanMoney(p.value.monthlyRent);
-
     return `월세 · ${deposit} / ${rent}`;
   } else if (type === "전세") {
     const price = formatKoreanMoney(p.value.jeonsePrice ?? p.value.deposit);
-
     return `전세 · ${price}`;
   } else if (type === "매매") {
     const price = formatKoreanMoney(p.value.sellingPrice ?? p.value.deposit);
-
     return `매매 · ${price}`;
   }
 
   return `${type} · ${formatKoreanMoney(p.value.deposit)}`;
 });
 
-// 층수 포맷팅 함수 (또는 computed로 작성 가능)
+// 층수 포맷팅
 const formatFloorInfo = (floorStr) => {
   if (!floorStr) return "";
-
-  // '/' 기준 분리 후 공백 제거
   const parts = floorStr.split("/").map((item) => item.trim());
 
-  if (parts.length < 2) return floorStr; // 예상치 못한 형식이면 그대로 반환
+  if (parts.length < 2) return floorStr;
 
-  // 숫자 이외의 문자('층' 등) 제거
   const currentFloor = parts[0].replace(/[^0-9-]/g, "");
   const totalFloor = parts[1].replace(/[^0-9]/g, "");
 
   return `${currentFloor}층 / 총 ${totalFloor}층`;
 };
 
-// 층수 포맷팅
-const formattedFloor = computed(() => {
-  return formatFloorInfo(p.value?.floorInfo);
-});
+const formattedFloor = computed(() => formatFloorInfo(p.value?.floorInfo));
 
-// 평수 계산 (3.3으로 나누고 반올림)
 const pyeong = computed(() =>
   p.value?.areaM2 ? Math.round(p.value.areaM2 / 3.3) : 0,
 );
 
-// 지역/건물/거래 유형/평수/층수 요약 라인
-const regionLine = computed(() =>
-  p.value
-    ? `창원시 성산구 ${p.value.dong || ""} · ${p.value.propertyType || ""} ${pyeong.value}평 · ${formattedFloor.value}`
-    : "",
-);
-
-// 건물명 라인
-const buildingLine = computed(
-  () => p.value?.buildingName ?? "상남 오피스텔 (에스하임)",
-);
-
-// 입주 가능일 라인
-const availableLine = computed(() => {
-  if (!p.value?.availableDate) return "즉시 입주";
-  return `${p.value.availableDate.replaceAll("-", ".")} (${p.value.discussionStatus ?? "협의 가능"})`;
+// 주소/동 정보 기반 라인
+const regionLine = computed(() => {
+  if (!p.value) return "";
+  const addrPart = p.value.address
+    ? p.value.address.split(" ").slice(0, 3).join(" ")
+    : "";
+  const dongPart = p.value.dong ? ` ${p.value.dong}` : "";
+  return `${addrPart}${dongPart} · ${p.value.propertyType || ""} ${pyeong.value}평 · ${formattedFloor.value}`;
 });
 
-// 시세 평균 가격
+// 건물명 (title을 기본으로 활용)
+const buildingLine = computed(() => p.value?.title ?? "건물명 정보 없음");
+
+// 입주 가능일 및 협의 가능 여부 처리
+const availableLine = computed(() => {
+  if (!p.value?.availableDate) return "즉시 입주";
+
+  // "2026-09-28T00:00:00" -> "2026.09.28"
+  const formattedDate = p.value.availableDate
+    .split("T")[0]
+    .replaceAll("-", ".");
+  const statusStr = p.value.discussionStatus ? "협의 가능" : "협의 불가능";
+
+  return `${formattedDate} (${statusStr})`;
+});
+
 const medianPrice = computed(() => market.value?.medianPrice ?? 47);
 
-// 인프라 카테고리별 개수 계산
+// 인프라 데이터 포맷팅
 const formattedInfraSummary = computed(() => {
   if (!p.value?.infraSummary || !Array.isArray(p.value.infraSummary)) return [];
 
   return p.value.infraSummary.map((item) => ({
     category: item.category,
-    name: CATEGORY_NAMES[item.category] || item.category, // 맵에 없는 키면 영문 코드 그대로 표기
+    name: CATEGORY_NAMES[item.category] || item.category,
     count: item.count ?? 0,
   }));
 });
 
 const benefits = [
-  { id: 1, title: "창원시 청년월세지원", sub: "월 20만원 × 12개월" },
-  { id: 2, title: "청년 전입지원금", sub: "1회 30만원" },
+  { id: 1, title: "청년 월세/전세 지원", sub: "조건 충족 시 지원 혜택 제공" },
+  { id: 2, title: "청년 전입지원금", sub: "1회 지원" },
   {
     id: 3,
     title: "KB 청년 전월세보증금 대출",
-    sub: "실질 2.4% · 예상 이자 월 1만원",
+    sub: "실질 우대 금리 혜택 적용",
   },
 ];
 
 async function toggleFavorite() {
-  if (isFavorite.value) {
-    await favoriteApi.remove(p.value.id);
-    isFavorite.value = false;
-  } else {
-    await favoriteApi.add(p.value.id);
-    isFavorite.value = true;
+  if (!p.value?.id) return;
+  try {
+    if (isFavorite.value) {
+      await favoriteApi.remove(p.value.id);
+      isFavorite.value = false;
+    } else {
+      await favoriteApi.add(p.value.id);
+      isFavorite.value = true;
+    }
+  } catch (err) {
+    console.error("찜 상태 변경 실패:", err);
   }
 }
 
+// 비교함 담기 기능
 async function addToCompare() {
-  const ok = await compare.add({
+  if (!p.value?.id) return;
+
+  // load() 할 필요 없이 바로 담기 시도
+  const res = await compareStore.add({
     propertyId: p.value.id,
     title: p.value.title,
     tradeType: p.value.tradeType,
     deposit: p.value.deposit,
     monthlyRent: p.value.monthlyRent,
   });
-  compareMsg.value = ok
-    ? "비교함에 담았어요."
-    : "최대 3개까지 담을 수 있습니다.";
-  setTimeout(() => (compareMsg.value = ""), 2500);
+
+  // 성공("비교함에 담았어요.") 또는 실패("최대 3개까지...") 메시지 출력
+  compareMsg.value = res.message;
+
+  setTimeout(() => {
+    compareMsg.value = "";
+  }, 2500);
 }
 </script>
 
@@ -528,19 +571,18 @@ async function addToCompare() {
 .pdetail {
   display: flex;
   flex-direction: column;
-  height: 100vh; /* 또는 프레임 고정 높이 */
-  max-width: 430px; /* 화면에 보이는 모바일 레이아웃 너비에 맞게 조절 */
-  margin: 0 auto; /* 중앙 정렬 */
+  height: 100vh;
+  max-width: 430px;
+  margin: 0 auto;
   position: relative;
   background-color: #fff;
-  overflow: hidden; /* 영역 밖으로 나가는 요소 잘라내기 */
+  overflow: hidden;
 }
 .scroll-area {
   flex: 1;
   overflow-y: auto;
-  padding-bottom: 20px; /* 하단 간격 */
+  padding-bottom: 20px;
 }
-/* 사진 슬라이더 */
 .photo-slider {
   position: relative;
   height: 220px;
@@ -605,7 +647,6 @@ async function addToCompare() {
   border-radius: 4px;
 }
 
-/* 요약 헤더 */
 .head {
   background: #fff;
   padding: 16px;
@@ -620,7 +661,6 @@ async function addToCompare() {
   color: #767676;
 }
 
-/* 통합 점수 카드 */
 .score-card {
   margin: 12px 16px 0;
   padding: 16px;
@@ -651,7 +691,6 @@ async function addToCompare() {
   font-size: 15px;
 }
 
-/* 매물 정보 카드 */
 .card {
   margin: 12px 16px 0;
   padding: 16px;
@@ -703,7 +742,6 @@ async function addToCompare() {
   font-weight: 500;
 }
 
-/* 사용 승인일과 상세 설명 사이의 구분선 */
 .section-divider {
   margin: 16px 0 12px;
   border: none;
@@ -720,7 +758,6 @@ async function addToCompare() {
   line-height: 1.6;
 }
 
-/* 요약 미니 카드 */
 .mini-row {
   display: flex;
   gap: 10px;
@@ -748,7 +785,6 @@ async function addToCompare() {
   font-weight: 800;
 }
 
-/* 이동 배너 그룹 */
 .banner-group {
   display: flex;
   flex-direction: column;
@@ -780,7 +816,6 @@ async function addToCompare() {
   color: #fff;
 }
 
-/* 공인중개사 & 혜택 */
 .realtor-card {
   margin-top: 12px;
   border: 1px solid #eee;
@@ -885,7 +920,6 @@ async function addToCompare() {
   color: #8a8d8f;
 }
 
-/* 하단 액션 바 */
 .bottom-actions-wrap {
   position: sticky;
   bottom: 0;
@@ -902,7 +936,6 @@ async function addToCompare() {
   gap: 10px;
 }
 
-/* 버튼 및 메시지 기본 스타일 */
 .fav-btn {
   width: 48px;
   height: 48px;
