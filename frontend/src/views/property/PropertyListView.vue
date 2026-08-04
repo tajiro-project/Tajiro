@@ -508,6 +508,13 @@ import KakaoLocation from '@/components/KakaoLocation.vue';
 import { computed, ref, reactive, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { infraColor } from '@/constants/infraIcons';
+import {
+  TRADE_OPTIONS as TRADE_TYPES,
+  HOUSING_OPTIONS as PROPERTY_TYPES,
+  FLOOR_OPTIONS,
+  INFRA_CATEGORIES,
+  AMENITY_CATEGORIES,
+} from '@/constants/preferenceOptions';
 
 // mock data
 const RAW_PROPERTIES = [
@@ -1013,9 +1020,6 @@ const hoveredDot = ref(null);
 const activeDot = computed(() => hoveredDot.value ?? pinnedDot.value);
 const items = ref(RAW_PROPERTIES);
 
-const TRADE_TYPES = ['월세', '전세', '매매'];
-const PROPERTY_TYPES = ['원룸', '오피스텔', '아파트'];
-const FLOOR_OPTIONS = ['지하/반지하', '1층', '2층 이상', '옥탑'];
 
 const PRICE_LIMITS = {
   월세: { deposit: 5000, rent: 200 },
@@ -1034,36 +1038,6 @@ const DEFAULT_DISTANCE = 2000;
 const PYEONG = 3.3058;
 const AREA_MAX_M2 = 200;
 
-const INFRA_CATEGORIES = [
-  { key: 'SUBWAY', label: '지하철' },
-  { key: 'BUS_TERMINAL', label: '버스터미널' },
-  { key: 'TRAIN', label: '기차역' },
-  { key: 'HOSPITAL', label: '병원' },
-  { key: 'PHARMACY', label: '약국' },
-  { key: 'SCHOOL', label: '학교' },
-  { key: 'KINDERGARTEN', label: '유치원' },
-  { key: 'ACADEMY', label: '학원' },
-  { key: 'LIBRARY', label: '도서관' },
-  { key: 'PARK', label: '공원' },
-  { key: 'POLICE', label: '경찰서' },
-  { key: 'FIRE', label: '소방서' },
-  { key: 'GOV_OFFICE', label: '행정복지센터' },
-  { key: 'PUBLIC', label: '관공서' },
-  { key: 'POST_OFFICE', label: '우체국' },
-  { key: 'BANK', label: '은행' },
-];
-
-const AMENITY_CATEGORIES = [
-  { key: 'CONVENIENCE', label: '편의점' },
-  { key: 'MART', label: '마트' },
-  { key: 'CAFE', label: '카페' },
-  { key: 'FOOD', label: '음식점' },
-  { key: 'CULTURE', label: '문화시설' },
-  { key: 'SPORTS', label: '체육시설' },
-  { key: 'SWIMMING', label: '수영장' },
-  { key: 'PARKING', label: '주차장' },
-  { key: 'GAS', label: '주유소' },
-];
 
 const filter = reactive({
   tradeTypes: [...TRADE_TYPES],
