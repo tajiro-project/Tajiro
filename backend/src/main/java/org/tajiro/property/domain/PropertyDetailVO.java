@@ -33,8 +33,8 @@ public class PropertyDetailVO {
     private Boolean parkAvailability;
     private Boolean transactionStatus;
     private String propertyDescription;
-    private LocalDateTime availableDate;
     private LocalDateTime moveInDate;
+    private LocalDateTime availableDate;
     private LocalDateTime updateDate;
     private Boolean discussionStatus;
     private String dong;
