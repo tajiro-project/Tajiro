@@ -22,11 +22,9 @@ export const financeApi = {
 
 // ---------- property ----------
 export const propertyApi = {
-  list: (params) =>
-    withMock(
-      () => client.get("/properties", { params }),
-      () => ({ items: mock.mockProperties, totalCount: 12, page: 1 }),
-    ),
+  getPropertyDetail: (propertyId) => {
+    return client.get(`/properties/${propertyId}`);
+  },
   recommended: () =>
     withMock(() => client.get("/properties/recommended"), mock.mockProperties),
   detail: (id) =>
@@ -108,11 +106,9 @@ export const favoriteApi = {
 export const comparisonApi = {
   box: () =>
     withMock(() => client.get("/users/me/compare"), mock.mockCompareBox),
-  addToBox: (propertyId) =>
-    withMock(
-      () => client.post(`/users/me/compare/${propertyId}`),
-      () => true,
-    ),
+  addToBox: (propertyId) => {
+    return client.post(`/users/me/compare/${propertyId}`);
+  },
   removeFromBox: (propertyId) =>
     withMock(
       () => client.delete(`/users/me/compare/${propertyId}`),
