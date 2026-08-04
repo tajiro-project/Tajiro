@@ -11,7 +11,6 @@
           @marker-click="onMarkerClick"
           @dot-click="onDotClick"
           @dot-hover="onDotHover"
-          @bounds-change="onBoundsChange"
         />
 
         <div v-if="activeDot" class="dot-info">
@@ -311,7 +310,7 @@
         class="location-input"
         type="text"
         readonly
-        :value="draft.workplace?.name ?? ''"
+        :value="draft.workplace?.name || draft.workplace?.address || ''"
         placeholder="예) 창원시 성산구 상남동"
         @click="goLocationSelect"
         @keydown.enter.prevent="goLocationSelect"
@@ -321,12 +320,12 @@
     <div class="field">
       <div class="field-head">
         <span class="field-name">희망 통근 거리</span>
-        <span class="field-value">{{ distanceLabel }}</span>
+        <span class="range-value">{{ distanceLabel }}</span>
       </div>
       <SingleSlider
         v-model="draft.distance"
         :min="500"
-        :max="10000"
+        :max="DISTANCE_MAX"
         :step="500"
         :marks="['500m', '2.5km', '5km', '7.5km', '10km']"
         aria-label="희망 통근 거리"
@@ -508,11 +507,7 @@ import KakaoLocation from '@/components/KakaoLocation.vue';
 
 import { computed, ref, reactive, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { infraColor, INFRA_ICON_PATHS } from '@/constants/infraIcons';
-import {
-  safetyColor,
-  SAFETY_ICON_PATHS,
-} from '@/constants/safetyIcons';
+import { infraColor } from '@/constants/infraIcons';
 
 // mock data
 const RAW_PROPERTIES = [
@@ -1012,7 +1007,6 @@ const scrollArea = ref(null);
 const selectedBuildingId = ref(null);
 const selectedPropertyId = ref(null);
 const selectionSource = ref(null);
-const bounds = ref(null);
 const pinnedDot = ref(null);
 const hoveredDot = ref(null);
 
@@ -1036,6 +1030,7 @@ const DEPOSIT_MARKS = {
 };
 
 const DISTANCE_MAX = 10000;
+const DEFAULT_DISTANCE = 2000;
 const PYEONG = 3.3058;
 const AREA_MAX_M2 = 200;
 
@@ -1082,7 +1077,7 @@ const filter = reactive({
   floorPreference: [],
   desiredInfraCategories: [],
   desiredAmenityCategories: [],
-  maxWorkplaceDistanceMeters: 2000,
+  maxWorkplaceDistanceMeters: DEFAULT_DISTANCE,
   workplace: null,
   hasCar: false,
   sort: 'recommend',
@@ -1154,10 +1149,10 @@ const draft = reactive({
   rent: [0, 200],
   propertyTypes: [],
   floorPreference: [],
-  areaRange: [0, 200],
+  areaRange: [0, AREA_MAX_M2],
   infra: [],
   amenity: [],
-  distance: 2000,
+  distance: DEFAULT_DISTANCE,
   workplace: null,
   hasCar: false,
   priorities: [],
@@ -1173,9 +1168,7 @@ const activeDotText = computed(() => activeDot.value?.name ?? '');
 const activeDotColor = computed(() => {
   const c = activeDot.value?.category;
   if (!c) return '#8a8d8f';
-  if (INFRA_ICON_PATHS[c]) return infraColor(c);
-  if (SAFETY_ICON_PATHS[c]) return safetyColor();
-  return '#8a8d8f';
+  return infraColor(c);
 });
 
 const sortedItems = computed(() => {
@@ -1269,17 +1262,18 @@ const commuteChipOn = computed(
   () =>
     filter.workplace != null ||
     filter.hasCar ||
-    filter.maxWorkplaceDistanceMeters !== 2000,
+    filter.maxWorkplaceDistanceMeters !== DEFAULT_DISTANCE,
 );
 
 const commuteChipLabel = computed(() => {
   if (!commuteChipOn.value) return '이주/통근';
   const parts = [];
-  if (filter.workplace?.name) parts.push(filter.workplace.name);
+  const placeName = filter.workplace?.name || filter.workplace?.address;
+  if (placeName) parts.push(placeName);
   const m = filter.maxWorkplaceDistanceMeters;
-  if (m !== 2000) parts.push(m >= 1000 ? `${(m / 1000).toFixed(1)}km 이내` : `${m}m 이내`);
+  if (m !== DEFAULT_DISTANCE) parts.push(m >= 1000 ? `${(m / 1000).toFixed(1)}km 이내` : `${m}m 이내`);
   if (filter.hasCar) parts.push('자차 O');
-  return parts.slice(0, 2).join(' · ');
+  return parts.slice(0, 2).join(' · ') || '이주/통근';
 });
 
 const housingChipOn = computed(
@@ -1306,6 +1300,7 @@ const housingChipLabel = computed(() => {
     );
   }
   if (filter.maxDeposit != null) parts.push(`${moneyLabel(filter.maxDeposit)} 이하`);
+  if (filter.maxMonthlyRent != null) parts.push(`월세 ${filter.maxMonthlyRent}만 이하`);
   if (filter.propertyTypes.length > 0) {
     parts.push(
       filter.propertyTypes.length === 1
@@ -1315,7 +1310,7 @@ const housingChipLabel = computed(() => {
   }
   if (filter.minAreaM2 != null || filter.maxAreaM2 != null) parts.push('면적 조건');
   if (filter.floorPreference.length > 0) parts.push(`층수 ${filter.floorPreference.length}개`);
-  return parts.slice(0, 2).join(' · ');
+  return parts.slice(0, 2).join(' · ') || '주거 조건';
 });
 
 const selectedTrades = computed(() =>
@@ -1339,7 +1334,8 @@ const depositValueLabel = computed(() => {
 
 const rentValueLabel = computed(() => {
   const [lo, hi] = draft.rent;
-  return `${lo} ~ ${hi >= PRICE_LIMITS['월세'].rent ? '최대' : hi}만`;
+  const max = PRICE_LIMITS['월세'].rent;
+  return `${lo}만 ~ ${hi >= max ? '최대' : `${hi}만`}`;
 });
 
 const areaLabel = computed(() => {
@@ -1351,11 +1347,16 @@ const areaLabel = computed(() => {
 
 const distanceLabel = computed(() => {
   const m = draft.distance;
-  if (m >= DISTANCE_MAX) return '제한 없음';
   return m >= 1000 ? `${(m / 1000).toFixed(1)}km 이내` : `${m}m 이내`;
 });
 
 const totalCount = computed(() => listItems.value.length);
+
+const infraChipOn = computed(
+  () =>
+    filter.desiredInfraCategories.length > 0 ||
+    filter.desiredAmenityCategories.length > 0,
+);
 
 const infraChipLabel = computed(() => {
   if (!infraChipOn.value) return '인프라/편의';
@@ -1372,12 +1373,6 @@ const infraChipLabel = computed(() => {
     : `${allLabels[0]} 외 ${allLabels.length - 1}개`;
 });
 
-const infraChipOn = computed(
-  () =>
-    filter.desiredInfraCategories.length > 0 ||
-    filter.desiredAmenityCategories.length > 0,
-);
-
 
 const sortLabel = computed(
   () => SORT_OPTIONS.find((o) => o.key === filter.sort)?.label ?? '추천순',
@@ -1385,7 +1380,7 @@ const sortLabel = computed(
 
 function openSheet(name) {
   if (name === 'commute') {
-    draft.distance = filter.maxWorkplaceDistanceMeters ?? 2000;
+    draft.distance = filter.maxWorkplaceDistanceMeters ?? DEFAULT_DISTANCE;
     draft.workplace = filter.workplace;
     draft.hasCar = filter.hasCar;
   } else if (name === 'housing') {
@@ -1454,7 +1449,7 @@ function applyCommute() {
 }
 
 function resetCommute() {
-  draft.distance = 2000;
+  draft.distance = DEFAULT_DISTANCE;
   draft.workplace = null;
   draft.hasCar = false;
 }
@@ -1565,9 +1560,6 @@ function onCardClick(property) {
   selectionSource.value = 'card';
 }
 
-function onBoundsChange(b) {
-  bounds.value = b;
-}
 
 function onDotClick(dot) {
   pinnedDot.value = keyOf(pinnedDot.value) === keyOf(dot) ? null : dot;
@@ -1690,6 +1682,7 @@ watch(filter, () => {
   background: #fff;
   border: 1px solid #e9e7e2;
   border-radius: 14px;
+  overflow: hidden;
   cursor: pointer;
 }
 
@@ -2021,6 +2014,10 @@ watch(filter, () => {
   margin-bottom: 10px;
 }
 
+.field-head .field-name {
+  margin-bottom: 0;
+}
+
 .range-card {
   display: flex;
   flex-direction: column;
@@ -2119,12 +2116,6 @@ watch(filter, () => {
 
 .checkbox.on svg {
   opacity: 1;
-}
-
-.field-value {
-  font-size: 12.5px;
-  font-weight: 700;
-  color: #fe7b00;
 }
 
 .sheet-note {
