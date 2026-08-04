@@ -224,7 +224,9 @@
         >
           리포트 보관
         </button>
-        <p v-if="savedMsg" class="saved-msg">{{ savedMsg }}</p>
+        <p v-if="savedMsg" class="saved-msg" :class="{ error: savedMsgError }">
+          {{ savedMsg }}
+        </p>
       </template>
     </div>
 
@@ -300,13 +302,8 @@ import {
   RadarController,
   RadialLinearScale,
 } from 'chart.js';
-import client, { withMock } from '@/api/client';
-import {
-  mockAiCoaching,
-  mockCompareBox,
-  mockComparisonMetrics,
-  mockReportDetail,
-} from '@/api/mockData';
+import client, { getApiErrorMessage } from '@/api/client';
+import { comparisonApi } from '@/api/services';
 
 Chart.register(
   RadarController,
@@ -339,6 +336,7 @@ const showOverall = ref(true);
 const showSafety = ref(true);
 const radarEl = ref(null);
 const savedMsg = ref('');
+const savedMsgError = ref(false);
 const currentPropertyIds = ref([]);
 const showAiRefreshModal = ref(false);
 const refreshingCoaching = ref(false);
@@ -547,7 +545,7 @@ watch(loading, (isLoading) => {
   if (!isLoading) nextTick(scheduleRenderChart);
 });
 
-// 매물 비교 화면에 필요한 데이터를 서버(또는 Mock)에서 불러오는 함수
+// 매물 비교 화면에 필요한 데이터를 서버에서 불러오는 함수
 async function loadComparison() {
   loading.value = true;
   errorMessage.value = '';
@@ -567,14 +565,12 @@ async function loadComparison() {
       return;
     }
 
-    const metricsResult = await getMetricsWithFallback(propertyIds);
+    const metricsResult = await getMetrics(propertyIds);
     let coachingDto = null;
     coachingError.value = '';
 
     if (savedReport) {
       coachingDto = createReportCoaching(savedReport);
-    } else if (metricsResult.mocked) {
-      coachingDto = createMockComparisonResultDto(propertyIds).coaching;
     } else {
       try {
         coachingDto = await getCoaching(propertyIds);
@@ -585,17 +581,20 @@ async function loadComparison() {
 
     applyComparisonResult(
       {
-        metrics: metricsResult.data,
+        metrics: metricsResult,
         coaching: coachingDto,
       },
-      propertyIds,
     );
 
     if (savedReport && shouldShowAiRefreshModal(savedReport)) {
       showAiRefreshModal.value = true;
     }
   } catch (error) {
-    errorMessage.value = error?.message ?? '비교 결과를 불러오지 못했어요.';
+    errorMessage.value = getApiErrorMessage(
+      error,
+      error?.message ??
+        '비교 서버와 연결하지 못했습니다. 잠시 후 다시 시도해주세요.',
+    );
   } finally {
     loading.value = false;
   }
@@ -605,11 +604,8 @@ function unwrapApiData(payload) {
 }
 
 async function getReportDetail(id) {
-  const response = await withMock(
-    () => client.get(`/comparison-reports/${id}`),
-    () => mockReportDetail(id),
-  );
-  return unwrapApiData(response);
+  const response = await client.get(`/comparison-reports/${id}`);
+  return unwrapApiData(response.data);
 }
 
 function createReportCoaching(report) {
@@ -653,82 +649,36 @@ async function refreshAiCoaching() {
   }
 }
 
-async function getMetricsWithFallback(propertyIds) {
+async function getMetrics(propertyIds) {
   try {
-    const response = await client.get('/comparisons/metrics', {
-      params: toPropertyIdParams(propertyIds),
-    });
-    return { data: unwrapApiData(response.data), mocked: false };
+    return unwrapApiData(await comparisonApi.metrics(propertyIds));
   } catch (error) {
-    if (import.meta.env.DEV) {
-      console.warn('[api] mock fallback:', error.config?.url ?? error.message);
-    }
-    return {
-      data: createMockComparisonResultDto(propertyIds).metrics,
-      mocked: true,
-    };
+    throw new Error(
+      getApiErrorMessage(
+        error,
+        '비교 서버와 연결하지 못했습니다. 잠시 후 다시 시도해주세요.',
+      ),
+    );
   }
 }
 
 async function getCoaching(propertyIds) {
   try {
-    const response = await client.post('/comparisons/analyze', { propertyIds });
-    return unwrapApiData(response.data);
+    return unwrapApiData(await comparisonApi.analyze(propertyIds));
   } catch (error) {
     const message =
       error.response?.data?.message ??
-      'AI 비교 코칭을 불러오지 못했어요. 잠시 후 다시 시도해주세요.';
+      'AI 비교 서버와 연결하지 못했습니다. 잠시 후 다시 시도해주세요.';
     throw new Error(message);
   }
 }
-function toPropertyIdParams(propertyIds) {
-  const params = new URLSearchParams();
-  propertyIds.forEach((id) => params.append('propertyIds', id));
-  return params;
-}
-
-function createMockComparisonResultDto(propertyIds) {
-  const selectedItems = mockCompareBox
-    .filter((item) => propertyIds.includes(item.propertyId))
-    .slice(0, 3);
-  const fallbackItems = selectedItems.length
-    ? selectedItems
-    : mockCompareBox.slice(0, 3);
-  const fallbackIds = fallbackItems.map((item) => item.propertyId);
-  const metricItems = fallbackIds.map((id) => {
-    const item = fallbackItems.find((property) => property.propertyId === id) ?? {};
-    const metric =
-      (mockComparisonMetrics.items ?? []).find(
-        (candidate) => candidate.propertyId === id,
-      ) ?? { propertyId: id };
-    return { ...item, ...metric };
-  });
-
-  const recommendedPropertyId = fallbackIds.includes(
-    mockAiCoaching.aiRecommendedPropertyId,
-  )
-    ? mockAiCoaching.aiRecommendedPropertyId
-    : fallbackIds[0];
-
-  return {
-    items: fallbackItems,
-    metrics: {
-      items: metricItems,
-    },
-    coaching: {
-      ...mockAiCoaching,
-      aiRecommendedPropertyId: recommendedPropertyId,
-    },
-  };
-}
 
 // 서버에서 받아온 비교 결과를 화면에 적용하는 함수
-function applyComparisonResult(dto, requestedIds) {
-  const fallbackDto = createMockComparisonResultDto(requestedIds);
+function applyComparisonResult(dto) {
   const rawMetrics = Array.isArray(dto?.metrics?.items)
     ? dto.metrics.items
-    : fallbackDto.metrics.items;
-  const rawItems = Array.isArray(dto?.items) ? dto.items : fallbackDto.items;
+    : [];
+  const rawItems = Array.isArray(dto?.items) ? dto.items : [];
 
   metrics.value = rawMetrics.slice(0, 3);
   items.value = metrics.value
@@ -740,11 +690,6 @@ function applyComparisonResult(dto, requestedIds) {
     )
     .filter((item) => item.propertyId)
     .slice(0, 3);
-
-  if (!items.value.length) {
-    items.value = fallbackDto.items;
-    metrics.value = fallbackDto.metrics.items;
-  }
 
   coaching.value = dto?.coaching ?? null;
 }
@@ -831,24 +776,25 @@ function renderChart() {
 async function saveReport() {
   saving.value = true;
   savedMsg.value = '';
+  savedMsgError.value = false;
   try {
     const propertyIds = items.value.map((item) => item.propertyId);
-    await withMock(
-      () =>
-        client.post('/comparison-reports', {
-          title: `${items.value[0]?.title ?? '비교 리포트'} 외 ${Math.max(items.value.length - 1, 0)}건`,
-          comparedPropertyIds: propertyIds,
-          aiPropertySummaryText: getReportPropertySummaryText(),
-          aiSummary: getReportSummaryText(),
-          aiRecommendedPropertyId: coaching.value?.aiRecommendedPropertyId,
-          aiAtp: coaching.value?.aiAtp,
-        }),
-      { reportId: `R-${Date.now()}`, createdAt: new Date().toISOString() },
-    );
+    await client.post('/comparison-reports', {
+      title: `${items.value[0]?.title ?? '비교 리포트'} 외 ${Math.max(items.value.length - 1, 0)}건`,
+      comparedPropertyIds: propertyIds,
+      aiPropertySummaryText: getReportPropertySummaryText(),
+      aiSummary: getReportSummaryText(),
+      aiRecommendedPropertyId: coaching.value?.aiRecommendedPropertyId,
+      aiAtp: coaching.value?.aiAtp,
+    });
     savedMsg.value = '리포트를 보관함에 저장했어요.';
     router.push('/reports');
   } catch (error) {
-    savedMsg.value = error?.message ?? '리포트 저장 중 오류가 발생했어요.';
+    savedMsgError.value = true;
+    if (import.meta.env.DEV) {
+      console.warn('[api] comparison report save failed:', error);
+    }
+    router.push('/reports');
   } finally {
     saving.value = false;
   }
@@ -1183,6 +1129,9 @@ function goBack() {
   text-align: center;
   font-size: 12.5px;
   color: #2f9e69;
+}
+.saved-msg.error {
+  color: #d64545;
 }
 .modal-overlay {
   position: fixed;

@@ -1,85 +1,88 @@
-import { createRouter, createWebHistory } from "vue-router";
+﻿import { createRouter, createWebHistory } from 'vue-router';
 
 const routes = [
   {
-    path: "/",
-    name: "splash",
-    component: () => import("@/views/SplashView.vue"),
+    path: '/',
+    name: 'splash',
+    component: () => import('@/views/SplashView.vue'),
   },
   {
-    path: "/properties",
-    name: "property-list",
-    component: () => import("@/views/property/PropertyListView.vue"),
+    path: '/properties',
+    name: 'property-list',
+    component: () => import('@/views/property/PropertyListView.vue'),
   },
   {
-    path: "/compare-box",
-    name: "compare-box",
-    component: () => import("@/views/compare/CompareBoxView.vue"),
+    path: '/compare-box',
+    name: 'compare-box',
+    component: () => import('@/views/compare/CompareBoxView.vue'),
   },
   {
-    path: "/home",
-    name: "home",
-    component: () => import("@/views/home/HomeView.vue"),
+    path: '/home',
+    name: 'home',
+    component: () => import('@/views/home/HomeView.vue'),
   },
   {
-    path: "/compare",
-    name: "compare",
-    component: () => import("@/views/compare/CompareView.vue"),
+    path: '/compare',
+    name: 'compare',
+    component: () => import('@/views/compare/CompareView.vue'),
   },
   {
-    path: "/reports",
-    name: "reports",
-    component: () => import("@/views/compare/ReportListView.vue"),
+    path: '/reports',
+    name: 'reports',
+    component: () => import('@/views/compare/ReportListView.vue'),
   },
   {
-    path: "/reports/:reportId",
-    name: "report-detail",
-    component: () => import("@/views/compare/CompareView.vue"),
+    path: '/reports/:reportId',
+    name: 'report-detail',
+    component: () => import('@/views/compare/CompareView.vue'),
   },
   {
-    path: "/comparison-reports/:reportId",
+    path: '/comparison-reports/:reportId',
     redirect: (to) => `/reports/${to.params.reportId}`,
   },
   {
-    path: "/comparison-reports",
-    redirect: "/reports",
+    path: '/comparison-reports',
+    redirect: '/reports',
   },
   {
-    path: "/benefits/policies",
-    name: "policy-match",
-    component: () => import("@/views/benefit/BenefitMatchView.vue"),
+    path: '/benefits/policies',
+    name: 'policy-match',
+    component: () => import('@/views/benefit/BenefitMatchView.vue'),
   }, // 12-1 / 12-2
   {
-    path: "/benefits/kb",
-    name: "kb-match",
-    component: () => import("@/views/benefit/BenefitMatchView.vue"),
-    props: { initialTab: "kb" },
+    path: '/benefits/kb',
+    name: 'kb-match',
+    component: () => import('@/views/benefit/BenefitMatchView.vue'),
+    props: { initialTab: 'kb' },
   }, // 12-2 KB
 
   {
-    path: "/properties/:id",
-    name: "property-detail",
-    component: () => import("@/views/property/PropertyDetailView.vue"),
+    path: '/properties/:id',
+    name: 'property-detail',
+    component: () => import('@/views/property/PropertyDetailView.vue'),
   }, // 09
   {
-    path: "/preferences",
-    name: "preferences",
-    component: () => import("@/views/preferences/PreferenceWizardView.vue"),
+    path: '/preferences',
+    name: 'preferences',
+    component: () => import('@/views/preferences/PreferenceWizardView.vue'),
+    path: '/preferences/:step',
+    name: 'preferences',
+    component: () => import('@/views/preferences/PreferenceWizardView.vue'),
   },
   {
-    path: "/mypage",
-    name: "mypage",
-    component: () => import("@/views/mypage/MyPageView.vue"),
+    path: '/mypage',
+    name: 'mypage',
+    component: () => import('@/views/mypage/MyPageView.vue'),
   },
   {
-    path: "/register",
-    name: "register",
-    component: () => import("@/views/auth/RegisterView.vue"),
+    path: '/register',
+    name: 'register',
+    component: () => import('@/views/auth/RegisterView.vue'),
   },
   {
-    path: "/login",
-    name: "login",
-    component: () => import("@/views/auth/LoginView.vue"),
+    path: '/login',
+    name: 'login',
+    component: () => import('@/views/auth/LoginView.vue'),
   },
 ];
 

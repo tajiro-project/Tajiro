@@ -166,7 +166,11 @@ function propName(report, pid) {
 }
 function propPrice(report, pid) {
   const p = getProperty(report, pid);
-  return p ? `${p.deposit}/${p.monthlyRent}` : '';
+  if (!p) return '';
+  if (p.monthlyRent === null || p.monthlyRent === undefined || p.monthlyRent === '') {
+    return `${p.tradeType ?? '전세'} ${p.deposit}`;
+  }
+  return `${p.deposit}/${p.monthlyRent}`;
 }
 // 리포트 저장 날짜 이후 매물 정보가 업데이트됐는지 확인
 function hasUpdatedProperty(report) {

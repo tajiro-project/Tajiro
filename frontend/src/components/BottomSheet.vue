@@ -2,15 +2,28 @@
   <Teleport to="body">
     <Transition name="sheet">
       <div v-if="modelValue" class="sheet-overlay" @click.self="close">
-        <div class="sheet" :style="{ maxWidth: '375px' }">
-          <div class="sheet-handle" />
-          <div v-if="title" class="sheet-head">
-            <p class="sheet-title">{{ title }}</p>
-            <button class="sheet-close" aria-label="닫기" @click="close">
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                <path d="M4 4L14 14M14 4L4 14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
-              </svg>
-            </button>
+        <div class="sheet" :class="{ dragging }" :style="sheetStyle">
+          <div
+            class="sheet-grab"
+            @pointerdown="onDown"
+            @pointermove="onMove"
+            @pointerup="onUp"
+            @pointercancel="onUp"
+          >
+            <div class="sheet-handle" />
+            <div v-if="title" class="sheet-head">
+              <p class="sheet-title">{{ title }}</p>
+              <button class="sheet-close" aria-label="닫기" @click="close">
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                  <path
+                    d="M4 4L14 14M14 4L4 14"
+                    stroke="currentColor"
+                    stroke-width="1.6"
+                    stroke-linecap="round"
+                  />
+                </svg>
+              </button>
+            </div>
           </div>
           <div class="sheet-body">
             <slot />
@@ -22,14 +35,56 @@
 </template>
 
 <script setup>
+import { computed, ref, watch } from 'vue';
+
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
   title: { type: String, default: '' },
-})
-const emit = defineEmits(['update:modelValue'])
-function close() {
-  emit('update:modelValue', false)
+});
+const emit = defineEmits(['update:modelValue']);
+
+const dragY = ref(0);
+const dragging = ref(false);
+let startY = 0;
+let startAt = 0;
+
+const sheetStyle = computed(() => ({
+  maxWidth: '375px',
+  transform: dragY.value ? `translateY(${dragY.value}px)` : '',
+}));
+
+function onDown(e) {
+  if (e.target.closest('.sheet-close')) return;
+  dragging.value = true;
+  startY = e.clientY;
+  startAt = Date.now();
+  e.currentTarget.setPointerCapture(e.pointerId);
 }
+
+function onMove(e) {
+  if (!dragging.value) return;
+  dragY.value = Math.max(0, e.clientY - startY);
+}
+
+function onUp() {
+  if (!dragging.value) return;
+  // 짧고 빠르게 튕기면 거리가 짧아도 닫는다
+  const flick = Date.now() - startAt < 250 && dragY.value > 30;
+  dragging.value = false;
+  if (dragY.value > 90 || flick) close();
+  dragY.value = 0;
+}
+
+function close() {
+  emit('update:modelValue', false);
+}
+
+watch(
+  () => props.modelValue,
+  (v) => {
+    if (!v) dragY.value = 0;
+  },
+);
 </script>
 
 <style scoped>
@@ -49,6 +104,18 @@ function close() {
   padding: 8px 16px 20px;
   max-height: 82dvh;
   overflow-y: auto;
+  transition: transform 0.22s ease;
+}
+.sheet.dragging {
+  transition: none;
+}
+.sheet-grab {
+  touch-action: none;
+  cursor: grab;
+  user-select: none;
+}
+.sheet-grab:active {
+  cursor: grabbing;
 }
 .sheet-handle {
   width: 40px;
@@ -74,10 +141,6 @@ function close() {
 .sheet-enter-active,
 .sheet-leave-active {
   transition: opacity 0.22s ease;
-}
-.sheet-enter-active .sheet,
-.sheet-leave-active .sheet {
-  transition: transform 0.22s ease;
 }
 .sheet-enter-from,
 .sheet-leave-to {
