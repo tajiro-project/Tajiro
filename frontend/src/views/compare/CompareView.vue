@@ -128,6 +128,9 @@
               <span class="bb-label">가장 높은 영역</span>
               <b class="bb-value">{{ bestAreaText }}</b>
             </div>
+            <p v-if="unavailableAxes.length" class="metric-note">
+              데이터 부족으로 제외된 지표: {{ unavailableAxes.join(', ') }}
+            </p>
           </div>
         </section>
 
@@ -322,8 +325,6 @@ const colors = [
   { dot: '#88a860', fill: 'rgba(136, 168, 96, 0.45)', line: '#6f9048' },
   { dot: '#7aa8e8', fill: 'rgba(122, 168, 232, 0.30)', line: '#5c8fd6' },
 ];
-const axes = ['직주근접', '가성비', '인프라', '안전', '시세안정'];
-
 const items = ref([]);
 const metrics = ref([]);
 
@@ -366,49 +367,92 @@ const recommendedId = computed(() =>
 
 const warningText = computed(() => {
   const worst = [...metrics.value]
-    .filter((metric) => Math.abs(metric.evaluationScore ?? 0) >= 10)
+    .filter(
+      (metric) =>
+        hasNumber(metric.evaluationScore) &&
+        Math.abs(metric.evaluationScore) >= 10,
+    )
     .sort(
       (a, b) =>
-        Math.abs(b.evaluationScore ?? 0) - Math.abs(a.evaluationScore ?? 0),
+        Math.abs(b.evaluationScore) - Math.abs(a.evaluationScore),
     )[0];
   if (!worst) return '';
   const index = Math.max(0, metrics.value.indexOf(worst));
-  const score = worst.evaluationScore ?? 0;
+  const score = worst.evaluationScore;
   const pct = Math.abs(Math.round(score));
   const direction = score > 0 ? '높아요' : '낮아요';
   return `${letters[index]} 매물은 주변 시세보다 ${pct}% ${direction}. 계약 전 시세와 관리비 항목을 확인하세요.`;
 });
 
-// 차트 점수를 정규화하여 35~95점 사이로 변환
-const seriesScores = computed(() => {
+const allScoreSpecs = computed(() => {
   if (!metrics.value.length) return [];
-  const commute = normalize(
-    metrics.value.map((m) => m.commuteMinutes ?? 0),
-    true,
-  );
-  const cost = normalize(
-    metrics.value.map((m) => (m.monthlyRent ?? 0) + feeValue(m)),
-    true,
-  );
-  const infra = normalize(metrics.value.map((m) => m.infraCount ?? 0));
-  const safety = normalize(
-    metrics.value.map(
-      (m) => (m.cctvCountWithin500m ?? 0) + (m.bellCountWithin500m ?? 0),
-    ),
-  );
-  const market = normalize(
-    metrics.value.map((m) => Math.abs(m.evaluationScore ?? 0)),
-    true,
-  );
-  return metrics.value.map((_, i) => [
-    commute[i],
-    cost[i],
-    infra[i],
-    safety[i],
-    market[i],
-  ]);
+
+  return [
+    {
+      label: '직주근접',
+      available: metrics.value.every((m) => hasNumber(m.commuteMinutes)),
+      values: metrics.value.map((m) => Number(m.commuteMinutes)),
+      invert: true,
+    },
+    {
+      label: '가성비',
+      available: metrics.value.every(
+        (m) => hasNumber(m.monthlyRent) && hasNumber(m.maintenanceFee),
+      ),
+      values: metrics.value.map((m) => Number(m.monthlyRent) + feeValue(m)),
+      invert: true,
+    },
+    {
+      label: '인프라',
+      available: metrics.value.every((m) => hasNumber(m.infraCount)),
+      values: metrics.value.map((m) => Number(m.infraCount)),
+      invert: false,
+    },
+    {
+      label: '안전',
+      available: metrics.value.every(
+        (m) =>
+          hasNumber(m.cctvCountWithin500m) &&
+          hasNumber(m.bellCountWithin500m),
+      ),
+      values: metrics.value.map(
+        (m) => Number(m.cctvCountWithin500m) + Number(m.bellCountWithin500m),
+      ),
+      invert: false,
+    },
+    {
+      label: '시세안정',
+      available: metrics.value.every((m) => hasNumber(m.evaluationScore)),
+      values: metrics.value.map((m) => Math.abs(Number(m.evaluationScore))),
+      invert: true,
+    },
+  ];
 });
 
+const scoreSpecs = computed(() =>
+  allScoreSpecs.value.filter((spec) => spec.available),
+);
+
+const unavailableAxes = computed(() =>
+  allScoreSpecs.value
+    .filter((spec) => !spec.available)
+    .map((spec) => spec.label),
+);
+
+const axes = computed(() => scoreSpecs.value.map((spec) => spec.label));
+
+// 차트 점수를 정규화하여 35~95점 사이로 변환
+const seriesScores = computed(() => {
+  if (!metrics.value.length || !scoreSpecs.value.length) return [];
+
+  const normalizedByAxis = scoreSpecs.value.map((spec) =>
+    normalize(spec.values, spec.invert),
+  );
+
+  return metrics.value.map((_, propertyIndex) =>
+    normalizedByAxis.map((axisScores) => axisScores[propertyIndex]),
+  );
+});
 const bestAreaText = computed(() => {
   if (!seriesScores.value.length) return '';
   // 각 매물의 총점 계산
@@ -418,7 +462,7 @@ const bestAreaText = computed(() => {
   // 총점이 가장 높은 매물 찾기
   const best = sums.indexOf(Math.max(...sums));
   // 총점이 가장 높은 매물의 상위 2개 영역 찾기
-  const top2 = axes
+  const top2 = axes.value
     .map((axis, i) => ({ axis, value: seriesScores.value[best][i] }))
     .sort((a, b) => b.value - a.value)
     .slice(0, 2)
@@ -721,6 +765,7 @@ function createComparisonItem(metric, fallbackItem = {}) {
 }
 
 function normalize(values, invert = false) {
+  if (!values.length) return [];
   const min = Math.min(...values);
   const max = Math.max(...values);
   if (min === max) return values.map(() => 70);
@@ -728,6 +773,10 @@ function normalize(values, invert = false) {
     const ratio = (value - min) / (max - min);
     return Math.round(35 + (invert ? 1 - ratio : ratio) * 60);
   });
+}
+
+function hasNumber(value) {
+  return value !== null && value !== undefined && Number.isFinite(Number(value));
 }
 
 function scheduleRenderChart() {
@@ -744,7 +793,7 @@ function renderChart() {
   chart = new Chart(ctx, {
     type: 'radar',
     data: {
-      labels: axes,
+      labels: axes.value,
       datasets: seriesScores.value.map((scores, i) => ({
         data: scores,
         backgroundColor: colors[i].fill,
@@ -1048,6 +1097,12 @@ function goBack() {
 .bb-value {
   font-size: 12.5px;
   font-weight: 800;
+}
+.metric-note {
+  margin-top: 8px;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--kb-gray);
 }
 .safety-table {
   width: 100%;
