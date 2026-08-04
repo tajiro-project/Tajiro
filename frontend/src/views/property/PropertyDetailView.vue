@@ -114,11 +114,11 @@
           </div>
           <div class="info-row">
             <dt>입주 가능일</dt>
-            <dd>{{ availableLine }}</dd>
+            <dd>{{ moveInLine }}</dd>
           </div>
           <div class="info-row">
             <dt>사용 승인일</dt>
-            <dd>{{ p.approvedDate ?? "정보 없음" }}</dd>
+            <dd>{{ availableLine ?? "정보 없음" }}</dd>
           </div>
         </dl>
 
@@ -492,19 +492,40 @@ const regionLine = computed(() => {
 });
 
 // 건물명 (title을 기본으로 활용)
-const buildingLine = computed(() => p.value?.title ?? "건물명 정보 없음");
+const buildingLine = computed(() => {
+  if (!p.value?.title) return "건물명 정보 없음";
+
+  // " 2101호", " 202호" 처럼 맨 뒤에 붙은 (공백 + 숫자 + 호) 패턴을 제거합니다.
+  return p.value.title.replace(/\s*\d+호$/, "").trim();
+});
+
+const formatDateStr = (dateStr, delimiter = ".") => {
+  if (!dateStr) return "";
+
+  // "T" 기준으로 잘라서 날짜 부분("2026-09-28")만 추출
+  const dateOnly = dateStr.split("T")[0];
+
+  // "-"를 지정한 구분자(기본값: '.')로 변경
+  return dateOnly.replaceAll("-", delimiter);
+};
 
 // 입주 가능일 및 협의 가능 여부 처리
-const availableLine = computed(() => {
-  if (!p.value?.availableDate) return "즉시 입주";
+const moveInLine = computed(() => {
+  if (!p.value?.moveInDate) return "협의 가능";
 
-  // "2026-09-28T00:00:00" -> "2026.09.28"
-  const formattedDate = p.value.availableDate
-    .split("T")[0]
-    .replaceAll("-", ".");
-  const statusStr = p.value.discussionStatus ? "협의 가능" : "협의 불가능";
+  // 공통 날짜 변환 함수 사용 ("2026.09.28")
+  const formattedDate = formatDateStr(p.value.moveInDate);
+
+  // discussionStatus(카멜) 또는 discussion_status(스네이크) 안전 처리
+  const isDiscussable = p.value?.discussionStatus ?? p.value?.discussion_status;
+  const statusStr = isDiscussable ? "협의 가능" : "협의 불가능";
 
   return `${formattedDate} (${statusStr})`;
+});
+
+// 사용 승인일
+const availableLine = computed(() => {
+  return formatDateStr(p.value?.availableDate);
 });
 
 const medianPrice = computed(() => market.value?.medianPrice ?? 47);
