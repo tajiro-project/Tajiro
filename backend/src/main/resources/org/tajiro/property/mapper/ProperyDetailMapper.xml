@@ -5,7 +5,7 @@
 <mapper namespace="org.tajiro.property.mapper.PropertyDetailMapper">
 
     <!-- 1. 매물 상세 정보 조회 (snake_case -> camelCase 매핑) -->
-    <select id="selectPropertyDetail" parameterType="long" resultType="org.tajiro.property.domain.PropertyDetailVO">
+    <select id="selectPropertyDetail" parameterType="long" resultType="PropertyDetailVO">
         SELECT
             id,
             source_listing_id     AS sourceListingId,
@@ -44,7 +44,7 @@
     </select>
 
     <!-- 3. 건물 ID 기준 인프라 통계 조회 (인프라 테이블 스네이크 케이스 반영) -->
-    <select id="selectInfraSummaryByBuildingId" parameterType="long" resultType="org.tajiro.property.dto.PropertyDetailDTO$InfraSummaryDTO">
+    <select id="selectInfraSummaryByBuildingId" parameterType="long" resultType="InfraSummaryDTO">
         SELECT
             infra_category      AS category,
             count_within2000m  AS count
