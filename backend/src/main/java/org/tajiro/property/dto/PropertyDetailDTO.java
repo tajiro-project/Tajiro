@@ -29,7 +29,9 @@ public class PropertyDetailDTO {
     private String dong;
     private Integer roomNum;
     private Integer bathroomNum;
+    private Boolean parkAvailability;
     private String propertyDescription;
+    private LocalDateTime moveInDate;
     private LocalDateTime availableDate;
     private Boolean discussionStatus;
     private Integer evaluationScore;
@@ -57,8 +59,10 @@ public class PropertyDetailDTO {
                 .address(vo.getAddress())
                 .dong(vo.getDong())
                 .roomNum(vo.getRoomNum())
+                .parkAvailability(vo.getParkAvailability())
                 .bathroomNum(vo.getBathroomNum())
                 .propertyDescription(vo.getPropertyDescription())
+                .moveInDate(vo.getMoveInDate())
                 .availableDate(vo.getAvailableDate())
                 .discussionStatus(vo.getDiscussionStatus())
                 .evaluationScore(vo.getEvaluationScore())
