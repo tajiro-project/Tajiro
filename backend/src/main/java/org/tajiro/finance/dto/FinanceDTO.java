@@ -10,8 +10,8 @@ import lombok.NoArgsConstructor;
 import org.tajiro.finance.domain.FinanceVO;
 
 import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.util.Date;
+import java.time.LocalDateTime;
+
 
 @NoArgsConstructor
 @AllArgsConstructor
@@ -23,16 +23,16 @@ public class FinanceDTO {
     private String productName;
     private BigDecimal minRate; //최소 금리
     private BigDecimal maxRate; //최고 금리
-    private int maxLimitAmount; // 최대 한도 금액
+    private Integer maxLimitAmount; // 최대 한도 금액
     private String loanLimit; // 대출한도
     private String rateDescription;
     private String eligibility; //신청대삭/제출 자격
     private String requiredDocs; // 제출 서류
     private String applicationUrl; // 신청 url
     private Boolean isActive; //판매여부
-    private Date referenceDate; //기준일
-    private Date validEndDate; // 종료일
-    private Date createdAt; // 등록일
+    private LocalDateTime referenceDate; //기준일
+    private LocalDateTime validEndDate; // 종료일
+    private LocalDateTime createdAt; // 등록일
 
 
     // VO  DTO 변환
