@@ -9,16 +9,11 @@ export const PREFERENCE_STEP_COUNT = PREFERENCE_STEP_LABELS.length;
 
 export const MAX_PRIORITY_SELECTIONS = 3;
 
-export const HOUSING_OPTIONS = [
-  '원/투룸',
-  '아파트',
-  '주택/빌라',
-  '오피스텔',
-];
+export const HOUSING_OPTIONS = ['원/투룸', '아파트', '주택/빌라', '오피스텔'];
 
 export const TRADE_OPTIONS = ['월세', '전세', '매매'];
 
-export const FLOOR_OPTIONS = ['저층', '1층', '2층 이상', '옥탑'];
+export const FLOOR_OPTIONS = ['지하/반지하', '1층', '2층 이상', '옥탑'];
 
 export const INFRA_CATEGORIES = [
   { key: 'SUBWAY', label: '지하철' },
