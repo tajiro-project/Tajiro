@@ -188,14 +188,17 @@
       </button>
       <button
         class="btn-cta"
-        :disabled="step === 4 && pref.priorities.length < 1"
+        :disabled="
+          (step === 1 && !pref.workplace) ||
+          (step === 4 && pref.priorities.length < 1)
+        "
         @click="onNext"
       >
         {{ step === 4 ? '설정 완료' : '다음' }}
       </button>
     </div>
 
-    <LocationPickerModal
+    <KakaoLocation
       :open="isLocationPickerOpen"
       :initial-location="pref.workplace"
       @close="isLocationPickerOpen = false"
@@ -207,7 +210,7 @@
 <script setup>
 import { computed, reactive, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import LocationPickerModal from '@/components/LocationPickerModal.vue';
+import KakaoLocation from '@/components/KakaoLocation.vue';
 import PageHeader from '@/components/PageHeader.vue';
 
 const route = useRoute();
