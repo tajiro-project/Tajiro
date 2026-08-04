@@ -27,6 +27,8 @@ public class PropertyDetailDTO {
     private String floorInfo;
     private String address;
     private String dong;
+    private Integer roomNum;
+    private Integer bathroomNum;
     private String propertyDescription;
     private LocalDateTime availableDate;
     private Boolean discussionStatus;
@@ -54,6 +56,8 @@ public class PropertyDetailDTO {
                 .floorInfo(vo.getFloorInfo())
                 .address(vo.getAddress())
                 .dong(vo.getDong())
+                .roomNum(vo.getRoomNum())
+                .bathroomNum(vo.getBathroomNum())
                 .propertyDescription(vo.getPropertyDescription())
                 .availableDate(vo.getAvailableDate())
                 .discussionStatus(vo.getDiscussionStatus())
