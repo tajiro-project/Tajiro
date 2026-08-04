@@ -113,8 +113,7 @@
       <div v-if="pref.tradeTypes.length" class="range-card">
         <div
           v-if="
-            pref.tradeTypes.includes('월세') ||
-            pref.tradeTypes.includes('전세')
+            pref.tradeTypes.includes('월세') || pref.tradeTypes.includes('전세')
           "
           class="range-group"
         >
@@ -393,9 +392,7 @@ const depositJeonseLabel = computed(() =>
 const monthlyRentLabel = computed(() =>
   formatRange(pref.monthlyRentRange, 250),
 );
-const salePriceLabel = computed(() =>
-  formatRange(pref.salePriceRange, 400000),
-);
+const salePriceLabel = computed(() => formatRange(pref.salePriceRange, 400000));
 
 function toggle(list, value) {
   const i = list.indexOf(value);
