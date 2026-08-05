@@ -22,7 +22,10 @@ public enum ErrorCode {
     AUTH_REQUIRED(401, "AUTH_401_1", "인증이 만료되었거나 필요합니다."),
     INVALID_TOKEN(401, "AUTH_401_2", "유효하지 않은 토큰입니다."),
     EMAIL_DUPLICATE(409, "AUTH_409", "이미 사용 중인 이메일입니다."),
-    REQUIRED_TERMS_NOT_AGREED(400, "AUTH_400", "필수 약관에 동의해야 합니다.");
+    REQUIRED_TERMS_NOT_AGREED(400, "AUTH_400", "필수 약관에 동의해야 합니다."),
+
+    // --- 비교 리포트 ---
+    COMPARISON_REPORT_NOT_FOUND(404, "REPORT_404", "존재하지 않는 비교 리포트입니다.");
 
     private final int status;
     private final String code;
