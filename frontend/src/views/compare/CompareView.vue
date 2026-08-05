@@ -49,14 +49,10 @@
             AI 의사결정 코치
           </p>
 
-          <p v-if="coachingError" class="ai-p error">{{ coachingError }}</p>
-          <p v-else class="ai-p">
-            {{
-              coaching?.aiPropertySummaryText ??
-              '비교 코칭을 불러오는 중이에요...'
-            }}
+          <p v-if="aiPrimaryText" class="ai-p" :class="{ error: coachingError }">
+            {{ aiPrimaryText }}
           </p>
-          <p v-if="!coachingError" class="ai-p">{{ coaching?.aiSummary }}</p>
+          <p v-if="aiSecondaryText" class="ai-p">{{ aiSecondaryText }}</p>
         </section>
 
         <p v-if="warningText" class="warn">
@@ -317,6 +313,8 @@ const route = useRoute();
 const router = useRouter();
 
 const letters = ['A', 'B', 'C'];
+const AI_COACHING_UNAVAILABLE_MESSAGE =
+  'AI 코칭을 불러오지 못했어요. 잠시 후 다시 시도해주세요.';
 const colors = [
   { dot: '#ffbc00', fill: 'rgba(255, 205, 60, 0.45)', line: '#f0b400' },
   { dot: '#88a860', fill: 'rgba(136, 168, 96, 0.45)', line: '#6f9048' },
@@ -362,6 +360,17 @@ const hasAiRecommendation = computed(() =>
 const recommendedId = computed(() =>
   hasAiRecommendation.value ? coaching.value.aiRecommendedPropertyId : '',
 );
+const aiPrimaryText = computed(() => {
+  if (coachingError.value) return coachingError.value;
+  return coaching.value?.aiPropertySummaryText || AI_COACHING_UNAVAILABLE_MESSAGE;
+});
+
+const aiSecondaryText = computed(() => {
+  if (coachingError.value) return '';
+  const summary = coaching.value?.aiSummary ?? '';
+  return summary === aiPrimaryText.value ? '' : summary;
+});
+
 
 const warningText = computed(() => {
   const worst = [...metrics.value]
@@ -571,6 +580,9 @@ async function loadComparison() {
 
     if (savedReport) {
       coachingDto = createReportCoaching(savedReport);
+      if (!coachingDto.aiPropertySummaryText && !coachingDto.aiSummary) {
+        coachingError.value = AI_COACHING_UNAVAILABLE_MESSAGE;
+      }
     } else {
       try {
         coachingDto = await getCoaching(propertyIds);
@@ -609,10 +621,12 @@ async function getReportDetail(id) {
 }
 
 function createReportCoaching(report) {
+  const propertySummary = report.aiPropertySummaryText ?? '';
+  const summary = report.aiSummary ?? '';
+
   return {
-    aiPropertySummaryText:
-      report.aiPropertySummaryText ?? report.aiSummary ?? '',
-    aiSummary: report.aiSummary ?? report.aiPropertySummaryText ?? '',
+    aiPropertySummaryText: propertySummary || summary,
+    aiSummary: summary === propertySummary ? '' : summary,
     aiRecommendedPropertyId: report.aiRecommendedPropertyId,
     aiAtp: report.aiAtp,
   };
@@ -668,7 +682,7 @@ async function getCoaching(propertyIds) {
   } catch (error) {
     const message =
       error.response?.data?.message ??
-      'AI 비교 서버와 연결하지 못했습니다. 잠시 후 다시 시도해주세요.';
+      AI_COACHING_UNAVAILABLE_MESSAGE;
     throw new Error(message);
   }
 }
@@ -791,10 +805,13 @@ async function saveReport() {
     router.push('/reports');
   } catch (error) {
     savedMsgError.value = true;
+    savedMsg.value = getApiErrorMessage(
+      error,
+      '리포트 저장 중 오류가 발생했습니다.',
+    );
     if (import.meta.env.DEV) {
       console.warn('[api] comparison report save failed:', error);
     }
-    router.push('/reports');
   } finally {
     saving.value = false;
   }
@@ -802,11 +819,11 @@ async function saveReport() {
 
 
 function getReportPropertySummaryText() {
-  return coaching.value?.aiPropertySummaryText ?? coachingError.value ?? '';
+  return coaching.value?.aiPropertySummaryText ?? '';
 }
 
 function getReportSummaryText() {
-  return coaching.value?.aiSummary ?? coachingError.value ?? '';
+  return coaching.value?.aiSummary ?? '';
 }
 
 function shortName(title) {

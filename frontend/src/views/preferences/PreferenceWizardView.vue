@@ -162,6 +162,20 @@
         </div>
       </div>
 
+      <div class="area-group">
+        <p class="range-title">
+          매물 면적
+          <span class="range-value">{{ areaLabel }}</span>
+        </p>
+        <DualSlider
+          v-model="pref.areaRange"
+          :min="AREA_MIN_M2"
+          :max="AREA_MAX_M2"
+          :step="AREA_STEP_M2"
+          :marks="AREA_MARKS"
+        />
+      </div>
+
       <div class="group">
         <p class="section-title">매물 층수</p>
         <div class="chips">
@@ -218,7 +232,10 @@
 
     <!-- STEP 4 — 가치관 우선순위 (1~3개 선택) -->
     <div v-else class="content">
-      <p class="section-title big">주거 가치관 우선순위</p>
+      <div class="priority-head">
+        <p class="section-title big">주거 가치관 우선순위</p>
+        <p class="caption">중요한 순서대로 최대 3개까지 선택하세요.</p>
+      </div>
       <div class="priority-list">
         <button
           v-for="opt in PRIORITY_OPTIONS"
@@ -237,9 +254,6 @@
           }}</span>
         </button>
       </div>
-      <p v-if="maxWarning" class="max-warning">
-        우선순위는 최대 {{ MAX_PRIORITY_SELECTIONS }}개까지 선택할 수 있어요.
-      </p>
     </div>
 
     <div class="fixed-footer">
@@ -295,6 +309,12 @@ import {
 
 const route = useRoute();
 const router = useRouter();
+const AREA_MIN_M2 = 0;
+const AREA_MAX_M2 = 200;
+const AREA_STEP_M2 = 5;
+const AREA_MARKS = ['0', '50m²', '100m²', '150m²', '200m²'];
+const PYEONG_M2 = 3.3058;
+
 const pref = reactive({
   workplace: null,
   hasCar: false,
@@ -314,6 +334,7 @@ const pref = reactive({
     PREFERENCE_SLIDER_CONFIG.SALE_PRICE.min,
     PREFERENCE_SLIDER_CONFIG.SALE_PRICE.max,
   ],
+  areaRange: [AREA_MIN_M2, AREA_MAX_M2],
   floorPreference: [],
   desiredInfraCategories: [],
   desireAmenityCategories: [],
@@ -355,6 +376,17 @@ const monthlyRentLabel = computed(() =>
 const salePriceLabel = computed(() =>
   formatRange(pref.salePriceRange, PREFERENCE_SLIDER_CONFIG.SALE_PRICE.max),
 );
+const areaLabel = computed(() => {
+  const [low, high] = pref.areaRange;
+  const lowLabel =
+    low <= AREA_MIN_M2 ? '최소' : `${low}m² (${Math.floor(low / PYEONG_M2)}평)`;
+  const highLabel =
+    high >= AREA_MAX_M2
+      ? '최대'
+      : `${high}m² (${Math.floor(high / PYEONG_M2)}평)`;
+
+  return `${lowLabel} ~ ${highLabel}`;
+});
 
 function toggle(list, value) {
   const i = list.indexOf(value);
@@ -362,7 +394,6 @@ function toggle(list, value) {
   else list.push(value);
 }
 
-const maxWarning = ref(false);
 function onTogglePriority(criterion) {
   const index = pref.priorities.findIndex(
     (priority) => priority.criterion === criterion,
@@ -373,20 +404,15 @@ function onTogglePriority(criterion) {
     pref.priorities.forEach((priority, priorityIndex) => {
       priority.priorityOrder = priorityIndex + 1;
     });
-    maxWarning.value = false;
     return;
   }
 
-  const ok = pref.priorities.length < MAX_PRIORITY_SELECTIONS;
-  if (ok) {
-    pref.priorities.push({
-      criterion,
-      priorityOrder: pref.priorities.length + 1,
-    });
-  }
+  if (pref.priorities.length >= MAX_PRIORITY_SELECTIONS) return;
 
-  maxWarning.value = !ok;
-  if (ok) setTimeout(() => (maxWarning.value = false), 0);
+  pref.priorities.push({
+    criterion,
+    priorityOrder: pref.priorities.length + 1,
+  });
 }
 function priorityOrder(criterion) {
   return (
@@ -557,16 +583,29 @@ function onNext() {
   flex-direction: column;
   gap: 8px;
 }
+.area-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px 0 18px;
+}
 .range-title {
   display: flex;
   align-items: center;
-  gap: 6px;
+  justify-content: space-between;
+  gap: 12px;
   font-size: 13.5px;
   font-weight: 800;
 }
 .range-value {
+  margin-left: auto;
+  text-align: right;
   color: var(--kb-gray);
   font-weight: 500;
+}
+.priority-head {
+  display: flex;
+  flex-direction: column;
 }
 .priority-list {
   display: flex;
@@ -627,11 +666,6 @@ function onNext() {
   font-size: 12.5px;
   font-weight: 800;
   flex-shrink: 0;
-}
-.max-warning {
-  margin-top: 10px;
-  font-size: 12px;
-  color: var(--danger);
 }
 .fixed-footer {
   flex-shrink: 0;
