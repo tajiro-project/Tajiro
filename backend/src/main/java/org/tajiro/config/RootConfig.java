@@ -27,6 +27,7 @@ import javax.sql.DataSource;
 @PropertySource("classpath:application.properties")
 @EnableTransactionManagement
 @MapperScan(basePackages = {
+        "org.tajiro.auth.mapper",
         "org.tajiro.terms.mapper",
         "org.tajiro.user.mapper",
         "org.tajiro.property.mapper",
@@ -38,6 +39,7 @@ import javax.sql.DataSource;
 })
 @ComponentScan(basePackages = {
         "org.tajiro.auth.service",
+        "org.tajiro.security.jwt",
         "org.tajiro.terms.service",
         "org.tajiro.user.service",
         "org.tajiro.property.service",

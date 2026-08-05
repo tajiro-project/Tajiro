@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="cbox">
     <header class="local-header">
       <button class="back" type="button" aria-label="뒤로 가기" @click="goBack">‹</button>
@@ -27,7 +27,12 @@
 
           <div class="item-card">
             <span class="thumb">
-              <img v-if="item.thumbnailUrl" :src="item.thumbnailUrl" alt="" />
+              <img
+                v-if="item.thumbnailUrl && !imageErrorIds.includes(item.propertyId)"
+                :src="item.thumbnailUrl"
+                alt=""
+                @error="markImageError(item.propertyId)"
+              />
               <svg v-else width="26" height="26" viewBox="0 0 30 30" fill="none">
                 <path d="M4 13.5L15 5l11 8.5" stroke="#8a8477" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                 <path d="M7 12v12h16V12" stroke="#8a8477" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
@@ -50,10 +55,11 @@
         </li>
       </ul>
 
-      <button class="add-btn" type="button" @click="router.push('/properties')">
+      <button class="add-btn" type="button" @click="goPropertyListForAdd">
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2v10M2 7h10" stroke="#545045" stroke-width="1.5" stroke-linecap="round" /></svg>
         매물 리스트에서 추가하기
       </button>
+      <p v-if="toastMessage" class="toast-msg">{{ toastMessage }}</p>
 
       <p class="tip">
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1.5a4.2 4.2 0 00-2.4 7.6c.5.4.9 1 .9 1.6v.3h3v-.3c0-.6.4-1.2.9-1.6A4.2 4.2 0 007 1.5z" stroke="#8a8477" stroke-width="1.2" /><path d="M5.8 12.5h2.4" stroke="#8a8477" stroke-width="1.2" stroke-linecap="round" /></svg>
@@ -64,14 +70,17 @@
         비교 시작 ({{ checkedIds.length }}개)
       </button>
     </div>
+
+    <AppTabBar active="compare" />
   </div>
 </template>
 
 <script setup>
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import client, { withMock } from '@/api/client'
-import { mockCompareBox } from '@/api/mockData'
+import AppTabBar from '@/components/AppTabBar.vue'
+import { getApiErrorMessage } from '@/api/client'
+import { comparisonApi } from '@/api/services'
 
 const router = useRouter()
 
@@ -80,6 +89,9 @@ const deletingId = ref('')
 const errorMessage = ref('')
 const items = ref([])
 const checkedIds = ref([])
+const imageErrorIds = ref([])
+const toastMessage = ref('')
+let toastTimer = null
 
 onMounted(loadCompareBox)
 
@@ -88,12 +100,17 @@ async function loadCompareBox() {
   errorMessage.value = ''
 
   try {
-    const data = await withMock(() => client.get('/users/me/compare'), mockCompareBox)
-    const nextItems = Array.isArray(data) ? data : data?.items ?? []
+    const data = await comparisonApi.box()
+    const payload = data?.data ?? data
+    const nextItems = Array.isArray(payload) ? payload : payload?.items ?? []
     items.value = nextItems.slice(0, 3)
     checkedIds.value = items.value.slice(0, 3).map((item) => item.propertyId)
+    imageErrorIds.value = []
   } catch (error) {
-    errorMessage.value = error?.message ?? '비교함을 불러오지 못했어요.'
+    errorMessage.value = getApiErrorMessage(
+      error,
+      '비교함 서버와 연결하지 못했습니다. 잠시 후 다시 시도해주세요.',
+    )
   } finally {
     loading.value = false
   }
@@ -109,19 +126,46 @@ async function removeItem(propertyId) {
   deletingId.value = propertyId
 
   try {
-    await withMock(() => client.delete(`/users/me/compare/${propertyId}`), {})
+    await comparisonApi.removeFromBox(propertyId)
     items.value = items.value.filter((item) => item.propertyId !== propertyId)
     checkedIds.value = checkedIds.value.filter((id) => id !== propertyId)
   } catch (error) {
-    errorMessage.value = error?.message ?? '삭제 중 오류가 발생했어요.'
+    errorMessage.value = getApiErrorMessage(
+      error,
+      '비교함 서버와 연결하지 못해 삭제하지 못했습니다.',
+    )
   } finally {
     deletingId.value = ''
   }
 }
 
+function markImageError(propertyId) {
+  if (!imageErrorIds.value.includes(propertyId)) {
+    imageErrorIds.value.push(propertyId)
+  }
+}
+
 function startCompare() {
   if (checkedIds.value.length < 2) return
-  router.push({ path: '/compare', query: { ids: checkedIds.value.join(',') } })
+  router.push({ path: '/compare', query: { propertyIds: checkedIds.value } })
+}
+
+function goPropertyListForAdd() {
+  if (items.value.length >= 3) {
+    showToast('비교함에는 최대 3개까지만 담을 수 있어요.\n매물을 삭제한 뒤 추가해주세요.')
+    return
+  }
+
+  router.push('/properties')
+}
+
+function showToast(message) {
+  toastMessage.value = message
+  if (toastTimer) clearTimeout(toastTimer)
+  toastTimer = setTimeout(() => {
+    toastMessage.value = ''
+    toastTimer = null
+  }, 2200)
 }
 
 function goBack() {
@@ -149,7 +193,7 @@ function formatArea(areaM2) {
 }
 
 function formatFee(item) {
-  const fee = item.maintenanceFee ?? item.maintenaceFee
+  const fee = item.maintenanceFee
   if (fee === null || fee === undefined || fee === '') return '-'
   return `${Number(fee).toLocaleString('ko-KR')}만`
 }
@@ -312,6 +356,25 @@ function formatFee(item) {
 }
 .remove:disabled {
   opacity: 0.45;
+}
+.toast-msg {
+  position: fixed;
+  left: 50%;
+  bottom: 92px;
+  z-index: 80;
+  width: max-content;
+  max-width: min(300px, calc(100% - 72px));
+  transform: translateX(-50%);
+  padding: 9px 12px;
+  border-radius: 10px;
+  background: rgba(33, 30, 24, 0.92);
+  color: #fff;
+  font-size: 11.5px;
+  font-weight: 700;
+  line-height: 1.4;
+  text-align: center;
+  white-space: pre-line;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.16);
 }
 .add-btn {
   display: flex;

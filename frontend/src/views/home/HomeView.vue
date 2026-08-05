@@ -75,7 +75,7 @@
             <section class="quick-menu">
                 <p class="section-title">무엇을 도와드릴까요?</p>
 
-                <button class="menu-card primary" type="button" @click="router.push('/properties')">
+                <button class="menu-card primary" type="button" @click="router.push('/preferences/1')">
                     <span class="menu-icon primary">
                         <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                             <path d="M10 2c-3 0-5.5 2.4-5.5 5.5 0 4 5.5 10.5 5.5 10.5s5.5-6.5 5.5-10.5C15.5 4.4 13 2 10 2z" stroke="#545045" stroke-width="1.6" stroke-linejoin="round" />
@@ -116,6 +116,8 @@
         </div>
 
         <AppTabBar active="home" />
+
+        <KakaoLocation :open="isLocationPickerOpen" @close="isLocationPickerOpen = false" @select="onLocationSelected" />
     </div>
 </template>
 
@@ -125,9 +127,11 @@ import { useRouter } from 'vue-router';
 import client, { withMock } from '@/api/client';
 import { mockDashboard } from '@/api/mockData';
 import AppTabBar from '@/components/AppTabBar.vue';
+import KakaoLocation from '@/components/KakaoLocation.vue';
 
 const router = useRouter();
 const targetRegion = ref('');
+const isLocationPickerOpen = ref(false);
 
 onMounted(loadTargetRegion);
 
@@ -141,7 +145,11 @@ async function loadTargetRegion() {
 }
 
 function goRegionSearch() {
-    router.push('/location-search');
+    isLocationPickerOpen.value = true;
+}
+
+function onLocationSelected(location) {
+    router.push({ path: '/properties', query: { region: location.name } });
 }
 </script>
 
