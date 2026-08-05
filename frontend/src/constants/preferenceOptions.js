@@ -9,7 +9,7 @@ export const PREFERENCE_STEP_COUNT = PREFERENCE_STEP_LABELS.length;
 
 export const MAX_PRIORITY_SELECTIONS = 3;
 
-export const HOUSING_OPTIONS = ['원/투룸', '아파트', '주택/빌라', '오피스텔'];
+export const HOUSING_OPTIONS = ['원룸', '아파트', '주택/빌라', '오피스텔'];
 
 export const TRADE_OPTIONS = ['월세', '전세', '매매'];
 
