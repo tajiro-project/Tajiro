@@ -88,11 +88,6 @@ const routes = [
     name: 'login',
     component: () => import('@/views/auth/LoginView.vue'),
   },
-  {
-    path: '/location-search',
-    name: 'location-search',
-    component: () => import('@/views/location/LocationSearchView.vue'),
-  },
 ];
 
 const router = createRouter({
