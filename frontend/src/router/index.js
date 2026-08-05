@@ -84,6 +84,11 @@ const routes = [
     component: () => import('@/views/favorite/FavoriteListView.vue'),
   },
   {
+    path: '/profile-setup',
+    name: 'profile-setup',
+    component: () => import('@/views/profile/ProfileSetupView.vue'),
+  },
+  {
     path: '/register',
     name: 'register',
     component: () => import('@/views/auth/RegisterView.vue'),
