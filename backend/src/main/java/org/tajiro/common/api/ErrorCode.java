@@ -14,6 +14,10 @@ public enum ErrorCode {
     // --- 서버 에러 (500) ---
     INTERNAL_SERVER_ERROR(500, "SERVER_500", "서버 내부 오류가 발생했습니다."),
 
+    // --- AI 코칭 ---
+    AI_API_KEY_NOT_CONFIGURED(503, "AI_503_1", "AI API 키가 설정되지 않았습니다."),
+    AI_COACHING_UNAVAILABLE(503, "AI_503_2", "AI 코칭을 불러오지 못했어요. 잠시 후 다시 시도해주세요."),
+
     // --- 매물 (Property) ---
     PROPERTY_NOT_FOUND(404, "PROP_404", "존재하지 않거나 삭제된 매물입니다."),
 

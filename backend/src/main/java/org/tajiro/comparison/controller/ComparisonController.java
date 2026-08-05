@@ -9,10 +9,14 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.tajiro.comparison.dto.ComparisonAnalysisRequestDTO;
+import org.tajiro.comparison.dto.ComparisonAnalysisResponseDTO;
 import org.tajiro.comparison.dto.ComparePropertyDTO;
 import org.tajiro.comparison.dto.ComparisonMetricsResponseDTO;
+import org.tajiro.comparison.service.ComparisonAiService;
 import org.tajiro.comparison.service.ComparisonService;
 
 import java.util.List;
@@ -27,6 +31,7 @@ public class ComparisonController {
     private static final Long MOCK_USER_ID = 1L;
 
     private final ComparisonService comparisonService;
+    private final ComparisonAiService comparisonAiService;
 
     @GetMapping("/users/me/compare")
     public ResponseEntity<List<ComparePropertyDTO>> getCompareProperties() {
@@ -50,5 +55,11 @@ public class ComparisonController {
             @RequestParam List<Long> propertyIds) {
         return ResponseEntity.ok(
                 comparisonService.getComparisonMetrics(MOCK_USER_ID, propertyIds));
+    }
+
+    @PostMapping("/comparisons/analyze")
+    public ResponseEntity<ComparisonAnalysisResponseDTO> analyzeComparison(
+            @RequestBody ComparisonAnalysisRequestDTO request) {
+        return ResponseEntity.ok(comparisonAiService.analyze(MOCK_USER_ID, request));
     }
 }

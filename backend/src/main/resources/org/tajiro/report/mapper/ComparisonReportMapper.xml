@@ -4,15 +4,6 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="org.tajiro.report.mapper.ComparisonReportMapper">
 
-    <select id="countExistingProperties" resultType="int">
-        SELECT COUNT(*)
-        FROM property
-        WHERE id IN
-        <foreach collection="propertyIds" item="propertyId" open="(" separator="," close=")">
-            #{propertyId}
-        </foreach>
-    </select>
-
     <insert id="insert"
             parameterType="org.tajiro.report.domain.ComparisonReportVO"
             useGeneratedKeys="true"
@@ -23,6 +14,7 @@
             ai_recommended_property_id,
             title,
             compared_property_ids,
+            preference_priorities,
             ai_property_summary_text,
             ai_summary,
             saved,
@@ -33,9 +25,10 @@
             #{aiRecommendedPropertyId},
             #{title},
             CAST(#{comparedPropertyIdsJson} AS JSON),
+            CAST(#{preferencePrioritiesJson} AS JSON),
             #{aiPropertySummaryText},
             #{aiSummary},
-            1,
+            #{saved},
             #{aiAtp},
             NOW()
         )
@@ -48,8 +41,10 @@
                ai_recommended_property_id,
                title,
                CAST(compared_property_ids AS CHAR) AS compared_property_ids_json,
+               CAST(preference_priorities AS CHAR) AS preference_priorities_json,
                ai_property_summary_text,
                ai_summary,
+               saved,
                ai_atp,
                created_at
         FROM comparison_report
@@ -58,27 +53,50 @@
         ORDER BY created_at DESC, id DESC
     </select>
 
-    <select id="findSavedBySameProperties"
+    <select id="findReusable"
             resultType="org.tajiro.report.domain.ComparisonReportVO">
         SELECT id AS report_id,
                user_id,
                ai_recommended_property_id,
                title,
                CAST(compared_property_ids AS CHAR) AS compared_property_ids_json,
+               CAST(preference_priorities AS CHAR) AS preference_priorities_json,
                ai_property_summary_text,
                ai_summary,
+               saved,
                ai_atp,
                created_at
         FROM comparison_report
         WHERE user_id = #{userId}
-          AND saved = 1
+          AND JSON_LENGTH(compared_property_ids) = #{propertyCount}
+          AND JSON_CONTAINS(compared_property_ids, CAST(#{propertyIdsJson} AS JSON))
+          AND JSON_CONTAINS(CAST(#{propertyIdsJson} AS JSON), compared_property_ids)
+          AND preference_priorities = CAST(#{preferencePrioritiesJson} AS JSON)
+        ORDER BY created_at DESC, id DESC
+        LIMIT 1
+    </select>
+
+    <select id="findLatestBySameProperties"
+            resultType="org.tajiro.report.domain.ComparisonReportVO">
+        SELECT id AS report_id,
+               user_id,
+               ai_recommended_property_id,
+               title,
+               CAST(compared_property_ids AS CHAR) AS compared_property_ids_json,
+               CAST(preference_priorities AS CHAR) AS preference_priorities_json,
+               ai_property_summary_text,
+               ai_summary,
+               saved,
+               ai_atp,
+               created_at
+        FROM comparison_report
+        WHERE user_id = #{userId}
           AND JSON_LENGTH(compared_property_ids) = #{propertyCount}
           AND JSON_CONTAINS(compared_property_ids, CAST(#{propertyIdsJson} AS JSON))
           AND JSON_CONTAINS(CAST(#{propertyIdsJson} AS JSON), compared_property_ids)
         ORDER BY created_at DESC, id DESC
         LIMIT 1
     </select>
-
     <select id="findByIdAndUserId"
             resultType="org.tajiro.report.domain.ComparisonReportVO">
         SELECT id AS report_id,
@@ -86,8 +104,10 @@
                ai_recommended_property_id,
                title,
                CAST(compared_property_ids AS CHAR) AS compared_property_ids_json,
+               CAST(preference_priorities AS CHAR) AS preference_priorities_json,
                ai_property_summary_text,
                ai_summary,
+               saved,
                ai_atp,
                created_at
         FROM comparison_report
@@ -95,6 +115,27 @@
           AND user_id = #{userId}
           AND saved = 1
     </select>
+
+    <update id="updateGeneratedReport"
+            parameterType="org.tajiro.report.domain.ComparisonReportVO">
+        UPDATE comparison_report
+        SET ai_recommended_property_id = #{aiRecommendedPropertyId},
+            title = #{title},
+            preference_priorities = CAST(#{preferencePrioritiesJson} AS JSON),
+            ai_property_summary_text = #{aiPropertySummaryText},
+            ai_summary = #{aiSummary},
+            ai_atp = #{aiAtp},
+            created_at = NOW()
+        WHERE id = #{reportId}
+          AND user_id = #{userId}
+    </update>
+
+    <update id="markSaved">
+        UPDATE comparison_report
+        SET saved = 1
+        WHERE id = #{reportId}
+          AND user_id = #{userId}
+    </update>
 
     <select id="findPropertyIdsByJson" resultType="long">
         SELECT report_property.property_id
@@ -131,9 +172,11 @@
         ORDER BY report_property.sort_order
     </select>
 
-    <delete id="deleteByIdAndUserId">
-        DELETE FROM comparison_report
+    <update id="markUnsaved">
+        UPDATE comparison_report
+        SET saved = 0
         WHERE id = #{reportId}
           AND user_id = #{userId}
-    </delete>
+          AND saved = 1
+    </update>
 </mapper>

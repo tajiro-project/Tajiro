@@ -125,5 +125,11 @@ export const comparisonApi = {
       })
     ).data,
   analyze: async (propertyIds) =>
-    (await client.post("/comparisons/analyze", { propertyIds })).data,
+    (
+      await client.post(
+        "/comparisons/analyze",
+        { propertyIds },
+        { timeout: 35000 },
+      )
+    ).data,
 };
