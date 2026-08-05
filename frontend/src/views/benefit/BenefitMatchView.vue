@@ -51,46 +51,9 @@
         <li v-for="p in paginatedPolicies" :key="p.id">
           <button class="item-card" @click="$router.push(`/policies/${p.id}`)">
             <p class="item-title">{{ p.title }}</p>
-            <p class="item-amount">{{ shortAmount(p.benefitAmount) }}</p>
+            <p class="item-amount">{{ shortAmount(p.sumDescription) }}</p>
           </button>
         </li>
-        <nav
-          v-if="activeItems.length > 0"
-          class="pagination"
-          aria-label="목록 페이지 이동"
-        >
-          <button
-            class="page-arrow"
-            type="button"
-            :disabled="currentPage === 1"
-            aria-label="이전 페이지"
-            @click="movePage(currentPage - 1)"
-          >
-            ‹
-          </button>
-
-          <button
-            v-for="page in visiblePages"
-            :key="page"
-            type="button"
-            class="page-number"
-            :class="{ active: currentPage === page }"
-            :aria-current="currentPage === page ? 'page' : undefined"
-            @click="movePage(page)"
-          >
-            {{ page }}
-          </button>
-
-          <button
-            class="page-arrow"
-            type="button"
-            :disabled="currentPage === totalPages"
-            aria-label="다음 페이지"
-            @click="movePage(currentPage + 1)"
-          >
-            ›
-          </button>
-        </nav>
       </ul>
 
       <!-- KB 금융 상품 리스트 -->
@@ -195,7 +158,7 @@
 import { computed, onMounted, ref, watch } from 'vue';
 import PageHeader from '@/components/PageHeader.vue';
 import AppTabBar from '@/components/AppTabBar.vue';
-import { financeApi } from '@/api/services';
+import { financeApi, policyApi } from '@/api/services';
 
 const props = defineProps({
   initialTab: { type: String, default: 'policy' },
@@ -214,7 +177,7 @@ onMounted(async () => {
   // 프로필(지역·생년월일) 미입력 시 12-1 모달 노출
   // if (!profile || !profile.targetRegion || !profile.birthDate)
   //   needProfile.value = true;
-  // policies.value = (await policyApi.matches()) ?? [];
+  policies.value = (await policyApi.matches()) ?? [];
   products.value = (await financeApi.matches()) ?? [];
 });
 
