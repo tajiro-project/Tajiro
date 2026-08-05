@@ -214,8 +214,8 @@ function confirmLocation() {
 }
 
 .map-box {
-    flex: 1;
-    min-height: 200px;
+    flex-shrink: 0;
+    height: 220px;
     background: var(--yellow-tint);
     border: 1px solid var(--border);
     border-radius: 14px;
