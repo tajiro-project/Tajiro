@@ -117,8 +117,7 @@ import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import PageHeader from '@/components/PageHeader.vue';
 import AppTabBar from '@/components/AppTabBar.vue';
-import client, { withMock } from '@/api/client';
-import { mockReports } from '@/api/mockData';
+import client, { getApiErrorMessage } from '@/api/client';
 
 const router = useRouter();
 const letters = ['A', 'B', 'C'];
@@ -136,18 +135,17 @@ async function loadReports() {
   deleteError.value = '';
 
   try {
-    //API 요청
-    const data = await withMock(
-      () => client.get('/users/me/comparison-reports'),
-      mockReports,
-    );
-    const payload = data?.data ?? data;
+    const response = await client.get('/comparison-reports');
+    const payload = response.data;
     const nextReports = Array.isArray(payload)
       ? payload
       : (payload?.items ?? []);
     reports.value = nextReports;
   } catch (error) {
-    errorMessage.value = error?.message ?? '리포트 보관함을 불러오지 못했어요.';
+    errorMessage.value = getApiErrorMessage(
+      error,
+      '리포트 보관함 서버와 연결하지 못했습니다.',
+    );
   } finally {
     loading.value = false;
   }
@@ -186,9 +184,15 @@ function recommendedOf(r) {
   return r.aiRecommendedPropertyId ?? '';
 }
 function summaryOf(r) {
-  return (
-    r.aiSummary ?? r.aiPropertySummaryText ?? '저장된 AI 코칭 요약이 없어요.'
+  return firstText(
+    r.aiSummary,
+    r.aiPropertySummaryText,
+    'AI 코칭을 아직 불러오지 못했어요.',
   );
+}
+
+function firstText(...values) {
+  return values.find((value) => String(value ?? '').trim()) ?? '';
 }
 
 async function removeReport(r) {
@@ -196,13 +200,13 @@ async function removeReport(r) {
   deleteError.value = '';
 
   try {
-    await withMock(
-      () => client.delete(`/comparison-reports/${r.reportId}`),
-      {},
-    );
+    await client.delete(`/comparison-reports/${r.reportId}`);
     reports.value = reports.value.filter((x) => x.reportId !== r.reportId);
   } catch (error) {
-    deleteError.value = error?.message ?? '리포트 삭제 중 오류가 발생했어요.';
+    deleteError.value = getApiErrorMessage(
+      error,
+      '리포트 삭제 중 오류가 발생했어요.',
+    );
   } finally {
     deletingId.value = '';
   }
