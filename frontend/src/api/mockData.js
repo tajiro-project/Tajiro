@@ -494,44 +494,6 @@ export const mockRegions = [
   },
 ];
 
-export const mockLocations = [
-  {
-    name: "창원대학교",
-    address: "경남 창원시 의창구 창원대학로 20",
-    latitude: 35.2339,
-    longitude: 128.6212,
-    buildingCode: "B4812401",
-  },
-  {
-    name: "창원대학교 창의관",
-    address: "경남 창원시 의창구 퇴촌로 42",
-    latitude: 35.2345,
-    longitude: 128.622,
-    buildingCode: "B4812402",
-  },
-  {
-    name: "LG전자 창원1공장",
-    address: "경남 창원시 성산구 완암로 84",
-    latitude: 35.2101,
-    longitude: 128.6733,
-    buildingCode: "B4812301",
-  },
-  {
-    name: "창원시청",
-    address: "경남 창원시 의창구 중앙대로 151",
-    latitude: 35.2281,
-    longitude: 128.6811,
-    buildingCode: "B4812101",
-  },
-  {
-    name: "상남동 스타벅스",
-    address: "경남 창원시 성산구 상남로 77",
-    latitude: 35.2226,
-    longitude: 128.6819,
-    buildingCode: "B4812302",
-  },
-];
-
 export const mockDashboard = {
   name: "김민주",
   targetRegion: "경남 창원시",

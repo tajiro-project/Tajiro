@@ -116,6 +116,8 @@
         </div>
 
         <AppTabBar active="home" />
+
+        <KakaoLocation :open="isLocationPickerOpen" @close="isLocationPickerOpen = false" @select="onLocationSelected" />
     </div>
 </template>
 
@@ -125,9 +127,11 @@ import { useRouter } from 'vue-router';
 import client, { withMock } from '@/api/client';
 import { mockDashboard } from '@/api/mockData';
 import AppTabBar from '@/components/AppTabBar.vue';
+import KakaoLocation from '@/components/KakaoLocation.vue';
 
 const router = useRouter();
 const targetRegion = ref('');
+const isLocationPickerOpen = ref(false);
 
 onMounted(loadTargetRegion);
 
@@ -141,7 +145,11 @@ async function loadTargetRegion() {
 }
 
 function goRegionSearch() {
-    router.push('/location-search');
+    isLocationPickerOpen.value = true;
+}
+
+function onLocationSelected(location) {
+    router.push({ path: '/properties', query: { region: location.name } });
 }
 </script>
 
