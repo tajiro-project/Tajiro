@@ -1,23 +1,39 @@
 package org.tajiro.security.config;
 
+import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.tajiro.security.jwt.JwtAuthenticationFilter;
+import org.tajiro.security.jwt.JwtProvider;
 
 /**
  * Spring Security 설정 (JWT · 세션 미사용).
  *
- * <p>스켈레톤 단계에서는 모든 요청을 허용합니다. 인증 서비스를 구현한 뒤
- * JwtAuthenticationFilter를 UsernamePasswordAuthenticationFilter 앞에 추가하고
- * 보호가 필요한 경로를 authenticated()로 바꾸세요.
+ * <p>JwtAuthenticationFilter가 Authorization 헤더의 accessToken을 읽어 SecurityContext에
+ * 인증 정보를 채운다. 다만 auth 도메인(#67) 범위에서는 다른 도메인 컨트롤러들이 아직
+ * X-USER-ID 헤더 기반으로 동작 중이라 anyRequest()는 permitAll을 유지한다 — 각 도메인을
+ * @AuthenticationPrincipal 기반으로 옮기는 건 별도 이슈에서 진행.
  */
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 @SuppressWarnings("deprecation")
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
+
+    private final JwtProvider jwtProvider;
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
 
     @Override
     public void configure(WebSecurity web) {
@@ -38,38 +54,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .and()
                 .authorizeRequests()
                 .antMatchers("/api/auth/**", "/api/terms/**").permitAll()
-                .anyRequest().permitAll();
-
-        // ------------------------------------------------------------------
-        // JWT 인증을 붙일 때 아래를 함께 적용하세요.
-        //
-        // 1) 지금은 anyRequest().permitAll() 이라 프리플라이트(OPTIONS)도 통과하고
-        //    CORS는 WebConfig.addCorsMappings(MVC 계층)가 처리합니다.
-        //    보호 경로를 authenticated() 로 바꾸는 순간, 프리플라이트가 시큐리티
-        //    필터에서 먼저 막혀 프론트에 CORS 에러로 보입니다. 그때 아래가 필요합니다.
-        //
-        //    .cors().configurationSource(corsConfigurationSource()).and()
-        //    .authorizeRequests()
-        //    .antMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-        //
-        //    @Bean
-        //    public CorsConfigurationSource corsConfigurationSource() {
-        //        CorsConfiguration config = new CorsConfiguration();
-        //        config.setAllowedOrigins(List.of("http://localhost:5173"));
-        //        config.setAllowedMethods(List.of("GET","POST","PUT","PATCH","DELETE","OPTIONS"));
-        //        config.setAllowedHeaders(List.of("*"));
-        //        config.setAllowCredentials(true);
-        //        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        //        source.registerCorsConfiguration("/api/**", config);
-        //        return source;
-        //    }
-        //
-        //    ※ .cors() 를 쓸 때 CorsConfigurationSource 빈이 없으면
-        //      "No bean named 'mvcHandlerMappingIntrospector' available" 로 기동에 실패합니다
-        //      (SecurityConfig는 루트 컨텍스트, 해당 빈은 서블릿 컨텍스트에 있음).
-        //
-        // 2) http.addFilterBefore(jwtAuthenticationFilter,
-        //                         UsernamePasswordAuthenticationFilter.class);
-        // ------------------------------------------------------------------
+                .anyRequest().permitAll()
+                .and()
+                .addFilterBefore(new JwtAuthenticationFilter(jwtProvider), UsernamePasswordAuthenticationFilter.class);
     }
 }

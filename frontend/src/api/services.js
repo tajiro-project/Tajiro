@@ -22,11 +22,8 @@ export const financeApi = {
 
 // ---------- property ----------
 export const propertyApi = {
-  list: (params) =>
-    withMock(
-      () => client.get("/properties", { params }),
-      () => ({ items: mock.mockProperties, totalCount: 12, page: 1 }),
-    ),
+  getPropertyDetail: async (propertyId) =>
+    (await client.get(`/properties/${propertyId}`)).data,
   recommended: () =>
     withMock(() => client.get("/properties/recommended"), mock.mockProperties),
   detail: (id) =>
