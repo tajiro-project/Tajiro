@@ -8,8 +8,15 @@
         <setting name="jdbcTypeForNull" value="NULL"/>
     </settings>
     <typeAliases>
-        <typeAlias alias="BuildingVO" type="org.tajiro.property.domain.BuildingVO"/>
         <typeAlias alias="PropertyVO" type="org.tajiro.property.domain.PropertyVO"/>
         <typeAlias alias="PropertySearchRequest" type="org.tajiro.property.dto.PropertySearchRequest"/>
+        <typeAlias alias="UserVO" type="org.tajiro.auth.domain.UserVO"/>
+        <typeAlias alias="FinanceVO" type="org.tajiro.finance.domain.FinanceVO"/>
+        <typeAlias alias="PolicyVO" type="org.tajiro.policy.domain.PolicyVO"/>
+        <typeAlias alias="UserProfileVO" type="org.tajiro.user.domain.UserProfileVO"/>
+        <typeAlias alias="PropertyDetailVO" type="org.tajiro.property.domain.PropertyDetailVO"/>
+        <typeAlias alias="InfraSummaryDTO" type="org.tajiro.property.dto.PropertyDetailDTO$InfraSummaryDTO"/>
+        <typeAlias alias="BuildingVO" type="org.tajiro.property.domain.BuildingVO"/>
+        <typeAlias alias="InfrastructureInfoDTO" type="org.tajiro.property.dto.PropertyInfrastructureDTO$InfrastructureInfoDTO"/>
     </typeAliases>
 </configuration>
