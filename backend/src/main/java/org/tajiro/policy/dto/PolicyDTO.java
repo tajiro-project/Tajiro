@@ -21,13 +21,15 @@ public class PolicyDTO {
     private Long id;
     private String title;
     private String region;
-    private String targetMinAge;
-    private String targetMaxAge;
+    private String minAge;
+    private String maxAge;
     private Integer benefitAmount;
     private String applicationPeriod;
     private String agency;
     private String applyMethod;
     private String requiredDocuments;
+    private String description;
+    private String sumDescription;
 
 
 
@@ -39,13 +41,15 @@ public class PolicyDTO {
                 .id(vo.getId())
                 .title(vo.getTitle())
                 .region(vo.getRegion())
-                .targetMinAge(vo.getTargetMinAge())
-                .targetMaxAge(vo.getTargetMaxAge())
+                .minAge(vo.getMinAge())
+                .maxAge(vo.getMaxAge())
                 .benefitAmount(vo.getBenefitAmount())
                 .applicationPeriod(vo.getApplicationPeriod())
                 .agency(vo.getAgency())
                 .applyMethod(vo.getApplyMethod())
                 .requiredDocuments(vo.getRequiredDocuments())
+                .description(vo.getDescription())
+                .sumDescription(vo.getSumDescription())
                 .build();
     }
 }
