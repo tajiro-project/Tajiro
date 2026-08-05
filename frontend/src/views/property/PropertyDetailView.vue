@@ -146,27 +146,71 @@
         </div>
       </div>
 
-      <div class="mini-card wide">
+      <!-- 인프라 및 편의시설 분리 카드 -->
+      <div class="mini-card wide compact">
         <p class="mini-label">
           <Building2 :size="14" color="#8a8d8f" />
-          인프라
+          인프라 및 편의시설
         </p>
-        <p class="mini-value">
-          <template v-if="formattedInfraSummary.length > 0">
-            <span
-              v-for="(item, idx) in formattedInfraSummary"
-              :key="item.category"
-            >
-              {{ item.name }} {{ item.count }}
-              <template v-if="idx < formattedInfraSummary.length - 1">
-                ·
-              </template>
-            </span>
+
+        <div class="infra-wrapper">
+          <template
+            v-if="
+              formattedInfraList.length === 0 &&
+              formattedAmenityList.length === 0
+            "
+          >
+            <p class="empty-text">주변 인프라 정보가 없습니다.</p>
           </template>
+
           <template v-else>
-            <span>주변 인프라 정보가 없습니다.</span>
+            <!-- 1. 인프라 섹션 -->
+            <div class="infra-row" v-if="formattedInfraList.length > 0">
+              <span class="group-badge">인프라</span>
+              <div class="inline-list">
+                <template
+                  v-for="(item, idx) in formattedInfraList"
+                  :key="item.category"
+                >
+                  <span class="item">
+                    <span class="name">{{ item.name }}</span>
+                    <span class="count">{{ item.count }}</span>
+                  </span>
+                  <span v-if="idx < formattedInfraList.length - 1" class="sep"
+                    >·</span
+                  >
+                </template>
+              </div>
+            </div>
+
+            <!-- 구분선 -->
+            <hr
+              class="compact-divider"
+              v-if="
+                formattedInfraList.length > 0 && formattedAmenityList.length > 0
+              "
+            />
+
+            <!-- 2. 편의시설 섹션 -->
+            <div class="infra-row" v-if="formattedAmenityList.length > 0">
+              <span class="group-badge amenity">편의시설</span>
+              <div class="inline-list">
+                <template
+                  v-for="(item, idx) in formattedAmenityList"
+                  :key="item.category"
+                >
+                  <span class="item">
+                    <span class="name">{{ item.name }}</span>
+                    <span class="count">{{ item.count }}</span>
+                  </span>
+                  <span v-if="idx < formattedAmenityList.length - 1" class="sep"
+                    >·</span
+                  >
+                </template>
+              </div>
+            </div>
           </template>
-        </p>
+        </div>
       </div>
 
       <!-- 단순 이동 바 -->
@@ -269,7 +313,13 @@
             :color="isFavorite ? '#ffbc00' : '#8a8d8f'"
           />
         </button>
-        <button class="compare-btn" @click="addToCompare">비교함 담기</button>
+        <button
+          class="compare-btn"
+          :disabled="isSubmitting"
+          @click="addToCompare"
+        >
+          비교함 담기
+        </button>
       </div>
       <p v-if="compareMsg" class="compare-msg">{{ compareMsg }}</p>
     </div>
@@ -283,8 +333,11 @@ import { computed, onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
 import PageHeader from "@/components/PageHeader.vue";
 import AppTabBar from "@/components/AppTabBar.vue";
-import { propertyApi, favoriteApi } from "@/api/services";
-import { useCompareStore } from "@/stores/compare";
+import { propertyApi, favoriteApi, comparisonApi } from "@/api/services";
+import {
+  INFRA_CATEGORIES,
+  AMENITY_CATEGORIES,
+} from "@/constants/preferenceOptions";
 
 import {
   Image as ImageIcon,
@@ -301,11 +354,10 @@ import {
 } from "lucide-vue-next";
 
 const route = useRoute();
-const compareStore = useCompareStore();
 const compareMsg = ref("");
+const isSubmitting = ref(false); // 버튼 연타 방지용
 
 const p = ref(null);
-const infras = ref([]);
 const market = ref(null);
 const isFavorite = ref(false);
 const profileName = ref("홍길동");
@@ -346,63 +398,21 @@ onMounted(async () => {
 
   try {
     // 매물 상세 정보 조회
-    const res = await propertyApi.getPropertyDetail(id);
+    const detailData = await propertyApi.getPropertyDetail(id);
 
-    const detailData = res?.data?.data ?? res?.data ?? res;
-
-    if (detailData) {
-      if (!detailData.images || detailData.images.length === 0) {
-        detailData.images = [
+    if (detailData?.data) {
+      if (!detailData.data.images || detailData.data.images.length === 0) {
+        detailData.data.images = [
           "https://via.placeholder.com/600x400/f5efdb/8a8477?text=Room+Image+1",
         ];
       }
-
-      p.value = detailData;
-      isFavorite.value = detailData?.isFavorite ?? false;
-    }
-
-    if (propertyApi.infrastructures) {
-      const infraRes = await propertyApi.infrastructures(id);
-      infras.value = infraRes?.data?.data ?? infraRes?.data ?? infraRes ?? [];
-    }
-
-    if (propertyApi.marketEvaluation) {
-      const marketRes = await propertyApi.marketEvaluation(id);
-      market.value = marketRes?.data?.data ?? marketRes?.data ?? marketRes;
+      p.value = detailData.data;
+      isFavorite.value = detailData.isFavorite ?? false;
     }
   } catch (error) {
     console.error("매물 상세 정보를 불러오는 데 실패했습니다:", error);
   }
 });
-
-// 전체 인프라 카테고리 이름 매핑
-const CATEGORY_NAMES = {
-  CAFE: "카페",
-  GYM: "헬스장",
-  SPORTS: "체육시설",
-  CONVENIENCE: "편의점",
-  MART: "마트",
-  HOSPITAL: "병원",
-  PHARMACY: "약국",
-  SUBWAY: "지하철역",
-  BUS: "버스정류장",
-  PARK: "공원",
-  BANK: "은행",
-  FOOD: "음식점",
-  ACADEMY: "학원",
-  CULTURE: "문화시설",
-  FIRE: "소방서",
-  GAS: "주유소",
-  GOV_OFFICE: "관공서",
-  KINDERGARTEN: "유치원",
-  LIBRARY: "도서관",
-  PARKING: "주차장",
-  POLICE: "경찰서",
-  POST_OFFICE: "우체국",
-  PUBLIC: "공공기관",
-  SCHOOL: "학교",
-  SWIMMING: "수영장",
-};
 
 // 숫자를 억/만 단위로 분리해 주는 헬퍼 함수
 const formatKoreanMoney = (value) => {
@@ -494,29 +504,19 @@ const regionLine = computed(() => {
 // 건물명 (title을 기본으로 활용)
 const buildingLine = computed(() => {
   if (!p.value?.title) return "건물명 정보 없음";
-
-  // " 2101호", " 202호" 처럼 맨 뒤에 붙은 (공백 + 숫자 + 호) 패턴을 제거합니다.
   return p.value.title.replace(/\s*\d+호$/, "").trim();
 });
 
 const formatDateStr = (dateStr, delimiter = ".") => {
   if (!dateStr) return "";
-
-  // "T" 기준으로 잘라서 날짜 부분("2026-09-28")만 추출
   const dateOnly = dateStr.split("T")[0];
-
-  // "-"를 지정한 구분자(기본값: '.')로 변경
   return dateOnly.replaceAll("-", delimiter);
 };
 
 // 입주 가능일 및 협의 가능 여부 처리
 const moveInLine = computed(() => {
   if (!p.value?.moveInDate) return "협의 가능";
-
-  // 공통 날짜 변환 함수 사용 ("2026.09.28")
   const formattedDate = formatDateStr(p.value.moveInDate);
-
-  // discussionStatus(카멜) 또는 discussion_status(스네이크) 안전 처리
   const isDiscussable = p.value?.discussionStatus ?? p.value?.discussion_status;
   const statusStr = isDiscussable ? "협의 가능" : "협의 불가능";
 
@@ -530,15 +530,39 @@ const availableLine = computed(() => {
 
 const medianPrice = computed(() => market.value?.medianPrice ?? 47);
 
-// 인프라 데이터 포맷팅
-const formattedInfraSummary = computed(() => {
-  if (!p.value?.infraSummary || !Array.isArray(p.value.infraSummary)) return [];
+// 인프라 데이터 및 분류 처리
+const infraData = computed(
+  () => p.value?.infraSummary || p.value?.infraList || [],
+);
 
-  return p.value.infraSummary.map((item) => ({
-    category: item.category,
-    name: CATEGORY_NAMES[item.category] || item.category,
-    count: item.count ?? 0,
-  }));
+// 카테고리 Key -> 한글 이름(label) 매핑 맵 생성
+const infraCategoryMap = new Map(
+  INFRA_CATEGORIES.map((item) => [item.key, item.label]),
+);
+const amenityCategoryMap = new Map(
+  AMENITY_CATEGORIES.map((item) => [item.key, item.label]),
+);
+
+// 1. 주요 인프라 항목 필터링
+const formattedInfraList = computed(() => {
+  return infraData.value
+    .filter((item) => infraCategoryMap.has(item.category))
+    .map((item) => ({
+      category: item.category,
+      name: infraCategoryMap.get(item.category),
+      count: item.count,
+    }));
+});
+
+// 2. 편의시설 항목 필터링
+const formattedAmenityList = computed(() => {
+  return infraData.value
+    .filter((item) => amenityCategoryMap.has(item.category))
+    .map((item) => ({
+      category: item.category,
+      name: amenityCategoryMap.get(item.category),
+      count: item.count,
+    }));
 });
 
 const benefits = [
@@ -551,6 +575,7 @@ const benefits = [
   },
 ];
 
+// 찜 상태 토글
 async function toggleFavorite() {
   if (!p.value?.id) return;
   try {
@@ -566,25 +591,37 @@ async function toggleFavorite() {
   }
 }
 
-// 비교함 담기 기능
+// Pinia 없이 직접 API 호출하는 비교함 담기 기능
 async function addToCompare() {
-  if (!p.value?.id) return;
+  if (!p.value?.id || isSubmitting.value) return;
 
-  // load() 할 필요 없이 바로 담기 시도
-  const res = await compareStore.add({
-    propertyId: p.value.id,
-    title: p.value.title,
-    tradeType: p.value.tradeType,
-    deposit: p.value.deposit,
-    monthlyRent: p.value.monthlyRent,
-  });
+  try {
+    isSubmitting.value = true;
 
-  // 성공("비교함에 담았어요.") 또는 실패("최대 3개까지...") 메시지 출력
-  compareMsg.value = res.message;
+    // 백엔드 API 직접 호출
+    await comparisonApi.addToBox(p.value.id);
+    compareMsg.value = "비교함에 담았어요.";
+  } catch (error) {
+    console.error("비교함 담기 실패:", error);
 
-  setTimeout(() => {
-    compareMsg.value = "";
-  }, 2500);
+    const status = error.response?.status;
+
+    if (status === 409) {
+      const serverMessage = error.response?.data?.message;
+      compareMsg.value =
+        serverMessage || "비교함에는 매물을 최대 3개까지 담을 수 있습니다.";
+    } else if (status === 404) {
+      compareMsg.value = "존재하지 않는 매물입니다.";
+    } else {
+      compareMsg.value = "비교함 추가 중 오류가 발생했습니다.";
+    }
+  } finally {
+    isSubmitting.value = false;
+
+    setTimeout(() => {
+      compareMsg.value = "";
+    }, 2500);
+  }
 }
 </script>
 
@@ -806,6 +843,96 @@ async function addToCompare() {
   font-weight: 800;
 }
 
+/* 인프라 및 편의시설 스타일 추가 */
+.mini-value-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+/* 컴팩트 카드 여백 조절 */
+.mini-card.wide.compact {
+  padding: 10px 12px; /* 상하좌우 패딩 축소 */
+}
+
+.infra-wrapper {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.infra-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+/* 왼쪽 범주 배지 (크기 축소) */
+.group-badge {
+  flex-shrink: 0;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #666;
+  background-color: #fff6dc;
+  padding: 1px 5px;
+  border-radius: 4px;
+  white-space: nowrap;
+  margin-top: 1px;
+}
+
+.group-badge.amenity {
+  background-color: #e2f0d9;
+  color: #385723;
+}
+
+/* 오른쪽 텍스트 리스트 (줄바꿈 가능) */
+.inline-list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px; /* 가로/세로 간격 최소화 */
+  line-height: 1.4;
+}
+
+.item {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  white-space: nowrap; /* 단어 단위 세로 깨짐 방지 */
+  font-size: 12px;
+}
+
+.name {
+  color: #444;
+}
+
+.count {
+  font-weight: 700;
+  color: #e67e22; /* 수량 강하게 표시 */
+}
+
+/* 구분자 스타일 (· 또는 |) */
+.sep {
+  color: #b0b0b0;
+  font-size: 11px;
+  user-select: none;
+}
+
+/* 슬림한 구분선 */
+.compact-divider {
+  border: none;
+  border-top: 1px solid #eee;
+  margin: 2px 0;
+  width: 100%;
+}
+
+.empty-text {
+  font-size: 12px;
+  color: #8a8d8f;
+}
+
 .banner-group {
   display: flex;
   flex-direction: column;
@@ -977,6 +1104,10 @@ async function addToCompare() {
   font-weight: 600;
   font-size: 15px;
   cursor: pointer;
+}
+.compare-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 .compare-msg {
   position: absolute;
