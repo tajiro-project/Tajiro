@@ -33,4 +33,5 @@ public class FinanceVO {
     private LocalDateTime referenceDate; //기준일
     private LocalDateTime validEndDate; // 종료일
     private LocalDateTime createdAt; // 등록일
+    private String baseType;
 }

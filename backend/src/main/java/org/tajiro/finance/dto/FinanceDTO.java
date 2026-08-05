@@ -33,6 +33,7 @@ public class FinanceDTO {
     private LocalDateTime referenceDate; //기준일
     private LocalDateTime validEndDate; // 종료일
     private LocalDateTime createdAt; // 등록일
+    private String baseType;
 
 
     // VO  DTO 변환
@@ -57,6 +58,7 @@ public class FinanceDTO {
                 .referenceDate(vo.getReferenceDate())
                 .validEndDate(vo.getValidEndDate())
                 .createdAt(vo.getCreatedAt())
+                .baseType(vo.getBaseType())
                 .build();
     }
 }
