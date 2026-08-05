@@ -49,15 +49,13 @@
 
 <script setup>
 import { computed, ref } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { useRouter } from 'vue-router';
 import client, { withMock } from '@/api/client';
 import { mockLocations } from '@/api/mockData';
 import KakaoMap from '@/components/KakaoMap.vue';
 import PageHeader from '@/components/PageHeader.vue';
 
-const route = useRoute();
 const router = useRouter();
-const mode = computed(() => (route.query.mode === 'preference' ? 'preference' : 'home'));
 
 const keyword = ref('');
 const results = ref([]);
@@ -88,13 +86,7 @@ function selectItem(item) {
 
 function confirmLocation() {
     if (!selected.value) return;
-
-    if (mode.value === 'home') {
-        router.push({ path: '/properties', query: { region: selected.value.name } });
-    } else {
-        sessionStorage.setItem('selectedLocation', JSON.stringify(selected.value));
-        router.push('/preferences/1');
-    }
+    router.push({ path: '/properties', query: { region: selected.value.name } });
 }
 </script>
 
