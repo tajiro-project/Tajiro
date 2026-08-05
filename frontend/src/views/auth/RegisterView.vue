@@ -17,6 +17,7 @@
                 <div class="field">
                     <label class="field-label" for="password">비밀번호</label>
                     <input id="password" v-model="password" class="field-input" type="password" placeholder="8자 이상, 영문+숫자 조합" required />
+                    <p v-if="password && !passwordValid" class="field-hint">8자 이상, 영문과 숫자를 포함해주세요</p>
                 </div>
                 <div class="field">
                     <label class="field-label" for="passwordConfirm">비밀번호 확인</label>
@@ -56,15 +57,13 @@
 
                 <button class="btn-cta register-btn" type="submit" :disabled="!canSubmit || loading">가입하고 시작하기</button>
             </form>
-
-            <p class="flow-hint">가입 후 내 정보 입력(1/2) → 가치관 설정(2/2)으로 이어져요</p>
         </div>
 
         <div v-if="activeTerm" class="sheet-overlay" @click="closeTermsSheet">
             <div class="sheet" @click.stop>
                 <div class="sheet-handle"></div>
                 <div class="sheet-header">
-                    <p class="sheet-title">{{ activeTerm.label.replace('[필수] ', '') }}</p>
+                    <p class="sheet-title">{{ activeTerm.label.replace(/^\[(필수|선택)\] /, '') }}</p>
                     <button class="sheet-close" type="button" @click="closeTermsSheet">
                         <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                             <path d="M4.5 4.5l9 9M13.5 4.5l-9 9" stroke="#60584c" stroke-width="1.6" stroke-linecap="round" />
@@ -81,14 +80,16 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import client, { withMock } from '@/api/client';
+import client, { getApiErrorMessage, withMock } from '@/api/client';
 import { mockTerms } from '@/api/mockData';
 import PageHeader from '@/components/PageHeader.vue';
+
+const PASSWORD_PATTERN = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
 
 const termsList = [
     { id: 1, label: '[필수] 서비스 이용약관 동의', required: true },
     { id: 2, label: '[필수] 개인정보 수집 · 이용 동의', required: true },
-    { id: 4, label: '[필수] 맞춤 추천을 위한 금융정보 활용', required: true },
+    { id: 3, label: '[선택] 마케팅 정보 수신 동의', required: false },
 ];
 
 const router = useRouter();
@@ -100,9 +101,9 @@ const loading = ref(false);
 const errorMessage = ref('');
 const agreedIds = ref([1, 2]);
 const activeTermId = ref(null);
+const activeTermContent = ref('');
 
 const activeTerm = computed(() => termsList.find((term) => term.id === activeTermId.value) ?? null);
-const activeTermContent = computed(() => mockTerms[activeTermId.value]?.content ?? '');
 
 const isAllAgreed = computed(() => termsList.every((term) => agreedIds.value.includes(term.id)));
 
@@ -110,11 +111,13 @@ const requiredAgreed = computed(() => {
     return termsList.filter((term) => term.required).every((term) => agreedIds.value.includes(term.id));
 });
 
+const passwordValid = computed(() => password.value === '' || PASSWORD_PATTERN.test(password.value));
+
 const canSubmit = computed(() => {
     return (
         name.value.trim() !== '' &&
         email.value.trim() !== '' &&
-        password.value !== '' &&
+        PASSWORD_PATTERN.test(password.value) &&
         password.value === passwordConfirm.value &&
         requiredAgreed.value
     );
@@ -136,12 +139,21 @@ function toggleAll() {
     agreedIds.value = isAllAgreed.value ? [] : termsList.map((term) => term.id);
 }
 
-function openTermsSheet(termId) {
+async function openTermsSheet(termId) {
     activeTermId.value = termId;
+    activeTermContent.value = '';
+
+    const data = await withMock(
+        () => client.get(`/terms/${termId}`),
+        () => mockTerms[termId],
+    );
+    const payload = data?.data ?? data;
+    activeTermContent.value = payload?.content ?? '';
 }
 
 function closeTermsSheet() {
     activeTermId.value = null;
+    activeTermContent.value = '';
 }
 
 function agreeAndClose() {
@@ -158,20 +170,25 @@ async function handleRegister() {
     loading.value = true;
 
     try {
-        const data = await withMock(
-            () =>
-                client.post('/auth/register', {
-                    name: name.value,
-                    email: email.value,
-                    password: password.value,
-                    agreements: termsList.map((term) => ({ termsId: term.id, agreed: isAgreed(term.id) })),
-                }),
-            { userId: 1, accessToken: 'mock-access-token' },
-        );
-        localStorage.setItem('accessToken', data.accessToken);
-        router.push('/profile-setup');
-    } catch {
-        errorMessage.value = '회원가입에 실패했어요. 잠시 후 다시 시도해주세요.';
+        let data;
+        try {
+            const res = await client.post('/auth/register', {
+                name: name.value,
+                email: email.value,
+                password: password.value,
+                agreements: termsList.map((term) => ({ termsId: term.id, agreed: isAgreed(term.id) })),
+            });
+            data = res.data;
+        } catch (error) {
+            if (error.response) throw error; // 백엔드가 실제로 응답한 에러는 그대로 던짐(mock으로 감추지 않음)
+            data = { userId: 1, accessToken: 'mock-access-token' }; // 백엔드 자체가 없을 때만 mock으로 대체
+        }
+
+        const payload = data.data ?? data;
+        localStorage.setItem('accessToken', payload.accessToken);
+        router.push('/preferences/1');
+    } catch (error) {
+        errorMessage.value = getApiErrorMessage(error, '회원가입에 실패했어요. 잠시 후 다시 시도해주세요.');
     } finally {
         loading.value = false;
     }
@@ -281,11 +298,10 @@ async function handleRegister() {
     color: var(--danger);
 }
 
-.flow-hint {
-    margin-top: 16px;
+.field-hint {
+    margin-top: 4px;
     font-size: 11px;
-    color: var(--kb-silver);
-    text-align: center;
+    color: var(--danger);
 }
 
 .sheet-overlay {
