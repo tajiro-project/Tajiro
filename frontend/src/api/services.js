@@ -20,6 +20,16 @@ export const financeApi = {
     ),
 };
 
+// ---------- policy ----------
+export const policyApi = {
+  list: (regionCode, keyword) =>
+    withMock(() => client.get('/policies', { params: { regionCode, keyword } }), mock.mockPolicies),
+  matches: (keyword) =>
+    withMock(() => client.get('/policies/matches', { params: { keyword } }), mock.mockPolicies),
+  detail: (policyId) => withMock(() => client.get(`/policies/${policyId}`), mock.mockPolicyDetail),
+}
+
+
 // ---------- property ----------
 export const propertyApi = {
   getPropertyDetail: async (propertyId) =>
