@@ -15,5 +15,7 @@
         <typeAlias alias="UserProfileVO" type="org.tajiro.user.domain.UserProfileVO"/>
         <typeAlias alias="PropertyDetailVO" type="org.tajiro.property.domain.PropertyDetailVO"/>
         <typeAlias alias="InfraSummaryDTO" type="org.tajiro.property.dto.PropertyDetailDTO$InfraSummaryDTO"/>
+        <typeAlias alias="BuildingVO" type="org.tajiro.property.domain.BuildingVO"/>
+        <typeAlias alias="InfrastructureInfoDTO" type="org.tajiro.property.dto.PropertyInfrastructureDTO$InfrastructureInfoDTO"/>
     </typeAliases>
 </configuration>

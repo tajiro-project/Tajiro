@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.tajiro.property.mapper.InfrastructureMapper">
+
+    <!-- 1. property 테이블에서 propertyId로 building_id 조회 -->
+    <select id="selectBuildingIdByPropertyId" parameterType="long" resultType="long">
+        SELECT building_id AS buildingId
+        FROM property
+        WHERE id = #{propertyId}
+    </select>
+
+    <!-- 2. building 테이블에서 buildingId로 기존 BuildingVO 조회 -->
+    <select id="selectBuildingById" parameterType="long" resultType="BuildingVO">
+        SELECT
+            id,
+            building_code AS buildingCode,
+            road_address  AS roadAddress,
+            jibun_address AS jibunAddress,
+            bld_nm        AS bldNm,
+            dong_nm       AS dongNm,
+            pnu,
+            latitude,
+            longitude
+        FROM building
+        WHERE id = #{buildingId}
+    </select>
+
+    <!-- 3. sort_order = 1 조건으로 카테고리별 가장 가까운 상세 인프라 조회 -->
+    <select id="selectNearestInfrastructuresByBuildingId" parameterType="long" resultType="InfrastructureInfoDTO">
+        SELECT
+            i.infra_category        AS infraCategory,
+            si.infra_name           AS infraName,
+            si.distance_m           AS distanceM,
+            i.nearest_walk_minutes  AS walkMinutes,
+            si.latitude             AS latitude,
+            si.longitude            AS longitude
+        FROM infrastructure i
+                 INNER JOIN infrastructure_detail si ON i.id = si.infra_id
+        WHERE i.building_id = #{buildingId}
+          AND si.sort_order = 1
+    </select>
+
+</mapper>
