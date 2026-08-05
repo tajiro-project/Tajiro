@@ -24,6 +24,14 @@
           </button>
         </div>
 
+        <div v-if="selectedBuildingId" class="map-overlay">
+          <InfraTogglePanel
+            v-model="mapLayers"
+            :categories="layerCategories"
+            @open-settings="openSheet('infra')"
+          />
+        </div>
+
         <button
           v-if="selectedBuildingId"
           class="reset-btn"
@@ -289,10 +297,10 @@
       </div>
       <DualSlider
         v-model="draft.areaRange"
-        :min="0"
-        :max="AREA_MAX_M2"
-        :step="5"
-        :marks="['0', '50m²', '100m²', '150m²', '200m²']"
+        :min="AREA.min"
+        :max="AREA.max"
+        :step="AREA.step"
+        :marks="AREA.marks"
       />
     </div>
 
@@ -474,7 +482,6 @@
   </BottomSheet>
 
   <!-- 우선순위 -->
-  <!-- 08-2 · 가치관 우선순위 -->
   <BottomSheet
     :model-value="openedSheet === 'priority'"
     title="가치관 우선순위 수정"
@@ -527,6 +534,7 @@ import BottomSheet from '@/components/BottomSheet.vue';
 import DualSlider from '@/components/DualSlider.vue';
 import SingleSlider from '@/components/SingleSlider.vue';
 import KakaoLocation from '@/components/KakaoLocation.vue';
+import InfraTogglePanel from '@/components/InfraTogglePanel.vue';
 
 import { computed, ref, reactive, watch } from 'vue';
 import { useRouter } from 'vue-router';
@@ -875,6 +883,50 @@ const RAW_INFRA = [
     longitude: 127.4529,
   },
 
+  // B01 — 토글 확인용으로 카테고리를 채움
+  {
+    buildingId: 1,
+    category: 'CONVENIENCE',
+    name: 'CU 용운점',
+    latitude: 36.3268,
+    longitude: 127.4535,
+  },
+  {
+    buildingId: 1,
+    category: 'MART',
+    name: '이마트에브리데이 용운점',
+    latitude: 36.3277,
+    longitude: 127.4527,
+  },
+  {
+    buildingId: 1,
+    category: 'PHARMACY',
+    name: '용운약국',
+    latitude: 36.3279,
+    longitude: 127.4548,
+  },
+  {
+    buildingId: 1,
+    category: 'FOOD',
+    name: '대학로국밥',
+    latitude: 36.3266,
+    longitude: 127.4547,
+  },
+  {
+    buildingId: 1,
+    category: 'BANK',
+    name: '국민은행 대전대점',
+    latitude: 36.3283,
+    longitude: 127.4536,
+  },
+  {
+    buildingId: 1,
+    category: 'SPORTS',
+    name: '용운헬스클럽',
+    latitude: 36.3258,
+    longitude: 127.4533,
+  },
+
   // B02
   {
     buildingId: 2,
@@ -1046,11 +1098,12 @@ const hoveredDot = ref(null);
 const activeDot = computed(() => hoveredDot.value ?? pinnedDot.value);
 const items = ref(RAW_PROPERTIES);
 
-const { DEPOSIT_JEONSE, SALE_PRICE, MONTHLY_RENT } = PREFERENCE_SLIDER_CONFIG;
+const { DEPOSIT_JEONSE, SALE_PRICE, MONTHLY_RENT, AREA } =
+  PREFERENCE_SLIDER_CONFIG;
 
 const DEFAULT_DISTANCE = PREFERENCE_SLIDER_CONFIG.COMMUTE_DISTANCE.defaultValue;
 const PYEONG = 3.3058;
-const AREA_MAX_M2 = 200;
+// const AREA_MAX_M2 = 200;
 
 const filter = reactive({
   tradeTypes: [...TRADE_TYPES],
@@ -1114,7 +1167,7 @@ const draft = reactive({
   rent: [0, MONTHLY_RENT.max],
   propertyTypes: [],
   floorPreference: [],
-  areaRange: [0, AREA_MAX_M2],
+  areaRange: [0, AREA.max],
   infra: [],
   amenity: [],
   distance: DEFAULT_DISTANCE,
@@ -1207,18 +1260,31 @@ const markers = computed(() => {
     .filter((m) => !selectedBuildingId.value || m.selected);
 });
 
+const layerCategories = computed(() => [
+  ...filter.desiredInfraCategories,
+  ...filter.desiredAmenityCategories,
+]);
+
+const mapLayers = ref([...layerCategories.value]);
+
+watch(layerCategories, (v) => {
+  mapLayers.value = [...v];
+});
+
 const dots = computed(() => {
   if (!selectedBuildingId.value) return [];
 
   // 인프라/편의시설 관련
   const infra = RAW_INFRA.filter(
     (i) => i.buildingId === selectedBuildingId.value,
-  ).map((i) => ({
-    lat: Number(i.latitude),
-    lng: Number(i.longitude),
-    category: i.category,
-    name: i.name,
-  }));
+  )
+    .filter((i) => mapLayers.value.includes(i.category))
+    .map((i) => ({
+      lat: Number(i.latitude),
+      lng: Number(i.longitude),
+      category: i.category,
+      name: i.name,
+    }));
 
   return [...infra];
 });
@@ -1313,7 +1379,7 @@ const areaLabel = computed(() => {
   const [lo, hi] = draft.areaRange;
   const loStr = lo <= 0 ? '최소' : `${lo}m² (${Math.floor(lo / PYEONG)}평)`;
   const hiStr =
-    hi >= AREA_MAX_M2 ? '최대' : `${hi}m² (${Math.floor(hi / PYEONG)}평)`;
+    hi >= AREA.max ? '최대' : `${hi}m² (${Math.floor(hi / PYEONG)}평)`;
   return `${loStr} ~ ${hiStr}`;
 });
 
@@ -1370,7 +1436,7 @@ function openSheet(name) {
     ];
     draft.propertyTypes = [...filter.propertyTypes];
     draft.floorPreference = [...filter.floorPreference];
-    draft.areaRange = [filter.minAreaM2 ?? 0, filter.maxAreaM2 ?? AREA_MAX_M2];
+    draft.areaRange = [filter.minAreaM2 ?? 0, filter.maxAreaM2 ?? AREA.max];
   } else if (name === 'infra') {
     draft.infra = [...filter.desiredInfraCategories];
     draft.amenity = [...filter.desiredAmenityCategories];
@@ -1457,8 +1523,7 @@ function applyHousing() {
   filter.propertyTypes = [...draft.propertyTypes];
   filter.floorPreference = [...draft.floorPreference];
   filter.minAreaM2 = draft.areaRange[0] > 0 ? draft.areaRange[0] : null;
-  filter.maxAreaM2 =
-    draft.areaRange[1] < AREA_MAX_M2 ? draft.areaRange[1] : null;
+  filter.maxAreaM2 = draft.areaRange[1] < AREA.max ? draft.areaRange[1] : null;
   closeSheet();
 }
 
@@ -1469,7 +1534,7 @@ function resetHousing() {
   draft.rent = [0, MONTHLY_RENT.max];
   draft.propertyTypes = [];
   draft.floorPreference = [];
-  draft.areaRange = [0, AREA_MAX_M2];
+  draft.areaRange = [0, AREA.max];
 }
 
 function applyInfra() {
@@ -1744,11 +1809,20 @@ watch(filter, () => {
   border-color: #ffbc00;
 }
 
+.map-overlay {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  bottom: 12px;
+  z-index: 100;
+  pointer-events: none;
+}
+
 .reset-btn {
   position: absolute;
   bottom: 12px;
   right: 12px;
-  z-index: 100;
+  z-index: 90;
   padding: 7px 12px;
   border: 1px solid #e9e7e2;
   border-radius: 100px;
