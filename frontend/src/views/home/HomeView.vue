@@ -83,7 +83,7 @@
                         </svg>
                     </span>
                     <span class="menu-texts">
-                        <span class="menu-title">매물 검색</span>
+                        <span class="menu-title">가치관 입력 / 매물 검색</span>
                         <span class="menu-sub">가치관 입력하고 맞춤 매물 찾기</span>
                     </span>
                     <svg class="menu-chevron" width="16" height="16" viewBox="0 0 16 16" fill="none">
