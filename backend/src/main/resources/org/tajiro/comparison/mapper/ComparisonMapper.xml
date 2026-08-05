@@ -30,6 +30,7 @@
           AND cp.property_status = 1
         ORDER BY cp.added_at DESC
     </select>
+
     <select id="existsProperty" resultType="boolean">
         SELECT EXISTS(
             SELECT 1
@@ -37,6 +38,7 @@
             WHERE id = #{propertyId}
         )
     </select>
+
     <select id="existsByUserIdAndPropertyId" resultType="boolean">
         SELECT EXISTS(
             SELECT 1
@@ -45,19 +47,80 @@
               AND property_id = #{propertyId}
         )
     </select>
+
     <select id="countByUserId" resultType="int">
         SELECT COUNT(*)
         FROM compare_property
         WHERE user_id = #{userId}
           AND property_status = 1
     </select>
+
     <insert id="insert">
         INSERT INTO compare_property (user_id, property_id, property_status, added_at)
         VALUES (#{userId}, #{propertyId}, 1, NOW())
     </insert>
+
     <delete id="delete">
         DELETE FROM compare_property
         WHERE user_id = #{userId}
           AND property_id = #{propertyId}
     </delete>
+
+    <select id="findMetrics"
+            resultType="org.tajiro.comparison.dto.ComparisonMetricDTO">
+        SELECT p.id AS property_id,
+               p.title,
+               p.property_type,
+               p.trade_type,
+               p.deposit,
+               p.monthly_rent,
+               p.maintenance_fee,
+               p.area_m2,
+               p.floor_info,
+               CASE
+                   WHEN pvar.workplace_distance_meters IS NULL THEN NULL
+                   ELSE CEIL(pvar.workplace_distance_meters * 2 / 67.0)
+               END AS commute_minutes,
+               COALESCE(infra.infra_count, 0) AS infra_count,
+               p.evaluation_score,
+               COALESCE(safety.cctv_count, 0) AS cctv_count_within500m,
+               COALESCE(safety.police_count, 0) AS police_count_within500m,
+               COALESCE(safety.children_count, 0) AS children_count_within500m,
+               COALESCE(safety.bell_count, 0) AS bell_count_within500m,
+               COALESCE(safety.safety_light_count, 0) AS safety_light_count_within500m
+        FROM property p
+        LEFT JOIN property_value_analysis_result pvar
+               ON pvar.property_id = p.id
+              AND pvar.user_id = #{userId}
+        LEFT JOIN (
+            SELECT building_id,
+                   SUM(count_within2000m) AS infra_count
+            FROM infrastructure
+            GROUP BY building_id
+        ) infra ON infra.building_id = p.building_id
+        LEFT JOIN (
+            SELECT building_id,
+                   MAX(CASE WHEN safe_category = 'CCTV'
+                            THEN count_within500m ELSE 0 END) AS cctv_count,
+                   MAX(CASE WHEN safe_category = 'POLICE_CENTER'
+                            THEN count_within500m ELSE 0 END) AS police_count,
+                   MAX(CASE WHEN safe_category = 'CHILD_GUARD_HOUSE'
+                            THEN count_within500m ELSE 0 END) AS children_count,
+                   MAX(CASE WHEN safe_category = 'SAFETY_BELL'
+                            THEN count_within500m ELSE 0 END) AS bell_count,
+                   MAX(CASE WHEN safe_category = 'SECURITY_LIGHT'
+                            THEN count_within500m ELSE 0 END) AS safety_light_count
+            FROM safety
+            GROUP BY building_id
+        ) safety ON safety.building_id = p.building_id
+        WHERE p.id IN
+        <foreach collection="propertyIds" item="propertyId" open="(" separator="," close=")">
+            #{propertyId}
+        </foreach>
+        ORDER BY FIELD(p.id,
+        <foreach collection="propertyIds" item="propertyId" separator=",">
+            #{propertyId}
+        </foreach>
+        )
+    </select>
 </mapper>

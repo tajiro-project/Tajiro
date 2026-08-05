@@ -9,16 +9,18 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.tajiro.comparison.dto.ComparePropertyDTO;
+import org.tajiro.comparison.dto.ComparisonMetricsResponseDTO;
 import org.tajiro.comparison.service.ComparisonService;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/users/me/compare")
+@RequestMapping("/api")
 @RequiredArgsConstructor
-@Api(tags = "매물 비교함")
+@Api(tags = "매물 비교")
 public class ComparisonController {
 
     // TODO: JWT 인증 구현 후 인증 객체에서 사용자 ID를 가져오도록 교체한다.
@@ -26,20 +28,27 @@ public class ComparisonController {
 
     private final ComparisonService comparisonService;
 
-    @GetMapping
+    @GetMapping("/users/me/compare")
     public ResponseEntity<List<ComparePropertyDTO>> getCompareProperties() {
         return ResponseEntity.ok(comparisonService.getCompareProperties(MOCK_USER_ID));
     }
 
-    @PostMapping("/{propertyId}")
+    @PostMapping("/users/me/compare/{propertyId}")
     public ResponseEntity<Void> addCompareProperty(@PathVariable Long propertyId) {
         comparisonService.addCompareProperty(MOCK_USER_ID, propertyId);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-    @DeleteMapping("/{propertyId}")
+    @DeleteMapping("/users/me/compare/{propertyId}")
     public ResponseEntity<Void> removeCompareProperty(@PathVariable Long propertyId) {
         comparisonService.removeCompareProperty(MOCK_USER_ID, propertyId);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/comparisons/metrics")
+    public ResponseEntity<ComparisonMetricsResponseDTO> getComparisonMetrics(
+            @RequestParam List<Long> propertyIds) {
+        return ResponseEntity.ok(
+                comparisonService.getComparisonMetrics(MOCK_USER_ID, propertyIds));
     }
 }
