@@ -17,6 +17,9 @@ public enum ErrorCode {
     // --- 매물 (Property) ---
     PROPERTY_NOT_FOUND(404, "PROP_404", "존재하지 않거나 삭제된 매물입니다."),
 
+    // --- 인프라 (Infrastructure) ---
+    INFRASTRUCTURE_NOT_FOUND(404, "INFRA_404", "해당 매물의 인프라 정보가 존재하지 않습니다."),
+
     // --- 인증 (Auth) ---
     LOGIN_FAILED(401, "AUTH_401", "이메일 또는 비밀번호가 일치하지 않습니다."),
     AUTH_REQUIRED(401, "AUTH_401_1", "인증이 만료되었거나 필요합니다."),
