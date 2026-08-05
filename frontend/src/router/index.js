@@ -93,6 +93,16 @@ const routes = [
     name: 'login',
     component: () => import('@/views/auth/LoginView.vue'),
   },
+  {
+    path: '/policies/:id',
+    name: 'policy-detail',
+    component: () => import('@/views/benefit/PolicyDetailView.vue'),
+  },
+  {
+    path: '/financial-products/:id',
+    name: 'financial-product-detail',
+    component: () => import('@/views/benefit/LoanDetailView.vue'),
+  },
 ];
 
 const router = createRouter({
