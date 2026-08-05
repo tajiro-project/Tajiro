@@ -13,7 +13,7 @@ export const HOUSING_OPTIONS = ['원/투룸', '아파트', '주택/빌라', '오
 
 export const TRADE_OPTIONS = ['월세', '전세', '매매'];
 
-export const FLOOR_OPTIONS = ['지하/반지하', '1층', '2층 이상', '옥탑'];
+export const FLOOR_OPTIONS = ['저층', '1층', '2층 이상', '옥탑'];
 
 export const INFRA_CATEGORIES = [
   { key: 'SUBWAY', label: '지하철' },
@@ -48,17 +48,11 @@ export const AMENITY_CATEGORIES = [
 
 export const PREFERENCE_SLIDER_CONFIG = {
   COMMUTE_DISTANCE: {
-    min: 500,
+    min: 0,
     max: 10000,
     step: 100,
     defaultValue: 1500,
-    marks: ['500m', '2.5km', '5km', '7.5km', '10km'],
-  },
-  DEPOSIT_MONTHLY: {
-    min: 0,
-    max: 5000,
-    step: 100,
-    marks: ['최소', '1,000', '2,000', '3,000', '4,000', '최대'],
+    marks: ['0', '2km', '4km', '6km', '8km', '10km'],
   },
   DEPOSIT_JEONSE: {
     min: 0,

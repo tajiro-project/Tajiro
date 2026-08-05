@@ -234,17 +234,22 @@
     </div>
 
     <div v-if="draft.tradeTypes.length" class="range-card">
-      <div class="range-group">
+      <div
+        v-if="
+          draft.tradeTypes.includes('월세') || draft.tradeTypes.includes('전세')
+        "
+        class="range-group"
+      >
         <p class="range-title">
-          {{ depositTitle }}
-          <span class="range-value">{{ depositValueLabel }}</span>
+          보증금/전세금
+          <span class="range-value">{{ depositJeonseLabel }}</span>
         </p>
         <DualSlider
-          v-model="draft.deposit"
-          :min="0"
-          :max="depositMax"
-          :step="depositStep"
-          :marks="depositMarks"
+          v-model="draft.depositJeonse"
+          :min="DEPOSIT_JEONSE.min"
+          :max="DEPOSIT_JEONSE.max"
+          :step="DEPOSIT_JEONSE.step"
+          :marks="DEPOSIT_JEONSE.marks"
         />
       </div>
 
@@ -255,10 +260,24 @@
         </p>
         <DualSlider
           v-model="draft.rent"
-          :min="PREFERENCE_SLIDER_CONFIG.MONTHLY_RENT.min"
-          :max="PREFERENCE_SLIDER_CONFIG.MONTHLY_RENT.max"
-          :step="PREFERENCE_SLIDER_CONFIG.MONTHLY_RENT.step"
-          :marks="PREFERENCE_SLIDER_CONFIG.MONTHLY_RENT.marks"
+          :min="MONTHLY_RENT.min"
+          :max="MONTHLY_RENT.max"
+          :step="MONTHLY_RENT.step"
+          :marks="MONTHLY_RENT.marks"
+        />
+      </div>
+
+      <div v-if="draft.tradeTypes.includes('매매')" class="range-group">
+        <p class="range-title">
+          매매가
+          <span class="range-value">{{ salePriceLabel }}</span>
+        </p>
+        <DualSlider
+          v-model="draft.salePrice"
+          :min="SALE_PRICE.min"
+          :max="SALE_PRICE.max"
+          :step="SALE_PRICE.step"
+          :marks="SALE_PRICE.marks"
         />
       </div>
     </div>
@@ -294,7 +313,9 @@
 
     <div class="sheet-actions">
       <button class="btn-ghost" @click="resetHousing">초기화</button>
-      <button class="btn-primary" @click="applyHousing">이 조건으로 적용</button>
+      <button class="btn-primary" @click="applyHousing">
+        이 조건으로 적용
+      </button>
     </div>
   </BottomSheet>
 
@@ -368,7 +389,9 @@
 
     <div class="sheet-actions">
       <button class="btn-ghost" @click="resetCommute">초기화</button>
-      <button class="btn-primary" @click="applyCommute">이 조건으로 적용</button>
+      <button class="btn-primary" @click="applyCommute">
+        이 조건으로 적용
+      </button>
     </div>
   </BottomSheet>
 
@@ -1023,38 +1046,19 @@ const hoveredDot = ref(null);
 const activeDot = computed(() => hoveredDot.value ?? pinnedDot.value);
 const items = ref(RAW_PROPERTIES);
 
-
-const { DEPOSIT_MONTHLY, DEPOSIT_JEONSE, SALE_PRICE, MONTHLY_RENT } =
-  PREFERENCE_SLIDER_CONFIG;
-
-const PRICE_LIMITS = {
-  월세: { deposit: DEPOSIT_MONTHLY.max, rent: MONTHLY_RENT.max },
-  전세: { deposit: DEPOSIT_JEONSE.max },
-  매매: { deposit: SALE_PRICE.max },
-};
-
-const DEPOSIT_MARKS = {
-  [DEPOSIT_MONTHLY.max]: DEPOSIT_MONTHLY.marks,
-  [DEPOSIT_JEONSE.max]: DEPOSIT_JEONSE.marks,
-  [SALE_PRICE.max]: SALE_PRICE.marks,
-};
-
-const DEPOSIT_STEPS = {
-  [DEPOSIT_MONTHLY.max]: DEPOSIT_MONTHLY.step,
-  [DEPOSIT_JEONSE.max]: DEPOSIT_JEONSE.step,
-  [SALE_PRICE.max]: SALE_PRICE.step,
-};
+const { DEPOSIT_JEONSE, SALE_PRICE, MONTHLY_RENT } = PREFERENCE_SLIDER_CONFIG;
 
 const DEFAULT_DISTANCE = PREFERENCE_SLIDER_CONFIG.COMMUTE_DISTANCE.defaultValue;
 const PYEONG = 3.3058;
 const AREA_MAX_M2 = 200;
 
-
 const filter = reactive({
   tradeTypes: [...TRADE_TYPES],
   propertyTypes: [],
-  minDeposit: null,
-  maxDeposit: null,
+  minDepositJeonse: null,
+  maxDepositJeonse: null,
+  minSalePrice: null,
+  maxSalePrice: null,
   minMonthlyRent: null,
   maxMonthlyRent: null,
   minAreaM2: null,
@@ -1105,7 +1109,8 @@ const isLocationPickerOpen = ref(false);
 
 const draft = reactive({
   tradeTypes: [],
-  deposit: [0, DEPOSIT_MONTHLY.max],
+  depositJeonse: [0, DEPOSIT_JEONSE.max],
+  salePrice: [SALE_PRICE.min, SALE_PRICE.max],
   rent: [0, MONTHLY_RENT.max],
   propertyTypes: [],
   floorPreference: [],
@@ -1231,7 +1236,8 @@ const commuteChipLabel = computed(() => {
   const placeName = filter.workplace?.name || filter.workplace?.address;
   if (placeName) parts.push(placeName);
   const m = filter.maxWorkplaceDistanceMeters;
-  if (m !== DEFAULT_DISTANCE) parts.push(m >= 1000 ? `${(m / 1000).toFixed(1)}km 이내` : `${m}m 이내`);
+  if (m !== DEFAULT_DISTANCE)
+    parts.push(m >= 1000 ? `${(m / 1000).toFixed(1)}km 이내` : `${m}m 이내`);
   if (filter.hasCar) parts.push('자차 O');
   return parts.slice(0, 2).join(' · ') || '이주/통근';
 });
@@ -1239,8 +1245,10 @@ const commuteChipLabel = computed(() => {
 const housingChipOn = computed(
   () =>
     filter.tradeTypes.length < TRADE_TYPES.length ||
-    filter.minDeposit != null ||
-    filter.maxDeposit != null ||
+    filter.minDepositJeonse != null ||
+    filter.maxDepositJeonse != null ||
+    filter.minSalePrice != null ||
+    filter.maxSalePrice != null ||
     filter.minMonthlyRent != null ||
     filter.maxMonthlyRent != null ||
     filter.propertyTypes.length > 0 ||
@@ -1259,8 +1267,12 @@ const housingChipLabel = computed(() => {
         : `${filter.tradeTypes[0]} 외 ${filter.tradeTypes.length - 1}`,
     );
   }
-  if (filter.maxDeposit != null) parts.push(`${moneyLabel(filter.maxDeposit)} 이하`);
-  if (filter.maxMonthlyRent != null) parts.push(`월세 ${filter.maxMonthlyRent}만 이하`);
+  if (filter.maxDepositJeonse != null)
+    parts.push(`${moneyLabel(filter.maxDepositJeonse)} 이하`);
+  if (filter.maxSalePrice != null)
+    parts.push(`매매가 ${moneyLabel(filter.maxSalePrice)} 이하`);
+  if (filter.maxMonthlyRent != null)
+    parts.push(`월세 ${filter.maxMonthlyRent}만 이하`);
   if (filter.propertyTypes.length > 0) {
     parts.push(
       filter.propertyTypes.length === 1
@@ -1268,8 +1280,10 @@ const housingChipLabel = computed(() => {
         : `${filter.propertyTypes[0]} 외 ${filter.propertyTypes.length - 1}`,
     );
   }
-  if (filter.minAreaM2 != null || filter.maxAreaM2 != null) parts.push('면적 조건');
-  if (filter.floorPreference.length > 0) parts.push(`층수 ${filter.floorPreference.length}개`);
+  if (filter.minAreaM2 != null || filter.maxAreaM2 != null)
+    parts.push('면적 조건');
+  if (filter.floorPreference.length > 0)
+    parts.push(`층수 ${filter.floorPreference.length}개`);
   return parts.slice(0, 2).join(' · ') || '주거 조건';
 });
 
@@ -1277,31 +1291,29 @@ const selectedTrades = computed(() =>
   TRADE_TYPES.filter((t) => draft.tradeTypes.includes(t)),
 );
 
-const depositTitle = computed(() =>
-  selectedTrades.value
-    .map((t) => (t === '매매' ? '매매가' : t === '전세' ? '전세금' : '보증금'))
-    .join(' · '),
-);
+const depositJeonseLabel = computed(() => {
+  const [lo, hi] = draft.depositJeonse;
+  if (lo <= 0 && hi >= DEPOSIT_JEONSE.max) return '전체';
+  return `${moneyLabel(lo)} ~ ${hi >= DEPOSIT_JEONSE.max ? '최대' : moneyLabel(hi)}`;
+});
 
-const depositMax = computed(() => depositMaxOf(draft.tradeTypes));
-const depositStep = computed(() => DEPOSIT_STEPS[depositMax.value]);
-const depositMarks = computed(() => DEPOSIT_MARKS[depositMax.value]);
-
-const depositValueLabel = computed(() => {
-  const [lo, hi] = draft.deposit;
-  return `${moneyLabel(lo)} ~ ${hi >= depositMax.value ? '최대' : moneyLabel(hi)}`;
+const salePriceLabel = computed(() => {
+  const [lo, hi] = draft.salePrice;
+  if (lo <= SALE_PRICE.min && hi >= SALE_PRICE.max) return '전체';
+  return `${moneyLabel(lo)} ~ ${hi >= SALE_PRICE.max ? '최대' : moneyLabel(hi)}`;
 });
 
 const rentValueLabel = computed(() => {
   const [lo, hi] = draft.rent;
-  const max = PRICE_LIMITS['월세'].rent;
-  return `${lo}만 ~ ${hi >= max ? '최대' : `${hi}만`}`;
+  if (lo <= 0 && hi >= MONTHLY_RENT.max) return '전체';
+  return `${lo}만 ~ ${hi >= MONTHLY_RENT.max ? '최대' : `${hi}만`}`;
 });
 
 const areaLabel = computed(() => {
   const [lo, hi] = draft.areaRange;
   const loStr = lo <= 0 ? '최소' : `${lo}m² (${Math.floor(lo / PYEONG)}평)`;
-  const hiStr = hi >= AREA_MAX_M2 ? '최대' : `${hi}m² (${Math.floor(hi / PYEONG)}평)`;
+  const hiStr =
+    hi >= AREA_MAX_M2 ? '최대' : `${hi}m² (${Math.floor(hi / PYEONG)}평)`;
   return `${loStr} ~ ${hiStr}`;
 });
 
@@ -1333,7 +1345,6 @@ const infraChipLabel = computed(() => {
     : `${allLabels[0]} 외 ${allLabels.length - 1}개`;
 });
 
-
 const sortLabel = computed(
   () => SORT_OPTIONS.find((o) => o.key === filter.sort)?.label ?? '추천순',
 );
@@ -1345,11 +1356,18 @@ function openSheet(name) {
     draft.hasCar = filter.hasCar;
   } else if (name === 'housing') {
     draft.tradeTypes = [...filter.tradeTypes];
-    draft.deposit = [
-      filter.minDeposit ?? 0,
-      filter.maxDeposit ?? depositMaxOf(draft.tradeTypes),
+    draft.depositJeonse = [
+      filter.minDepositJeonse ?? 0,
+      filter.maxDepositJeonse ?? DEPOSIT_JEONSE.max,
     ];
-    draft.rent = [filter.minMonthlyRent ?? 0, filter.maxMonthlyRent ?? MONTHLY_RENT.max];
+    draft.salePrice = [
+      filter.minSalePrice ?? SALE_PRICE.min,
+      filter.maxSalePrice ?? SALE_PRICE.max,
+    ];
+    draft.rent = [
+      filter.minMonthlyRent ?? 0,
+      filter.maxMonthlyRent ?? MONTHLY_RENT.max,
+    ];
     draft.propertyTypes = [...filter.propertyTypes];
     draft.floorPreference = [...filter.floorPreference];
     draft.areaRange = [filter.minAreaM2 ?? 0, filter.maxAreaM2 ?? AREA_MAX_M2];
@@ -1375,29 +1393,13 @@ function toggleIn(list, value) {
 const nullIfMin = (v, min) => (v <= min ? null : v);
 const nullIfMax = (v, max) => (v >= max ? null : v);
 
-
-function depositMaxOf(types) {
-  return Math.max(...types.map((t) => PRICE_LIMITS[t].deposit));
-}
-
 function toggleDraftTrade(t) {
-  const before = depositMaxOf(draft.tradeTypes);
   const i = draft.tradeTypes.indexOf(t);
-
   if (i !== -1) {
     if (draft.tradeTypes.length === 1) return;
     draft.tradeTypes.splice(i, 1);
   } else {
     draft.tradeTypes.push(t);
-  }
-
-  const after = depositMaxOf(draft.tradeTypes);
-  if (after !== before) {
-    const [lo, hi] = draft.deposit;
-    draft.deposit = [
-      Math.min(lo, after),
-      hi >= before ? after : Math.min(hi, after),
-    ];
   }
 }
 
@@ -1424,14 +1426,30 @@ function selectWorkplace(location) {
 }
 
 function applyHousing() {
-  const max = depositMaxOf(draft.tradeTypes);
   filter.tradeTypes = [...selectedTrades.value];
-  filter.minDeposit = nullIfMin(draft.deposit[0], 0);
-  filter.maxDeposit = nullIfMax(draft.deposit[1], max);
+
+  if (draft.tradeTypes.includes('월세') || draft.tradeTypes.includes('전세')) {
+    filter.minDepositJeonse = nullIfMin(draft.depositJeonse[0], 0);
+    filter.maxDepositJeonse = nullIfMax(
+      draft.depositJeonse[1],
+      DEPOSIT_JEONSE.max,
+    );
+  } else {
+    filter.minDepositJeonse = null;
+    filter.maxDepositJeonse = null;
+  }
+
+  if (draft.tradeTypes.includes('매매')) {
+    filter.minSalePrice = nullIfMin(draft.salePrice[0], SALE_PRICE.min);
+    filter.maxSalePrice = nullIfMax(draft.salePrice[1], SALE_PRICE.max);
+  } else {
+    filter.minSalePrice = null;
+    filter.maxSalePrice = null;
+  }
 
   if (draft.tradeTypes.includes('월세')) {
     filter.minMonthlyRent = nullIfMin(draft.rent[0], 0);
-    filter.maxMonthlyRent = nullIfMax(draft.rent[1], PRICE_LIMITS['월세'].rent);
+    filter.maxMonthlyRent = nullIfMax(draft.rent[1], MONTHLY_RENT.max);
   } else {
     filter.minMonthlyRent = null;
     filter.maxMonthlyRent = null;
@@ -1439,14 +1457,16 @@ function applyHousing() {
   filter.propertyTypes = [...draft.propertyTypes];
   filter.floorPreference = [...draft.floorPreference];
   filter.minAreaM2 = draft.areaRange[0] > 0 ? draft.areaRange[0] : null;
-  filter.maxAreaM2 = draft.areaRange[1] < AREA_MAX_M2 ? draft.areaRange[1] : null;
+  filter.maxAreaM2 =
+    draft.areaRange[1] < AREA_MAX_M2 ? draft.areaRange[1] : null;
   closeSheet();
 }
 
 function resetHousing() {
   draft.tradeTypes = [...TRADE_TYPES];
-  draft.deposit = [0, depositMaxOf(TRADE_TYPES)];
-  draft.rent = [0, PRICE_LIMITS['월세'].rent];
+  draft.depositJeonse = [0, DEPOSIT_JEONSE.max];
+  draft.salePrice = [SALE_PRICE.min, SALE_PRICE.max];
+  draft.rent = [0, MONTHLY_RENT.max];
   draft.propertyTypes = [];
   draft.floorPreference = [];
   draft.areaRange = [0, AREA_MAX_M2];
@@ -1479,7 +1499,8 @@ function resetInfra() {
 function togglePriority(c) {
   const i = draft.priorities.indexOf(c);
   if (i !== -1) draft.priorities.splice(i, 1);
-  else if (draft.priorities.length < MAX_PRIORITY_SELECTIONS) draft.priorities.push(c);
+  else if (draft.priorities.length < MAX_PRIORITY_SELECTIONS)
+    draft.priorities.push(c);
 }
 
 function priorityRank(c) {
@@ -1519,7 +1540,6 @@ function onCardClick(property) {
   selectedBuildingId.value = property.buildingId;
   selectionSource.value = 'card';
 }
-
 
 function onDotClick(dot) {
   pinnedDot.value = keyOf(pinnedDot.value) === keyOf(dot) ? null : dot;
@@ -1958,7 +1978,6 @@ watch(filter, () => {
   font-weight: 700;
 }
 
-
 .field {
   padding: 4px 0 18px;
 }
@@ -2001,7 +2020,6 @@ watch(filter, () => {
   font-weight: 800;
   color: #33302a;
 }
-
 
 .range-value {
   font-size: 12.5px;
@@ -2119,7 +2137,6 @@ watch(filter, () => {
   cursor: default;
 }
 
-
 .sort-list {
   display: flex;
   flex-direction: column;
@@ -2142,8 +2159,6 @@ watch(filter, () => {
   font-weight: 700;
   color: #fe7b00;
 }
-
-
 
 .priority-list {
   display: flex;
