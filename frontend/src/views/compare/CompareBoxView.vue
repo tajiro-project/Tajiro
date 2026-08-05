@@ -55,10 +55,11 @@
         </li>
       </ul>
 
-      <button class="add-btn" type="button" @click="router.push('/properties')">
+      <button class="add-btn" type="button" @click="goPropertyListForAdd">
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2v10M2 7h10" stroke="#545045" stroke-width="1.5" stroke-linecap="round" /></svg>
         매물 리스트에서 추가하기
       </button>
+      <p v-if="toastMessage" class="toast-msg">{{ toastMessage }}</p>
 
       <p class="tip">
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1.5a4.2 4.2 0 00-2.4 7.6c.5.4.9 1 .9 1.6v.3h3v-.3c0-.6.4-1.2.9-1.6A4.2 4.2 0 007 1.5z" stroke="#8a8477" stroke-width="1.2" /><path d="M5.8 12.5h2.4" stroke="#8a8477" stroke-width="1.2" stroke-linecap="round" /></svg>
@@ -89,6 +90,8 @@ const errorMessage = ref('')
 const items = ref([])
 const checkedIds = ref([])
 const imageErrorIds = ref([])
+const toastMessage = ref('')
+let toastTimer = null
 
 onMounted(loadCompareBox)
 
@@ -145,6 +148,24 @@ function markImageError(propertyId) {
 function startCompare() {
   if (checkedIds.value.length < 2) return
   router.push({ path: '/compare', query: { propertyIds: checkedIds.value } })
+}
+
+function goPropertyListForAdd() {
+  if (items.value.length >= 3) {
+    showToast('비교함에는 최대 3개까지만 담을 수 있어요.\n매물을 삭제한 뒤 추가해주세요.')
+    return
+  }
+
+  router.push('/properties')
+}
+
+function showToast(message) {
+  toastMessage.value = message
+  if (toastTimer) clearTimeout(toastTimer)
+  toastTimer = setTimeout(() => {
+    toastMessage.value = ''
+    toastTimer = null
+  }, 2200)
 }
 
 function goBack() {
@@ -335,6 +356,25 @@ function formatFee(item) {
 }
 .remove:disabled {
   opacity: 0.45;
+}
+.toast-msg {
+  position: fixed;
+  left: 50%;
+  bottom: 92px;
+  z-index: 80;
+  width: max-content;
+  max-width: min(300px, calc(100% - 72px));
+  transform: translateX(-50%);
+  padding: 9px 12px;
+  border-radius: 10px;
+  background: rgba(33, 30, 24, 0.92);
+  color: #fff;
+  font-size: 11.5px;
+  font-weight: 700;
+  line-height: 1.4;
+  text-align: center;
+  white-space: pre-line;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.16);
 }
 .add-btn {
   display: flex;
