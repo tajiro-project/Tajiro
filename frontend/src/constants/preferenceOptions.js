@@ -13,7 +13,7 @@ export const HOUSING_OPTIONS = ['원룸', '아파트', '주택/빌라', '오피�
 
 export const TRADE_OPTIONS = ['월세', '전세', '매매'];
 
-export const FLOOR_OPTIONS = ['저층', '1층', '2층 이상', '옥탑'];
+export const FLOOR_OPTIONS = ['지하/반지하', '1층', '2층 이상', '옥탑'];
 
 export const INFRA_CATEGORIES = [
   { key: 'SUBWAY', label: '지하철' },
@@ -72,6 +72,12 @@ export const PREFERENCE_SLIDER_CONFIG = {
     step: 5000,
     marks: ['최소', '10억', '20억', '30억', '최대'],
   },
+  AREA: {
+    min: 0,
+    max: 200,
+    step: 1,
+    marks: ['0', '50m²', '100m²', '150m²', '200m²'],
+  },
 };
 
 export const PRIORITY_OPTIONS = [
@@ -97,7 +103,7 @@ export const PRIORITY_OPTIONS = [
     criterion: 'AMENITY',
     title: '편의시설',
     sub: '마트, 편의점, 카페 등',
-    icon: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2.5l6.5 3v5c0 4-2.8 6.4-6.5 7.5-3.7-1.1-6.5-3.5-6.5-7.5v-5l6.5-3z" stroke="#545045" stroke-width="1.5" stroke-linejoin="round"/><path d="M7.2 10l2 2 3.6-3.8" stroke="#545045" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    icon: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 7h12l-1 9H5L4 7z" stroke="#545045" stroke-width="1.5" stroke-linejoin="round"/><path d="M7.5 7V5.5a2.5 2.5 0 015 0V7" stroke="#545045" stroke-width="1.5"/></svg>',
   },
   {
     criterion: 'AREA',

@@ -16,62 +16,77 @@
         />
       </svg>
       <span class="ip-title">지도에 표시</span>
-      <span v-if="collapsed" class="ip-count">{{ modelValue.length }}</span>
-      <svg
-        class="ip-chevron"
-        width="12"
-        height="12"
-        viewBox="0 0 12 12"
-        fill="none"
-      >
-        <path
-          d="M2.5 7.5L6 4l3.5 3.5"
-          stroke="#8a8d8f"
-          stroke-width="1.4"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        />
-      </svg>
+      <template v-if="layers.length">
+        <span v-if="collapsed" class="ip-count">{{ modelValue.length }}</span>
+        <svg
+          class="ip-chevron"
+          width="12"
+          height="12"
+          viewBox="0 0 12 12"
+          fill="none"
+        >
+          <path
+            d="M2.5 7.5L6 4l3.5 3.5"
+            stroke="#8a8d8f"
+            stroke-width="1.4"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+      </template>
     </button>
 
     <template v-if="!collapsed">
-      <div v-for="layer in layers" :key="layer.key" class="ip-row">
-        <span class="ip-dot" :style="{ background: layer.color }" />
-        <span class="ip-label" :class="{ dim: !isOn(layer.key) }">
-          {{ layer.label }}
-        </span>
-        <button
-          class="ip-toggle"
-          :class="{ on: isOn(layer.key) }"
-          role="switch"
-          :aria-checked="isOn(layer.key)"
-          @click="toggle(layer.key)"
-        >
-          <span class="knob" />
-        </button>
-      </div>
+      <div class="ip-list">
+        <div v-for="layer in layers" :key="layer.key" class="ip-row">
+          <span class="ip-dot" :style="{ background: layer.color }" />
+          <span class="ip-label" :class="{ dim: !isOn(layer.key) }">
+            {{ layer.label }}
+          </span>
+          <button
+            class="ip-toggle"
+            :class="{ on: isOn(layer.key) }"
+            role="switch"
+            :aria-checked="isOn(layer.key)"
+            @click="toggle(layer.key)"
+          >
+            <span class="knob" />
+          </button>
+        </div>
 
-      <p v-if="!layers.length" class="ip-empty">표시할 카테고리가 없습니다</p>
+        <div v-if="!layers.length" class="ip-empty">
+          <p class="ip-empty-text">선택된 인프라·편의시설이 없어요</p>
+          <button class="ip-empty-btn" @click="emit('open-settings')">
+            선택하러 가기
+          </button>
+        </div>
+      </div>
     </template>
   </div>
 </template>
 
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { infraColor } from '@/constants/infraIcons';
 import {
   INFRA_CATEGORIES,
   AMENITY_CATEGORIES,
 } from '@/constants/preferenceOptions';
 
-// 지도 위 인프라·편의시설 레이어 토글
 const props = defineProps({
   modelValue: { type: Array, required: true },
   categories: { type: Array, required: true },
 });
-const emit = defineEmits(['update:modelValue']);
+const emit = defineEmits(['update:modelValue', 'open-settings']);
 
-const collapsed = ref(true);
+const collapsed = ref(props.categories.length > 0);
+
+watch(
+  () => props.categories.length,
+  (n) => {
+    if (n === 0) collapsed.value = false;
+  },
+);
 
 const ALL_CATEGORIES = [...INFRA_CATEGORIES, ...AMENITY_CATEGORIES];
 
@@ -98,13 +113,16 @@ function toggle(key) {
 <style scoped>
 .infra-panel {
   width: 168px;
-  background: var(--white);
+  max-height: 100%;
+  overflow: hidden;
+  background: #ffffff;
   border-radius: 12px;
   box-shadow: 0 4px 14px rgba(51, 48, 42, 0.18);
-  padding: 10px 12px;
+  padding: 6px 12px;
   display: flex;
   flex-direction: column;
   gap: 8px;
+  pointer-events: auto;
 }
 
 .ip-head {
@@ -117,8 +135,13 @@ function toggle(key) {
   cursor: pointer;
 }
 
-.infra-panel.collapsed .ip-head {
-  padding-bottom: 0;
+.ip-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .ip-title {
@@ -213,7 +236,25 @@ function toggle(key) {
 }
 
 .ip-empty {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ip-empty-text {
   font-size: 11.5px;
+  line-height: 1.4;
   color: var(--kb-silver);
+}
+
+.ip-empty-btn {
+  height: 28px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--white);
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #33302a;
+  cursor: pointer;
 }
 </style>
