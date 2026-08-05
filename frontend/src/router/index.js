@@ -55,11 +55,15 @@ const routes = [
     component: () => import('@/views/benefit/BenefitMatchView.vue'),
     props: { initialTab: 'kb' },
   }, // 12-2 KB
-
   {
     path: '/properties/:id',
     name: 'property-detail',
     component: () => import('@/views/property/PropertyDetailView.vue'),
+  }, // 09
+  {
+    path: '/properties/:id/infra',
+    name: 'property-infra',
+    component: () => import('@/views/property/PropertyInfraView.vue'),
   }, // 09
   {
     path: '/preferences',
