@@ -78,8 +78,8 @@
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import AppTabBar from '@/components/AppTabBar.vue'
-import client, { withMock } from '@/api/client'
-import { mockCompareBox } from '@/api/mockData'
+import { getApiErrorMessage } from '@/api/client'
+import { comparisonApi } from '@/api/services'
 
 const router = useRouter()
 
@@ -97,14 +97,17 @@ async function loadCompareBox() {
   errorMessage.value = ''
 
   try {
-    const data = await withMock(() => client.get('/users/me/compare'), mockCompareBox)
+    const data = await comparisonApi.box()
     const payload = data?.data ?? data
     const nextItems = Array.isArray(payload) ? payload : payload?.items ?? []
     items.value = nextItems.slice(0, 3)
     checkedIds.value = items.value.slice(0, 3).map((item) => item.propertyId)
     imageErrorIds.value = []
   } catch (error) {
-    errorMessage.value = error?.message ?? '비교함을 불러오지 못했어요.'
+    errorMessage.value = getApiErrorMessage(
+      error,
+      '비교함 서버와 연결하지 못했습니다. 잠시 후 다시 시도해주세요.',
+    )
   } finally {
     loading.value = false
   }
@@ -120,11 +123,14 @@ async function removeItem(propertyId) {
   deletingId.value = propertyId
 
   try {
-    await withMock(() => client.delete(`/users/me/compare/${propertyId}`), {})
+    await comparisonApi.removeFromBox(propertyId)
     items.value = items.value.filter((item) => item.propertyId !== propertyId)
     checkedIds.value = checkedIds.value.filter((id) => id !== propertyId)
   } catch (error) {
-    errorMessage.value = error?.message ?? '삭제 중 오류가 발생했어요.'
+    errorMessage.value = getApiErrorMessage(
+      error,
+      '비교함 서버와 연결하지 못해 삭제하지 못했습니다.',
+    )
   } finally {
     deletingId.value = ''
   }

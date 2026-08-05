@@ -23,4 +23,11 @@ export async function withMock(request, mock) {
   }
 }
 
+export function getApiErrorMessage(
+  error,
+  fallback = '서버와 연결하지 못했습니다. 잠시 후 다시 시도해주세요.',
+) {
+  return error?.response?.data?.message ?? error?.response?.data?.error ?? fallback;
+}
+
 export default client;
