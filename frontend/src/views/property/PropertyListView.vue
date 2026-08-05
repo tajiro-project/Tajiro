@@ -11,7 +11,6 @@
           @marker-click="onMarkerClick"
           @dot-click="onDotClick"
           @dot-hover="onDotHover"
-          @bounds-change="onBoundsChange"
         />
 
         <div v-if="activeDot" class="dot-info">
@@ -37,33 +36,24 @@
       <div class="filter-chips" @wheel="onWheelX">
         <button
           class="fchip"
-          :class="{ on: filter.tradeTypes.length > 0 }"
-          @click="openSheet('trade')"
-        >
-          {{ tradeChipLabel }}
-        </button>
-        <button
-          class="fchip"
-          :class="{
-            on: filter.maxDeposit != null || filter.maxMonthlyRent != null,
-          }"
-          @click="openSheet('price')"
-        >
-          {{ priceChipLabel }}
-        </button>
-        <button
-          class="fchip"
-          :class="{ on: filter.maxWorkplaceDistanceMeters != null }"
+          :class="{ on: commuteChipOn }"
           @click="openSheet('commute')"
         >
           {{ commuteChipLabel }}
         </button>
         <button
           class="fchip"
-          :class="{ on: filterChipOn }"
-          @click="openSheet('filter')"
+          :class="{ on: housingChipOn }"
+          @click="openSheet('housing')"
         >
-          필터
+          {{ housingChipLabel }}
+        </button>
+        <button
+          class="fchip"
+          :class="{ on: infraChipOn }"
+          @click="openSheet('infra')"
+        >
+          {{ infraChipLabel }}
         </button>
       </div>
 
@@ -86,31 +76,44 @@
       </div>
 
       <div
+        v-if="filter.sort === 'recommend'"
         class="priority-row"
         @click="openSheet('priority')"
-        v-if="filter.sort === 'recommend'"
         @wheel="onWheelX"
       >
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <svg
+          class="prow-icon"
+          width="18"
+          height="18"
+          viewBox="0 0 18 18"
+          fill="none"
+        >
           <path
-            d="M2 4h9M2 8h6M2 12h4M13 6v7M13 13l-2-2M13 13l2-2"
-            stroke="#545045"
-            stroke-width="1.3"
+            d="M2 5.5h3M8.5 5.5H16M2 12.5h7.5M13 12.5H16"
+            stroke="#33302a"
+            stroke-width="1.6"
             stroke-linecap="round"
-            stroke-linejoin="round"
+          />
+          <circle
+            cx="6.75"
+            cy="5.5"
+            r="1.9"
+            stroke="#33302a"
+            stroke-width="1.6"
+          />
+          <circle
+            cx="11.25"
+            cy="12.5"
+            r="1.9"
+            stroke="#33302a"
+            stroke-width="1.6"
           />
         </svg>
+
         <span v-for="p in priorityChips" :key="p.criterion" class="pchip">
           <b class="pnum">{{ p.priorityOrder }}</b>
           {{ criterionLabel(p.criterion) }}
         </span>
-        <svg width="13" height="13" viewBox="0 0 12 12" fill="none">
-          <path
-            d="M8.5 1.5l2 2L4 10H2V8l6.5-6.5z"
-            stroke="#8a8d8f"
-            stroke-width="1.1"
-          />
-        </svg>
       </div>
     </div>
     <div ref="scrollArea" class="scroll-area">
@@ -194,27 +197,357 @@
     </div>
   </div>
   <AppTabBar active="property" />
+  <!-- 희망 주거 조건 -->
+  <BottomSheet
+    :model-value="openedSheet === 'housing'"
+    title="희망 주거 조건"
+    @update:model-value="closeSheet"
+  >
+    <div class="field">
+      <p class="field-name">매물 유형</p>
+      <div class="opt-grid">
+        <button
+          v-for="t in PROPERTY_TYPES"
+          :key="t"
+          class="opt"
+          :class="{ on: draft.propertyTypes.includes(t) }"
+          @click="toggleIn(draft.propertyTypes, t)"
+        >
+          {{ t }}
+        </button>
+      </div>
+    </div>
+
+    <div class="field">
+      <p class="field-name">거래 유형</p>
+      <div class="opt-grid">
+        <button
+          v-for="t in TRADE_TYPES"
+          :key="t"
+          class="opt"
+          :class="{ on: draft.tradeTypes.includes(t) }"
+          @click="toggleDraftTrade(t)"
+        >
+          {{ t }}
+        </button>
+      </div>
+    </div>
+
+    <div v-if="draft.tradeTypes.length" class="range-card">
+      <div
+        v-if="
+          draft.tradeTypes.includes('월세') || draft.tradeTypes.includes('전세')
+        "
+        class="range-group"
+      >
+        <p class="range-title">
+          보증금/전세금
+          <span class="range-value">{{ depositJeonseLabel }}</span>
+        </p>
+        <DualSlider
+          v-model="draft.depositJeonse"
+          :min="DEPOSIT_JEONSE.min"
+          :max="DEPOSIT_JEONSE.max"
+          :step="DEPOSIT_JEONSE.step"
+          :marks="DEPOSIT_JEONSE.marks"
+        />
+      </div>
+
+      <div v-if="draft.tradeTypes.includes('월세')" class="range-group">
+        <p class="range-title">
+          월세
+          <span class="range-value">{{ rentValueLabel }}</span>
+        </p>
+        <DualSlider
+          v-model="draft.rent"
+          :min="MONTHLY_RENT.min"
+          :max="MONTHLY_RENT.max"
+          :step="MONTHLY_RENT.step"
+          :marks="MONTHLY_RENT.marks"
+        />
+      </div>
+
+      <div v-if="draft.tradeTypes.includes('매매')" class="range-group">
+        <p class="range-title">
+          매매가
+          <span class="range-value">{{ salePriceLabel }}</span>
+        </p>
+        <DualSlider
+          v-model="draft.salePrice"
+          :min="SALE_PRICE.min"
+          :max="SALE_PRICE.max"
+          :step="SALE_PRICE.step"
+          :marks="SALE_PRICE.marks"
+        />
+      </div>
+    </div>
+
+    <div class="field field-gap-top">
+      <div class="field-head">
+        <span class="field-name">매물 면적</span>
+        <span class="range-value">{{ areaLabel }}</span>
+      </div>
+      <DualSlider
+        v-model="draft.areaRange"
+        :min="0"
+        :max="AREA_MAX_M2"
+        :step="5"
+        :marks="['0', '50m²', '100m²', '150m²', '200m²']"
+      />
+    </div>
+
+    <div class="field">
+      <p class="field-name">매물 층수</p>
+      <div class="opt-grid">
+        <button
+          v-for="f in FLOOR_OPTIONS"
+          :key="f"
+          class="opt"
+          :class="{ on: draft.floorPreference.includes(f) }"
+          @click="toggleIn(draft.floorPreference, f)"
+        >
+          {{ f }}
+        </button>
+      </div>
+    </div>
+
+    <div class="sheet-actions">
+      <button class="btn-ghost" @click="resetHousing">초기화</button>
+      <button class="btn-primary" @click="applyHousing">
+        이 조건으로 적용
+      </button>
+    </div>
+  </BottomSheet>
+
+  <!-- 이주/통근 정보 -->
+  <BottomSheet
+    :model-value="openedSheet === 'commute'"
+    title="이주/통근 정보"
+    @update:model-value="closeSheet"
+  >
+    <div class="field">
+      <p class="field-name">선호 위치 (직장 / 학교 등)</p>
+      <input
+        class="location-input"
+        type="text"
+        readonly
+        :value="draft.workplace?.name || draft.workplace?.address || ''"
+        placeholder="예) 창원시 성산구 상남동"
+        @click="goLocationSelect"
+        @keydown.enter.prevent="goLocationSelect"
+      />
+    </div>
+
+    <div class="field">
+      <div class="field-head">
+        <span class="field-name">희망 통근 거리</span>
+        <span class="range-value">{{ distanceLabel }}</span>
+      </div>
+      <SingleSlider
+        v-model="draft.distance"
+        :min="PREFERENCE_SLIDER_CONFIG.COMMUTE_DISTANCE.min"
+        :max="PREFERENCE_SLIDER_CONFIG.COMMUTE_DISTANCE.max"
+        :step="PREFERENCE_SLIDER_CONFIG.COMMUTE_DISTANCE.step"
+        :marks="PREFERENCE_SLIDER_CONFIG.COMMUTE_DISTANCE.marks"
+        aria-label="희망 통근 거리"
+      />
+    </div>
+
+    <div class="field">
+      <p class="field-name">자차 보유 여부</p>
+      <div class="check-row">
+        <label class="check-item" @click="draft.hasCar = true">
+          <span class="checkbox" :class="{ on: draft.hasCar }">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path
+                d="M2 6.5L4.7 9L10 3.5"
+                stroke="#545045"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </span>
+          자차 보유 O
+        </label>
+        <label class="check-item" @click="draft.hasCar = false">
+          <span class="checkbox" :class="{ on: !draft.hasCar }">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path
+                d="M2 6.5L4.7 9L10 3.5"
+                stroke="#545045"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </span>
+          자차 보유 X
+        </label>
+      </div>
+    </div>
+
+    <div class="sheet-actions">
+      <button class="btn-ghost" @click="resetCommute">초기화</button>
+      <button class="btn-primary" @click="applyCommute">
+        이 조건으로 적용
+      </button>
+    </div>
+  </BottomSheet>
+
+  <!-- 인프라 · 편의시설 -->
+  <BottomSheet
+    :model-value="openedSheet === 'infra'"
+    title="인프라 · 편의시설"
+    @update:model-value="closeSheet"
+  >
+    <div class="field">
+      <p class="field-name">희망 인프라</p>
+      <p class="field-caption">반경 2km 이내만 표시</p>
+      <div class="opt-grid">
+        <button
+          v-for="c in INFRA_CATEGORIES"
+          :key="c.key"
+          class="opt"
+          :class="{ on: draft.infra.includes(c.key) }"
+          @click="toggleIn(draft.infra, c.key)"
+        >
+          {{ c.label }}
+        </button>
+      </div>
+    </div>
+
+    <div class="field">
+      <p class="field-name">희망 편의시설</p>
+      <p class="field-caption">반경 2km 이내만 표시</p>
+      <div class="opt-grid">
+        <button
+          v-for="c in AMENITY_CATEGORIES"
+          :key="c.key"
+          class="opt"
+          :class="{ on: draft.amenity.includes(c.key) }"
+          @click="toggleIn(draft.amenity, c.key)"
+        >
+          {{ c.label }}
+        </button>
+      </div>
+    </div>
+
+    <div class="sheet-actions">
+      <button class="btn-ghost" @click="resetInfra">초기화</button>
+      <button class="btn-primary" @click="applyInfra">이 조건으로 적용</button>
+    </div>
+  </BottomSheet>
+
+  <!-- 정렬 -->
+  <BottomSheet
+    :model-value="openedSheet === 'sort'"
+    title="정렬"
+    @update:model-value="closeSheet"
+  >
+    <ul class="sort-list">
+      <li v-for="o in SORT_OPTIONS" :key="o.key">
+        <button
+          class="sort-item"
+          :class="{ on: filter.sort === o.key }"
+          @click="applySort(o.key)"
+        >
+          {{ o.label }}
+          <svg
+            v-if="filter.sort === o.key"
+            width="14"
+            height="14"
+            viewBox="0 0 14 14"
+            fill="none"
+          >
+            <path
+              d="M3 7.5l3 3 5-6"
+              stroke="#fe7b00"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </button>
+      </li>
+    </ul>
+  </BottomSheet>
+
+  <!-- 우선순위 -->
+  <!-- 08-2 · 가치관 우선순위 -->
+  <BottomSheet
+    :model-value="openedSheet === 'priority'"
+    title="가치관 우선순위 수정"
+    @update:model-value="closeSheet"
+  >
+    <p class="sheet-note">중요한 순서대로 최대 3개까지 선택하세요.</p>
+    <div class="priority-list">
+      <button
+        v-for="opt in PRIORITY_OPTIONS"
+        :key="opt.criterion"
+        class="priority-card"
+        :class="{ on: priorityRank(opt.criterion) != null }"
+        @click="togglePriority(opt.criterion)"
+      >
+        <span class="p-icon" v-html="opt.icon" />
+        <span class="p-texts">
+          <span class="p-title">{{ opt.title }}</span>
+          <span class="p-sub">{{ opt.sub }}</span>
+        </span>
+        <span v-if="priorityRank(opt.criterion)" class="p-badge">
+          {{ priorityRank(opt.criterion) }}
+        </span>
+      </button>
+    </div>
+    <div class="sheet-actions">
+      <button class="btn-ghost" @click="draft.priorities = []">초기화</button>
+      <button
+        class="btn-primary"
+        :disabled="draft.priorities.length === 0"
+        @click="applyPriority"
+      >
+        이 순서로 적용
+      </button>
+    </div>
+  </BottomSheet>
+
+  <KakaoLocation
+    :open="isLocationPickerOpen"
+    :initial-location="draft.workplace"
+    @close="isLocationPickerOpen = false"
+    @select="selectWorkplace"
+  />
 </template>
 
 <script setup>
 import PageHeader from '@/components/PageHeader.vue';
 import AppTabBar from '@/components/AppTabBar.vue';
 import KakaoMap from '@/components/KakaoMap.vue';
+import BottomSheet from '@/components/BottomSheet.vue';
+import DualSlider from '@/components/DualSlider.vue';
+import SingleSlider from '@/components/SingleSlider.vue';
+import KakaoLocation from '@/components/KakaoLocation.vue';
+
 import { computed, ref, reactive, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { infraColor, INFRA_ICON_PATHS } from '@/constants/infraIcons';
+import { infraColor } from '@/constants/infraIcons';
 import {
-  safetyColor,
-  SAFETY_ICON_PATHS,
-  safetyLabel,
-} from '@/constants/safetyIcons';
+  TRADE_OPTIONS as TRADE_TYPES,
+  HOUSING_OPTIONS as PROPERTY_TYPES,
+  FLOOR_OPTIONS,
+  INFRA_CATEGORIES,
+  AMENITY_CATEGORIES,
+  PRIORITY_OPTIONS,
+  MAX_PRIORITY_SELECTIONS,
+  PREFERENCE_SLIDER_CONFIG,
+} from '@/constants/preferenceOptions';
 
 // mock data
 const RAW_PROPERTIES = [
   // B01 용운마젤란21 — 3건
   {
-    propertyId: 'P01',
-    buildingId: 'B01',
+    propertyId: 1,
+    buildingId: 1,
     buildingName: '용운마젤란21',
     title: '용운마젤란21 1302호',
     propertyType: '아파트',
@@ -235,8 +568,8 @@ const RAW_PROPERTIES = [
   },
 
   {
-    propertyId: 'P02',
-    buildingId: 'B01',
+    propertyId: 2,
+    buildingId: 1,
     buildingName: '용운마젤란21',
     title: '용운마젤란21 1103호',
     propertyType: '아파트',
@@ -257,8 +590,8 @@ const RAW_PROPERTIES = [
   },
 
   {
-    propertyId: 'P03',
-    buildingId: 'B01',
+    propertyId: 3,
+    buildingId: 1,
     buildingName: '용운마젤란21',
     title: '용운마젤란21 1401호',
     propertyType: '아파트',
@@ -280,8 +613,8 @@ const RAW_PROPERTIES = [
 
   // B02 한화꿈에그린 — 2건
   {
-    propertyId: 'P04',
-    buildingId: 'B02',
+    propertyId: 4,
+    buildingId: 2,
     buildingName: '한화꿈에그린',
     title: '한화꿈에그린 1504호',
     propertyType: '아파트',
@@ -302,8 +635,8 @@ const RAW_PROPERTIES = [
   },
 
   {
-    propertyId: 'P05',
-    buildingId: 'B02',
+    propertyId: 5,
+    buildingId: 2,
     buildingName: '한화꿈에그린',
     title: '한화꿈에그린 1004호',
     propertyType: '아파트',
@@ -325,8 +658,8 @@ const RAW_PROPERTIES = [
 
   // B03 용방마을아파트 — 1건
   {
-    propertyId: 'P06',
-    buildingId: 'B03',
+    propertyId: 6,
+    buildingId: 3,
     buildingName: '용방마을아파트',
     title: '용방마을주공3단지 1202호',
     propertyType: '아파트',
@@ -348,8 +681,8 @@ const RAW_PROPERTIES = [
 
   // B04 에코포레 — 4건
   {
-    propertyId: 'P07',
-    buildingId: 'B04',
+    propertyId: 7,
+    buildingId: 4,
     buildingName: '에코포레',
     title: 'e편한세상대전에코포레 2101호',
     propertyType: '아파트',
@@ -370,8 +703,8 @@ const RAW_PROPERTIES = [
   },
 
   {
-    propertyId: 'P08',
-    buildingId: 'B04',
+    propertyId: 8,
+    buildingId: 4,
     buildingName: '에코포레',
     title: 'e편한세상대전에코포레 601호',
     propertyType: '아파트',
@@ -392,8 +725,8 @@ const RAW_PROPERTIES = [
   },
 
   {
-    propertyId: 'P09',
-    buildingId: 'B04',
+    propertyId: 9,
+    buildingId: 4,
     buildingName: '에코포레',
     title: 'e편한세상대전에코포레 3201호',
     propertyType: '아파트',
@@ -414,8 +747,8 @@ const RAW_PROPERTIES = [
   },
 
   {
-    propertyId: 'P10',
-    buildingId: 'B04',
+    propertyId: 10,
+    buildingId: 4,
     buildingName: '에코포레',
     title: 'e편한세상대전에코포레 903호',
     propertyType: '아파트',
@@ -437,8 +770,8 @@ const RAW_PROPERTIES = [
 
   // B05 — 건물명 없음 (오피스텔)
   {
-    propertyId: 'P11',
-    buildingId: 'B05',
+    propertyId: 11,
+    buildingId: 5,
     buildingName: '',
     title: '대학로62-67 202호',
     propertyType: '오피스텔',
@@ -460,8 +793,8 @@ const RAW_PROPERTIES = [
 
   // B06 — 건물명 없음 (원룸). 지하·옥탑 표기 확인용
   {
-    propertyId: 'P12',
-    buildingId: 'B06',
+    propertyId: 12,
+    buildingId: 6,
     buildingName: '',
     title: '277-22 102호',
     propertyType: '원룸',
@@ -482,8 +815,8 @@ const RAW_PROPERTIES = [
   },
 
   {
-    propertyId: 'P13',
-    buildingId: 'B06',
+    propertyId: 13,
+    buildingId: 6,
     buildingName: '',
     title: '277-22 옥탑',
     propertyType: '원룸',
@@ -507,35 +840,35 @@ const RAW_PROPERTIES = [
 const RAW_INFRA = [
   // B01
   {
-    buildingId: 'B01',
+    buildingId: 1,
     category: 'SUBWAY',
     name: '판암역',
     latitude: 36.3285,
     longitude: 127.4541,
   },
   {
-    buildingId: 'B01',
+    buildingId: 1,
     category: 'HOSPITAL',
     name: '대전한국병원',
     latitude: 36.3281,
     longitude: 127.4553,
   },
   {
-    buildingId: 'B01',
+    buildingId: 1,
     category: 'CAFE',
     name: '스타벅스 대전대점',
     latitude: 36.3263,
     longitude: 127.4553,
   },
   {
-    buildingId: 'B01',
+    buildingId: 1,
     category: 'SCHOOL',
     name: '가양초등학교',
     latitude: 36.3259,
     longitude: 127.4541,
   },
   {
-    buildingId: 'B01',
+    buildingId: 1,
     category: 'PARK',
     name: '용운근린공원',
     latitude: 36.3263,
@@ -544,35 +877,35 @@ const RAW_INFRA = [
 
   // B02
   {
-    buildingId: 'B02',
+    buildingId: 2,
     category: 'BUS_TERMINAL',
     name: '대전복합터미널',
     latitude: 36.3318,
     longitude: 127.4589,
   },
   {
-    buildingId: 'B02',
+    buildingId: 2,
     category: 'PHARMACY',
     name: '온누리약국',
     latitude: 36.3314,
     longitude: 127.4601,
   },
   {
-    buildingId: 'B02',
+    buildingId: 2,
     category: 'MART',
     name: '홈플러스 가오점',
     latitude: 36.3296,
     longitude: 127.4601,
   },
   {
-    buildingId: 'B02',
+    buildingId: 2,
     category: 'ACADEMY',
     name: '이룸수학학원',
     latitude: 36.3292,
     longitude: 127.4589,
   },
   {
-    buildingId: 'B02',
+    buildingId: 2,
     category: 'CULTURE',
     name: '동구문화체육센터',
     latitude: 36.3296,
@@ -581,28 +914,28 @@ const RAW_INFRA = [
 
   // B03
   {
-    buildingId: 'B03',
+    buildingId: 3,
     category: 'TRAIN',
     name: '대전역',
     latitude: 36.3264,
     longitude: 127.4608,
   },
   {
-    buildingId: 'B03',
+    buildingId: 3,
     category: 'CONVENIENCE',
     name: 'GS25 용운점',
     latitude: 36.326,
     longitude: 127.462,
   },
   {
-    buildingId: 'B03',
+    buildingId: 3,
     category: 'KINDERGARTEN',
     name: '햇살유치원',
     latitude: 36.3242,
     longitude: 127.462,
   },
   {
-    buildingId: 'B03',
+    buildingId: 3,
     category: 'SPORTS',
     name: '동구실내체육관',
     latitude: 36.3238,
@@ -611,28 +944,28 @@ const RAW_INFRA = [
 
   // B04
   {
-    buildingId: 'B04',
+    buildingId: 4,
     category: 'PARKING',
     name: '용운공영주차장',
     latitude: 36.3343,
     longitude: 127.453,
   },
   {
-    buildingId: 'B04',
+    buildingId: 4,
     category: 'FOOD',
     name: '용운칼국수',
     latitude: 36.3339,
     longitude: 127.4542,
   },
   {
-    buildingId: 'B04',
+    buildingId: 4,
     category: 'LIBRARY',
     name: '한밭도서관',
     latitude: 36.3321,
     longitude: 127.4542,
   },
   {
-    buildingId: 'B04',
+    buildingId: 4,
     category: 'SWIMMING',
     name: '용운국제수영장',
     latitude: 36.3317,
@@ -641,28 +974,28 @@ const RAW_INFRA = [
 
   // B05
   {
-    buildingId: 'B05',
+    buildingId: 5,
     category: 'GAS',
     name: 'GS칼텍스 용운주유소',
     latitude: 36.3253,
     longitude: 127.452,
   },
   {
-    buildingId: 'B05',
+    buildingId: 5,
     category: 'BANK',
     name: '하나은행 대전대점',
     latitude: 36.3249,
     longitude: 127.4532,
   },
   {
-    buildingId: 'B05',
+    buildingId: 5,
     category: 'GOV_OFFICE',
     name: '용운동 행정복지센터',
     latitude: 36.3231,
     longitude: 127.4532,
   },
   {
-    buildingId: 'B05',
+    buildingId: 5,
     category: 'POST_OFFICE',
     name: '대전용운우체국',
     latitude: 36.3227,
@@ -671,66 +1004,32 @@ const RAW_INFRA = [
 
   // B06
   {
-    buildingId: 'B06',
+    buildingId: 6,
     category: 'PUBLIC',
     name: '대전동구청',
     latitude: 36.3333,
     longitude: 127.464,
   },
   {
-    buildingId: 'B06',
+    buildingId: 6,
     category: 'POLICE',
     name: '대전동부경찰서',
     latitude: 36.3329,
     longitude: 127.4652,
   },
   {
-    buildingId: 'B06',
+    buildingId: 6,
     category: 'FIRE',
     name: '동부소방서',
     latitude: 36.3311,
     longitude: 127.4652,
   },
   {
-    buildingId: 'B06',
+    buildingId: 6,
     category: 'FIRE',
     name: '동부119안전센터',
     latitude: 36.335,
     longitude: 127.468,
-  },
-];
-
-const RAW_SAFETY = [
-  { buildingId: 'B01', type: 'CCTV', latitude: 36.3281, longitude: 127.4529 },
-  {
-    buildingId: 'B03',
-    type: 'POLICE_CENTER',
-    latitude: 36.3242,
-    longitude: 127.4596,
-  },
-  {
-    buildingId: 'B04',
-    type: 'SAFETY_BELL',
-    latitude: 36.3321,
-    longitude: 127.4518,
-  },
-  {
-    buildingId: 'B05',
-    type: 'SECURITY_LIGHT',
-    latitude: 36.3231,
-    longitude: 127.4508,
-  },
-  {
-    buildingId: 'B06',
-    type: 'CHILD_SAFE_ZONE',
-    latitude: 36.3307,
-    longitude: 127.464,
-  },
-  {
-    buildingId: 'B06',
-    type: 'CHILD_GUARD_HOUSE',
-    latitude: 36.3311,
-    longitude: 127.4628,
   },
 ];
 
@@ -741,24 +1040,35 @@ const scrollArea = ref(null);
 const selectedBuildingId = ref(null);
 const selectedPropertyId = ref(null);
 const selectionSource = ref(null);
-const bounds = ref(null);
 const pinnedDot = ref(null);
 const hoveredDot = ref(null);
 
 const activeDot = computed(() => hoveredDot.value ?? pinnedDot.value);
 const items = ref(RAW_PROPERTIES);
 
+const { DEPOSIT_JEONSE, SALE_PRICE, MONTHLY_RENT } = PREFERENCE_SLIDER_CONFIG;
+
+const DEFAULT_DISTANCE = PREFERENCE_SLIDER_CONFIG.COMMUTE_DISTANCE.defaultValue;
+const PYEONG = 3.3058;
+const AREA_MAX_M2 = 200;
+
 const filter = reactive({
-  tradeTypes: ['월세', '전세', '매매'],
+  tradeTypes: [...TRADE_TYPES],
   propertyTypes: [],
-  minDeposit: null,
-  maxDeposit: 1000,
+  minDepositJeonse: null,
+  maxDepositJeonse: null,
+  minSalePrice: null,
+  maxSalePrice: null,
   minMonthlyRent: null,
   maxMonthlyRent: null,
   minAreaM2: null,
   maxAreaM2: null,
   floorPreference: [],
-  maxWorkplaceDistanceMeters: 2000,
+  desiredInfraCategories: [],
+  desiredAmenityCategories: [],
+  maxWorkplaceDistanceMeters: DEFAULT_DISTANCE,
+  workplace: null,
+  hasCar: false,
   sort: 'recommend',
 });
 
@@ -771,22 +1081,47 @@ const SORT_OPTIONS = [
   { key: 'area', label: '면적순' },
 ];
 
+const CONVERSION_RATE = 0.053; // 전월세 전활율(전국)
+function monthlyCost(p) {
+  return p.monthlyRent + (p.deposit * CONVERSION_RATE) / 12 + p.maintenanceFee;
+}
+
 const SORT_SPECS = {
   recommend: { value: (p) => p.recommendScore, dir: 'desc' },
   distance: { value: (p) => p.workplaceDistanceMeters, dir: 'asc' },
-  price: { value: (p) => p.monthlyRent + p.deposit / 100, dir: 'asc' },
+  price: { value: monthlyCost, dir: 'asc' },
   infra: { value: (p) => p.desiredInfraCount, dir: 'desc' },
   amenity: { value: (p) => p.desiredAmenityCount, dir: 'desc' },
   area: { value: (p) => p.areaM2, dir: 'desc' },
 };
 
 const priorityChips = ref([
-  { criterion: '직주근접', priorityOrder: 1 },
-  { criterion: '가성비', priorityOrder: 2 },
-  { criterion: '편의시설', priorityOrder: 3 },
+  { criterion: 'COMMUTE', priorityOrder: 1 },
+  { criterion: 'COST', priorityOrder: 2 },
+  { criterion: 'AMENITY', priorityOrder: 3 },
 ]);
 
+const criterionLabel = (c) =>
+  PRIORITY_OPTIONS.find((o) => o.criterion === c)?.title ?? c;
+
 const openedSheet = ref(null);
+const isLocationPickerOpen = ref(false);
+
+const draft = reactive({
+  tradeTypes: [],
+  depositJeonse: [0, DEPOSIT_JEONSE.max],
+  salePrice: [SALE_PRICE.min, SALE_PRICE.max],
+  rent: [0, MONTHLY_RENT.max],
+  propertyTypes: [],
+  floorPreference: [],
+  areaRange: [0, AREA_MAX_M2],
+  infra: [],
+  amenity: [],
+  distance: DEFAULT_DISTANCE,
+  workplace: null,
+  hasCar: false,
+  priorities: [],
+});
 
 function keyOf(dot) {
   return dot ? `${dot.lat},${dot.lng}` : null;
@@ -798,9 +1133,7 @@ const activeDotText = computed(() => activeDot.value?.name ?? '');
 const activeDotColor = computed(() => {
   const c = activeDot.value?.category;
   if (!c) return '#8a8d8f';
-  if (INFRA_ICON_PATHS[c]) return infraColor(c);
-  if (SAFETY_ICON_PATHS[c]) return safetyColor();
-  return '#8a8d8f';
+  return infraColor(c);
 });
 
 const sortedItems = computed(() => {
@@ -887,61 +1220,292 @@ const dots = computed(() => {
     name: i.name,
   }));
 
-  // 안전 지표 관련
-  const safety = RAW_SAFETY.filter(
-    (s) => s.buildingId === selectedBuildingId.value,
-  ).map((s) => ({
-    lat: Number(s.latitude),
-    lng: Number(s.longitude),
-    category: s.type,
-    name: safetyLabel(s.type),
-  }));
-
-  return [...infra, ...safety];
+  return [...infra];
 });
 
-const tradeChipLabel = computed(() => {
-  const v = filter.tradeTypes;
-  if (v.length === 0) return '거래유형';
-  return v.length === 1 ? v[0] : `${v[0]} 외 ${v.length - 1}`;
-});
-
-const priceChipLabel = computed(() => {
-  const parts = [];
-  if (filter.maxDeposit != null)
-    parts.push(`보증금 ${moneyLabel(filter.maxDeposit)} 이하`);
-  if (filter.maxMonthlyRent != null)
-    parts.push(`월세 ${filter.maxMonthlyRent} 이하`);
-  return parts.length ? parts.join(' · ') : '금액';
-});
-
-const commuteChipLabel = computed(() => {
-  const m = filter.maxWorkplaceDistanceMeters;
-  if (m == null) return '통근';
-  return m >= 1000 ? `직장 ${(m / 1000).toFixed(1)}km 이내` : `직장 ${m}m 이내`;
-});
-
-const sortLabel = computed(
-  () => SORT_OPTIONS.find((o) => o.key === filter.sort)?.label ?? '추천순',
+const commuteChipOn = computed(
+  () =>
+    filter.workplace != null ||
+    filter.hasCar ||
+    filter.maxWorkplaceDistanceMeters !== DEFAULT_DISTANCE,
 );
 
-const totalCount = computed(() => listItems.value.length);
+const commuteChipLabel = computed(() => {
+  if (!commuteChipOn.value) return '이주/통근';
+  const parts = [];
+  const placeName = filter.workplace?.name || filter.workplace?.address;
+  if (placeName) parts.push(placeName);
+  const m = filter.maxWorkplaceDistanceMeters;
+  if (m !== DEFAULT_DISTANCE)
+    parts.push(m >= 1000 ? `${(m / 1000).toFixed(1)}km 이내` : `${m}m 이내`);
+  if (filter.hasCar) parts.push('자차 O');
+  return parts.slice(0, 2).join(' · ') || '이주/통근';
+});
 
-const filterChipOn = computed(
+const housingChipOn = computed(
   () =>
+    filter.tradeTypes.length < TRADE_TYPES.length ||
+    filter.minDepositJeonse != null ||
+    filter.maxDepositJeonse != null ||
+    filter.minSalePrice != null ||
+    filter.maxSalePrice != null ||
+    filter.minMonthlyRent != null ||
+    filter.maxMonthlyRent != null ||
     filter.propertyTypes.length > 0 ||
     filter.floorPreference.length > 0 ||
     filter.minAreaM2 != null ||
     filter.maxAreaM2 != null,
 );
 
-function criterionLabel(criterion) {
-  return criterion;
-}
+const housingChipLabel = computed(() => {
+  if (!housingChipOn.value) return '주거 조건';
+  const parts = [];
+  if (filter.tradeTypes.length < TRADE_TYPES.length) {
+    parts.push(
+      filter.tradeTypes.length === 1
+        ? filter.tradeTypes[0]
+        : `${filter.tradeTypes[0]} 외 ${filter.tradeTypes.length - 1}`,
+    );
+  }
+  if (filter.maxDepositJeonse != null)
+    parts.push(`${moneyLabel(filter.maxDepositJeonse)} 이하`);
+  if (filter.maxSalePrice != null)
+    parts.push(`매매가 ${moneyLabel(filter.maxSalePrice)} 이하`);
+  if (filter.maxMonthlyRent != null)
+    parts.push(`월세 ${filter.maxMonthlyRent}만 이하`);
+  if (filter.propertyTypes.length > 0) {
+    parts.push(
+      filter.propertyTypes.length === 1
+        ? filter.propertyTypes[0]
+        : `${filter.propertyTypes[0]} 외 ${filter.propertyTypes.length - 1}`,
+    );
+  }
+  if (filter.minAreaM2 != null || filter.maxAreaM2 != null)
+    parts.push('면적 조건');
+  if (filter.floorPreference.length > 0)
+    parts.push(`층수 ${filter.floorPreference.length}개`);
+  return parts.slice(0, 2).join(' · ') || '주거 조건';
+});
+
+const selectedTrades = computed(() =>
+  TRADE_TYPES.filter((t) => draft.tradeTypes.includes(t)),
+);
+
+const depositJeonseLabel = computed(() => {
+  const [lo, hi] = draft.depositJeonse;
+  if (lo <= 0 && hi >= DEPOSIT_JEONSE.max) return '전체';
+  return `${moneyLabel(lo)} ~ ${hi >= DEPOSIT_JEONSE.max ? '최대' : moneyLabel(hi)}`;
+});
+
+const salePriceLabel = computed(() => {
+  const [lo, hi] = draft.salePrice;
+  if (lo <= SALE_PRICE.min && hi >= SALE_PRICE.max) return '전체';
+  return `${moneyLabel(lo)} ~ ${hi >= SALE_PRICE.max ? '최대' : moneyLabel(hi)}`;
+});
+
+const rentValueLabel = computed(() => {
+  const [lo, hi] = draft.rent;
+  if (lo <= 0 && hi >= MONTHLY_RENT.max) return '전체';
+  return `${lo}만 ~ ${hi >= MONTHLY_RENT.max ? '최대' : `${hi}만`}`;
+});
+
+const areaLabel = computed(() => {
+  const [lo, hi] = draft.areaRange;
+  const loStr = lo <= 0 ? '최소' : `${lo}m² (${Math.floor(lo / PYEONG)}평)`;
+  const hiStr =
+    hi >= AREA_MAX_M2 ? '최대' : `${hi}m² (${Math.floor(hi / PYEONG)}평)`;
+  return `${loStr} ~ ${hiStr}`;
+});
+
+const distanceLabel = computed(() => {
+  const m = draft.distance;
+  return m >= 1000 ? `${(m / 1000).toFixed(1)}km 이내` : `${m}m 이내`;
+});
+
+const totalCount = computed(() => listItems.value.length);
+
+const infraChipOn = computed(
+  () =>
+    filter.desiredInfraCategories.length > 0 ||
+    filter.desiredAmenityCategories.length > 0,
+);
+
+const infraChipLabel = computed(() => {
+  if (!infraChipOn.value) return '인프라/편의';
+  const allLabels = [
+    ...filter.desiredInfraCategories.map(
+      (k) => INFRA_CATEGORIES.find((c) => c.key === k)?.label ?? k,
+    ),
+    ...filter.desiredAmenityCategories.map(
+      (k) => AMENITY_CATEGORIES.find((c) => c.key === k)?.label ?? k,
+    ),
+  ];
+  return allLabels.length === 1
+    ? allLabels[0]
+    : `${allLabels[0]} 외 ${allLabels.length - 1}개`;
+});
+
+const sortLabel = computed(
+  () => SORT_OPTIONS.find((o) => o.key === filter.sort)?.label ?? '추천순',
+);
 
 function openSheet(name) {
+  if (name === 'commute') {
+    draft.distance = filter.maxWorkplaceDistanceMeters ?? DEFAULT_DISTANCE;
+    draft.workplace = filter.workplace;
+    draft.hasCar = filter.hasCar;
+  } else if (name === 'housing') {
+    draft.tradeTypes = [...filter.tradeTypes];
+    draft.depositJeonse = [
+      filter.minDepositJeonse ?? 0,
+      filter.maxDepositJeonse ?? DEPOSIT_JEONSE.max,
+    ];
+    draft.salePrice = [
+      filter.minSalePrice ?? SALE_PRICE.min,
+      filter.maxSalePrice ?? SALE_PRICE.max,
+    ];
+    draft.rent = [
+      filter.minMonthlyRent ?? 0,
+      filter.maxMonthlyRent ?? MONTHLY_RENT.max,
+    ];
+    draft.propertyTypes = [...filter.propertyTypes];
+    draft.floorPreference = [...filter.floorPreference];
+    draft.areaRange = [filter.minAreaM2 ?? 0, filter.maxAreaM2 ?? AREA_MAX_M2];
+  } else if (name === 'infra') {
+    draft.infra = [...filter.desiredInfraCategories];
+    draft.amenity = [...filter.desiredAmenityCategories];
+  } else if (name === 'priority') {
+    draft.priorities = priorityChips.value.map((p) => p.criterion);
+  }
   openedSheet.value = name;
-  console.log('시트 열기:', name); // 바텀시트는 다음 이슈
+}
+
+function closeSheet() {
+  openedSheet.value = null;
+}
+
+function toggleIn(list, value) {
+  const i = list.indexOf(value);
+  if (i === -1) list.push(value);
+  else list.splice(i, 1);
+}
+
+const nullIfMin = (v, min) => (v <= min ? null : v);
+const nullIfMax = (v, max) => (v >= max ? null : v);
+
+function toggleDraftTrade(t) {
+  const i = draft.tradeTypes.indexOf(t);
+  if (i !== -1) {
+    if (draft.tradeTypes.length === 1) return;
+    draft.tradeTypes.splice(i, 1);
+  } else {
+    draft.tradeTypes.push(t);
+  }
+}
+
+function applyCommute() {
+  filter.maxWorkplaceDistanceMeters = draft.distance;
+  filter.workplace = draft.workplace;
+  filter.hasCar = draft.hasCar;
+  closeSheet();
+}
+
+function resetCommute() {
+  draft.distance = DEFAULT_DISTANCE;
+  draft.workplace = null;
+  draft.hasCar = false;
+}
+
+function goLocationSelect() {
+  isLocationPickerOpen.value = true;
+}
+
+function selectWorkplace(location) {
+  draft.workplace = location;
+  isLocationPickerOpen.value = false;
+}
+
+function applyHousing() {
+  filter.tradeTypes = [...selectedTrades.value];
+
+  if (draft.tradeTypes.includes('월세') || draft.tradeTypes.includes('전세')) {
+    filter.minDepositJeonse = nullIfMin(draft.depositJeonse[0], 0);
+    filter.maxDepositJeonse = nullIfMax(
+      draft.depositJeonse[1],
+      DEPOSIT_JEONSE.max,
+    );
+  } else {
+    filter.minDepositJeonse = null;
+    filter.maxDepositJeonse = null;
+  }
+
+  if (draft.tradeTypes.includes('매매')) {
+    filter.minSalePrice = nullIfMin(draft.salePrice[0], SALE_PRICE.min);
+    filter.maxSalePrice = nullIfMax(draft.salePrice[1], SALE_PRICE.max);
+  } else {
+    filter.minSalePrice = null;
+    filter.maxSalePrice = null;
+  }
+
+  if (draft.tradeTypes.includes('월세')) {
+    filter.minMonthlyRent = nullIfMin(draft.rent[0], 0);
+    filter.maxMonthlyRent = nullIfMax(draft.rent[1], MONTHLY_RENT.max);
+  } else {
+    filter.minMonthlyRent = null;
+    filter.maxMonthlyRent = null;
+  }
+  filter.propertyTypes = [...draft.propertyTypes];
+  filter.floorPreference = [...draft.floorPreference];
+  filter.minAreaM2 = draft.areaRange[0] > 0 ? draft.areaRange[0] : null;
+  filter.maxAreaM2 =
+    draft.areaRange[1] < AREA_MAX_M2 ? draft.areaRange[1] : null;
+  closeSheet();
+}
+
+function resetHousing() {
+  draft.tradeTypes = [...TRADE_TYPES];
+  draft.depositJeonse = [0, DEPOSIT_JEONSE.max];
+  draft.salePrice = [SALE_PRICE.min, SALE_PRICE.max];
+  draft.rent = [0, MONTHLY_RENT.max];
+  draft.propertyTypes = [];
+  draft.floorPreference = [];
+  draft.areaRange = [0, AREA_MAX_M2];
+}
+
+function applyInfra() {
+  filter.desiredInfraCategories = [...draft.infra];
+  filter.desiredAmenityCategories = [...draft.amenity];
+  closeSheet();
+}
+
+function applySort(key) {
+  filter.sort = key;
+  closeSheet();
+}
+
+function applyPriority() {
+  priorityChips.value = draft.priorities.map((c, i) => ({
+    criterion: c,
+    priorityOrder: i + 1,
+  }));
+  closeSheet();
+}
+
+function resetInfra() {
+  draft.infra = [];
+  draft.amenity = [];
+}
+
+function togglePriority(c) {
+  const i = draft.priorities.indexOf(c);
+  if (i !== -1) draft.priorities.splice(i, 1);
+  else if (draft.priorities.length < MAX_PRIORITY_SELECTIONS)
+    draft.priorities.push(c);
+}
+
+function priorityRank(c) {
+  const i = draft.priorities.indexOf(c);
+  return i === -1 ? null : i + 1;
 }
 
 function clearSelection() {
@@ -977,10 +1541,6 @@ function onCardClick(property) {
   selectionSource.value = 'card';
 }
 
-function onBoundsChange(b) {
-  bounds.value = b;
-}
-
 function onDotClick(dot) {
   pinnedDot.value = keyOf(pinnedDot.value) === keyOf(dot) ? null : dot;
 }
@@ -1003,7 +1563,7 @@ function onWheelX(e) {
 }
 
 function pyeong(areaM2) {
-  return Math.round(areaM2 / 3.3058);
+  return Math.floor(areaM2 / PYEONG);
 }
 
 function floorLabel(floorInfo) {
@@ -1071,7 +1631,7 @@ watch(filter, () => {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding: 5px 16px 15px;
+  padding: 0px 16px 16px;
 }
 
 .empty {
@@ -1102,6 +1662,7 @@ watch(filter, () => {
   background: #fff;
   border: 1px solid #e9e7e2;
   border-radius: 14px;
+  overflow: hidden;
   cursor: pointer;
 }
 
@@ -1156,6 +1717,7 @@ watch(filter, () => {
 }
 
 .card-go {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1166,6 +1728,15 @@ watch(filter, () => {
   border-radius: 50%;
   background: #fff;
   cursor: pointer;
+}
+
+.card-go::after {
+  content: '';
+  position: absolute;
+  top: -35px;
+  right: -12px;
+  bottom: -35px;
+  left: -14px;
 }
 
 .card-go.on {
@@ -1246,7 +1817,7 @@ watch(filter, () => {
 .fchip {
   flex-shrink: 0;
   padding: 8px 14px;
-  border: 1px solid #e9e7e2;
+  border: 1.5px solid #e9e7e2;
   border-radius: 100px;
   background: #fff;
   font-size: 12.5px;
@@ -1256,7 +1827,7 @@ watch(filter, () => {
 }
 
 .fchip.on {
-  border-color: #ffbc00;
+  border-color: #ffdd80;
   background: #fff6dc;
   font-weight: 700;
 }
@@ -1265,7 +1836,7 @@ watch(filter, () => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 16px 0;
+  padding: 16px 16px;
 }
 
 .result-count {
@@ -1292,10 +1863,15 @@ watch(filter, () => {
 .priority-row {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 10px 16px;
+  gap: 10px;
+  margin: 0px 16px 16px;
+  padding: 9px 16px;
+  border-radius: 100px;
+  background: #fdf7e6;
+  border: 1.5px solid #ffdd80;
   overflow-x: auto;
   cursor: pointer;
+  height: 42px;
 }
 
 .filter-chips,
@@ -1308,16 +1884,21 @@ watch(filter, () => {
   display: none;
 }
 
+.prow-icon {
+  flex-shrink: 0;
+}
+
 .pchip {
+  height: 24px;
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 7px;
   flex-shrink: 0;
-  padding: 5px 10px 5px 5px;
-  border: 1px solid #e9e7e2;
+  padding: 6px 15px 6px 6px;
   border-radius: 100px;
   background: #fff;
   font-size: 11.5px;
+  font-weight: 700;
   color: #33302a;
   white-space: nowrap;
 }
@@ -1330,9 +1911,10 @@ watch(filter, () => {
   height: 16px;
   flex-shrink: 0;
   border-radius: 50%;
-  background: #ffbc00;
-  font-size: 10px;
-  font-weight: 700;
+  background: #f0c33c;
+  font-size: 9px;
+  font-weight: 800;
+  color: #545045;
 }
 
 .list-divider {
@@ -1369,5 +1951,279 @@ watch(filter, () => {
     background: #eceae5;
     border-radius: 2px;
   }
+}
+
+.opt-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.opt {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 15px;
+  border: 1px solid #e9e7e2;
+  border-radius: 100px;
+  background: #fff;
+  font-size: 13px;
+  color: #33302a;
+  cursor: pointer;
+}
+
+.opt.on {
+  border-color: #ffbc00;
+  background: #fff6dc;
+  font-weight: 700;
+}
+
+.field {
+  padding: 4px 0 18px;
+}
+
+.field-gap-top {
+  margin-top: 10px;
+}
+
+.field-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.field-head .field-name {
+  margin-bottom: 0;
+}
+
+.range-card {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 16px 14px;
+  border-radius: 14px;
+  background: var(--bg);
+}
+
+.range-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.range-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #33302a;
+}
+
+.range-value {
+  font-size: 12.5px;
+  color: var(--kb-gray);
+  font-weight: 500;
+}
+
+.field-name {
+  font-size: 15px;
+  font-weight: 800;
+  color: #33302a;
+  margin-bottom: 10px;
+}
+
+.field-caption {
+  margin-top: -4px;
+  margin-bottom: 10px;
+  font-size: 11.5px;
+  color: var(--kb-silver);
+}
+
+.location-input {
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid #e9e7e2;
+  border-radius: 10px;
+  background: #fff;
+  font-size: 14px;
+  color: #33302a;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.location-input::placeholder {
+  color: #b4b0a8;
+}
+
+.check-row {
+  display: flex;
+  gap: 28px;
+  margin-top: 2px;
+}
+
+.check-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  cursor: pointer;
+}
+
+.checkbox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  border: 1.5px solid #d8d5cf;
+  background: #fff;
+  flex-shrink: 0;
+}
+
+.checkbox svg {
+  opacity: 0;
+}
+
+.checkbox.on {
+  background: var(--kb-yellow);
+  border-color: var(--kb-yellow);
+}
+
+.checkbox.on svg {
+  opacity: 1;
+}
+
+.sheet-note {
+  font-size: 11.5px;
+  color: #8a8d8f;
+  margin-bottom: 12px;
+}
+
+.sheet-actions {
+  display: flex;
+  gap: 8px;
+  padding-top: 18px;
+}
+
+.btn-ghost {
+  flex-shrink: 0;
+  padding: 13px 18px;
+  border: 1px solid #e9e7e2;
+  border-radius: 12px;
+  background: #fff;
+  font-size: 13.5px;
+  color: #60584c;
+  cursor: pointer;
+}
+
+.btn-primary {
+  flex: 1;
+  padding: 13px;
+  border: none;
+  border-radius: 12px;
+  background: #ffdd80;
+  font-size: 14px;
+  font-weight: 700;
+  color: #33302a;
+  cursor: pointer;
+}
+
+.btn-primary:disabled {
+  background: #eceae5;
+  color: #b4b0a8;
+  cursor: default;
+}
+
+.sort-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.sort-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 14px 2px;
+  border: none;
+  background: none;
+  font-size: 14px;
+  color: #33302a;
+  cursor: pointer;
+}
+
+.sort-item.on {
+  font-weight: 700;
+  color: #fe7b00;
+}
+
+.priority-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.priority-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 14px;
+  text-align: left;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--white);
+  cursor: pointer;
+}
+
+.priority-card.on {
+  background: var(--yellow-tint);
+  border: 2px solid #ffdd80;
+  padding: 11px 13px;
+}
+
+.p-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 100px;
+  background: rgba(255, 188, 0, 0.14);
+  flex-shrink: 0;
+}
+
+.p-texts {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.p-title {
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.p-sub {
+  font-size: 11.5px;
+  color: var(--kb-silver);
+}
+
+.p-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #ffdd80;
+  font-size: 12.5px;
+  font-weight: 800;
+  flex-shrink: 0;
 }
 </style>
