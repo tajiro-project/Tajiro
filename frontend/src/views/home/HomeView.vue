@@ -75,7 +75,7 @@
             <section class="quick-menu">
                 <p class="section-title">무엇을 도와드릴까요?</p>
 
-                <button class="menu-card primary" type="button" @click="router.push('/properties')">
+                <button class="menu-card primary" type="button" @click="router.push('/preferences/1')">
                     <span class="menu-icon primary">
                         <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                             <path d="M10 2c-3 0-5.5 2.4-5.5 5.5 0 4 5.5 10.5 5.5 10.5s5.5-6.5 5.5-10.5C15.5 4.4 13 2 10 2z" stroke="#545045" stroke-width="1.6" stroke-linejoin="round" />

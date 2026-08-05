@@ -278,7 +278,6 @@ export const mockComparisonMetrics = {
       childrenCountWithin500m: 3,
       bellCountWithin500m: 6,
       safetyLightCountWithin500m: 41,
-      childrenSafetyZoneCountWithin500m: 3,
     },
     {
       propertyId: "P02",
@@ -293,7 +292,6 @@ export const mockComparisonMetrics = {
       childrenCountWithin500m: 2,
       bellCountWithin500m: 3,
       safetyLightCountWithin500m: 32,
-      childrenSafetyZoneCountWithin500m: 2,
     },
     {
       propertyId: "P03",
@@ -308,7 +306,6 @@ export const mockComparisonMetrics = {
       childrenCountWithin500m: 1,
       bellCountWithin500m: 4,
       safetyLightCountWithin500m: 36,
-      childrenSafetyZoneCountWithin500m: 1,
     },
   ],
 };

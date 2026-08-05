@@ -128,6 +128,9 @@
               <span class="bb-label">가장 높은 영역</span>
               <b class="bb-value">{{ bestAreaText }}</b>
             </div>
+            <p v-if="unavailableAxes.length" class="metric-note">
+              데이터 부족으로 제외된 지표: {{ unavailableAxes.join(', ') }}
+            </p>
           </div>
         </section>
 
@@ -221,7 +224,9 @@
         >
           리포트 보관
         </button>
-        <p v-if="savedMsg" class="saved-msg">{{ savedMsg }}</p>
+        <p v-if="savedMsg" class="saved-msg" :class="{ error: savedMsgError }">
+          {{ savedMsg }}
+        </p>
       </template>
     </div>
 
@@ -297,13 +302,8 @@ import {
   RadarController,
   RadialLinearScale,
 } from 'chart.js';
-import client, { withMock } from '@/api/client';
-import {
-  mockAiCoaching,
-  mockCompareBox,
-  mockComparisonMetrics,
-  mockReportDetail,
-} from '@/api/mockData';
+import client, { getApiErrorMessage } from '@/api/client';
+import { comparisonApi } from '@/api/services';
 
 Chart.register(
   RadarController,
@@ -322,8 +322,6 @@ const colors = [
   { dot: '#88a860', fill: 'rgba(136, 168, 96, 0.45)', line: '#6f9048' },
   { dot: '#7aa8e8', fill: 'rgba(122, 168, 232, 0.30)', line: '#5c8fd6' },
 ];
-const axes = ['직주근접', '가성비', '인프라', '안전', '시세안정'];
-
 const items = ref([]);
 const metrics = ref([]);
 
@@ -338,6 +336,7 @@ const showOverall = ref(true);
 const showSafety = ref(true);
 const radarEl = ref(null);
 const savedMsg = ref('');
+const savedMsgError = ref(false);
 const currentPropertyIds = ref([]);
 const showAiRefreshModal = ref(false);
 const refreshingCoaching = ref(false);
@@ -366,49 +365,92 @@ const recommendedId = computed(() =>
 
 const warningText = computed(() => {
   const worst = [...metrics.value]
-    .filter((metric) => Math.abs(metric.evaluationScore ?? 0) >= 10)
+    .filter(
+      (metric) =>
+        hasNumber(metric.evaluationScore) &&
+        Math.abs(metric.evaluationScore) >= 10,
+    )
     .sort(
       (a, b) =>
-        Math.abs(b.evaluationScore ?? 0) - Math.abs(a.evaluationScore ?? 0),
+        Math.abs(b.evaluationScore) - Math.abs(a.evaluationScore),
     )[0];
   if (!worst) return '';
   const index = Math.max(0, metrics.value.indexOf(worst));
-  const score = worst.evaluationScore ?? 0;
+  const score = worst.evaluationScore;
   const pct = Math.abs(Math.round(score));
   const direction = score > 0 ? '높아요' : '낮아요';
   return `${letters[index]} 매물은 주변 시세보다 ${pct}% ${direction}. 계약 전 시세와 관리비 항목을 확인하세요.`;
 });
 
-// 차트 점수를 정규화하여 35~95점 사이로 변환
-const seriesScores = computed(() => {
+const allScoreSpecs = computed(() => {
   if (!metrics.value.length) return [];
-  const commute = normalize(
-    metrics.value.map((m) => m.commuteMinutes ?? 0),
-    true,
-  );
-  const cost = normalize(
-    metrics.value.map((m) => (m.monthlyRent ?? 0) + feeValue(m)),
-    true,
-  );
-  const infra = normalize(metrics.value.map((m) => m.infraCount ?? 0));
-  const safety = normalize(
-    metrics.value.map(
-      (m) => (m.cctvCountWithin500m ?? 0) + (m.bellCountWithin500m ?? 0),
-    ),
-  );
-  const market = normalize(
-    metrics.value.map((m) => Math.abs(m.evaluationScore ?? 0)),
-    true,
-  );
-  return metrics.value.map((_, i) => [
-    commute[i],
-    cost[i],
-    infra[i],
-    safety[i],
-    market[i],
-  ]);
+
+  return [
+    {
+      label: '직주근접',
+      available: metrics.value.every((m) => hasNumber(m.commuteMinutes)),
+      values: metrics.value.map((m) => Number(m.commuteMinutes)),
+      invert: true,
+    },
+    {
+      label: '가성비',
+      available: metrics.value.every(
+        (m) => hasNumber(m.monthlyRent) && hasNumber(m.maintenanceFee),
+      ),
+      values: metrics.value.map((m) => Number(m.monthlyRent) + feeValue(m)),
+      invert: true,
+    },
+    {
+      label: '인프라',
+      available: metrics.value.every((m) => hasNumber(m.infraCount)),
+      values: metrics.value.map((m) => Number(m.infraCount)),
+      invert: false,
+    },
+    {
+      label: '안전',
+      available: metrics.value.every(
+        (m) =>
+          hasNumber(m.cctvCountWithin500m) &&
+          hasNumber(m.bellCountWithin500m),
+      ),
+      values: metrics.value.map(
+        (m) => Number(m.cctvCountWithin500m) + Number(m.bellCountWithin500m),
+      ),
+      invert: false,
+    },
+    {
+      label: '시세안정',
+      available: metrics.value.every((m) => hasNumber(m.evaluationScore)),
+      values: metrics.value.map((m) => Math.abs(Number(m.evaluationScore))),
+      invert: true,
+    },
+  ];
 });
 
+const scoreSpecs = computed(() =>
+  allScoreSpecs.value.filter((spec) => spec.available),
+);
+
+const unavailableAxes = computed(() =>
+  allScoreSpecs.value
+    .filter((spec) => !spec.available)
+    .map((spec) => spec.label),
+);
+
+const axes = computed(() => scoreSpecs.value.map((spec) => spec.label));
+
+// 차트 점수를 정규화하여 35~95점 사이로 변환
+const seriesScores = computed(() => {
+  if (!metrics.value.length || !scoreSpecs.value.length) return [];
+
+  const normalizedByAxis = scoreSpecs.value.map((spec) =>
+    normalize(spec.values, spec.invert),
+  );
+
+  return metrics.value.map((_, propertyIndex) =>
+    normalizedByAxis.map((axisScores) => axisScores[propertyIndex]),
+  );
+});
 const bestAreaText = computed(() => {
   if (!seriesScores.value.length) return '';
   // 각 매물의 총점 계산
@@ -418,7 +460,7 @@ const bestAreaText = computed(() => {
   // 총점이 가장 높은 매물 찾기
   const best = sums.indexOf(Math.max(...sums));
   // 총점이 가장 높은 매물의 상위 2개 영역 찾기
-  const top2 = axes
+  const top2 = axes.value
     .map((axis, i) => ({ axis, value: seriesScores.value[best][i] }))
     .sort((a, b) => b.value - a.value)
     .slice(0, 2)
@@ -503,7 +545,7 @@ watch(loading, (isLoading) => {
   if (!isLoading) nextTick(scheduleRenderChart);
 });
 
-// 매물 비교 화면에 필요한 데이터를 서버(또는 Mock)에서 불러오는 함수
+// 매물 비교 화면에 필요한 데이터를 서버에서 불러오는 함수
 async function loadComparison() {
   loading.value = true;
   errorMessage.value = '';
@@ -523,14 +565,12 @@ async function loadComparison() {
       return;
     }
 
-    const metricsResult = await getMetricsWithFallback(propertyIds);
+    const metricsResult = await getMetrics(propertyIds);
     let coachingDto = null;
     coachingError.value = '';
 
     if (savedReport) {
       coachingDto = createReportCoaching(savedReport);
-    } else if (metricsResult.mocked) {
-      coachingDto = createMockComparisonResultDto(propertyIds).coaching;
     } else {
       try {
         coachingDto = await getCoaching(propertyIds);
@@ -541,17 +581,20 @@ async function loadComparison() {
 
     applyComparisonResult(
       {
-        metrics: metricsResult.data,
+        metrics: metricsResult,
         coaching: coachingDto,
       },
-      propertyIds,
     );
 
     if (savedReport && shouldShowAiRefreshModal(savedReport)) {
       showAiRefreshModal.value = true;
     }
   } catch (error) {
-    errorMessage.value = error?.message ?? '비교 결과를 불러오지 못했어요.';
+    errorMessage.value = getApiErrorMessage(
+      error,
+      error?.message ??
+        '비교 서버와 연결하지 못했습니다. 잠시 후 다시 시도해주세요.',
+    );
   } finally {
     loading.value = false;
   }
@@ -561,11 +604,8 @@ function unwrapApiData(payload) {
 }
 
 async function getReportDetail(id) {
-  const response = await withMock(
-    () => client.get(`/comparison-reports/${id}`),
-    () => mockReportDetail(id),
-  );
-  return unwrapApiData(response);
+  const response = await client.get(`/comparison-reports/${id}`);
+  return unwrapApiData(response.data);
 }
 
 function createReportCoaching(report) {
@@ -609,82 +649,36 @@ async function refreshAiCoaching() {
   }
 }
 
-async function getMetricsWithFallback(propertyIds) {
+async function getMetrics(propertyIds) {
   try {
-    const response = await client.get('/comparisons/metrics', {
-      params: toPropertyIdParams(propertyIds),
-    });
-    return { data: unwrapApiData(response.data), mocked: false };
+    return unwrapApiData(await comparisonApi.metrics(propertyIds));
   } catch (error) {
-    if (import.meta.env.DEV) {
-      console.warn('[api] mock fallback:', error.config?.url ?? error.message);
-    }
-    return {
-      data: createMockComparisonResultDto(propertyIds).metrics,
-      mocked: true,
-    };
+    throw new Error(
+      getApiErrorMessage(
+        error,
+        '비교 서버와 연결하지 못했습니다. 잠시 후 다시 시도해주세요.',
+      ),
+    );
   }
 }
 
 async function getCoaching(propertyIds) {
   try {
-    const response = await client.post('/comparisons/analyze', { propertyIds });
-    return unwrapApiData(response.data);
+    return unwrapApiData(await comparisonApi.analyze(propertyIds));
   } catch (error) {
     const message =
       error.response?.data?.message ??
-      'AI 비교 코칭을 불러오지 못했어요. 잠시 후 다시 시도해주세요.';
+      'AI 비교 서버와 연결하지 못했습니다. 잠시 후 다시 시도해주세요.';
     throw new Error(message);
   }
 }
-function toPropertyIdParams(propertyIds) {
-  const params = new URLSearchParams();
-  propertyIds.forEach((id) => params.append('propertyIds', id));
-  return params;
-}
-
-function createMockComparisonResultDto(propertyIds) {
-  const selectedItems = mockCompareBox
-    .filter((item) => propertyIds.includes(item.propertyId))
-    .slice(0, 3);
-  const fallbackItems = selectedItems.length
-    ? selectedItems
-    : mockCompareBox.slice(0, 3);
-  const fallbackIds = fallbackItems.map((item) => item.propertyId);
-  const metricItems = fallbackIds.map((id) => {
-    const item = fallbackItems.find((property) => property.propertyId === id) ?? {};
-    const metric =
-      (mockComparisonMetrics.items ?? []).find(
-        (candidate) => candidate.propertyId === id,
-      ) ?? { propertyId: id };
-    return { ...item, ...metric };
-  });
-
-  const recommendedPropertyId = fallbackIds.includes(
-    mockAiCoaching.aiRecommendedPropertyId,
-  )
-    ? mockAiCoaching.aiRecommendedPropertyId
-    : fallbackIds[0];
-
-  return {
-    items: fallbackItems,
-    metrics: {
-      items: metricItems,
-    },
-    coaching: {
-      ...mockAiCoaching,
-      aiRecommendedPropertyId: recommendedPropertyId,
-    },
-  };
-}
 
 // 서버에서 받아온 비교 결과를 화면에 적용하는 함수
-function applyComparisonResult(dto, requestedIds) {
-  const fallbackDto = createMockComparisonResultDto(requestedIds);
+function applyComparisonResult(dto) {
   const rawMetrics = Array.isArray(dto?.metrics?.items)
     ? dto.metrics.items
-    : fallbackDto.metrics.items;
-  const rawItems = Array.isArray(dto?.items) ? dto.items : fallbackDto.items;
+    : [];
+  const rawItems = Array.isArray(dto?.items) ? dto.items : [];
 
   metrics.value = rawMetrics.slice(0, 3);
   items.value = metrics.value
@@ -696,11 +690,6 @@ function applyComparisonResult(dto, requestedIds) {
     )
     .filter((item) => item.propertyId)
     .slice(0, 3);
-
-  if (!items.value.length) {
-    items.value = fallbackDto.items;
-    metrics.value = fallbackDto.metrics.items;
-  }
 
   coaching.value = dto?.coaching ?? null;
 }
@@ -721,6 +710,7 @@ function createComparisonItem(metric, fallbackItem = {}) {
 }
 
 function normalize(values, invert = false) {
+  if (!values.length) return [];
   const min = Math.min(...values);
   const max = Math.max(...values);
   if (min === max) return values.map(() => 70);
@@ -728,6 +718,10 @@ function normalize(values, invert = false) {
     const ratio = (value - min) / (max - min);
     return Math.round(35 + (invert ? 1 - ratio : ratio) * 60);
   });
+}
+
+function hasNumber(value) {
+  return value !== null && value !== undefined && Number.isFinite(Number(value));
 }
 
 function scheduleRenderChart() {
@@ -744,7 +738,7 @@ function renderChart() {
   chart = new Chart(ctx, {
     type: 'radar',
     data: {
-      labels: axes,
+      labels: axes.value,
       datasets: seriesScores.value.map((scores, i) => ({
         data: scores,
         backgroundColor: colors[i].fill,
@@ -782,24 +776,25 @@ function renderChart() {
 async function saveReport() {
   saving.value = true;
   savedMsg.value = '';
+  savedMsgError.value = false;
   try {
     const propertyIds = items.value.map((item) => item.propertyId);
-    await withMock(
-      () =>
-        client.post('/comparison-reports', {
-          title: `${items.value[0]?.title ?? '비교 리포트'} 외 ${Math.max(items.value.length - 1, 0)}건`,
-          comparedPropertyIds: propertyIds,
-          aiPropertySummaryText: getReportPropertySummaryText(),
-          aiSummary: getReportSummaryText(),
-          aiRecommendedPropertyId: coaching.value?.aiRecommendedPropertyId,
-          aiAtp: coaching.value?.aiAtp,
-        }),
-      { reportId: `R-${Date.now()}`, createdAt: new Date().toISOString() },
-    );
+    await client.post('/comparison-reports', {
+      title: `${items.value[0]?.title ?? '비교 리포트'} 외 ${Math.max(items.value.length - 1, 0)}건`,
+      comparedPropertyIds: propertyIds,
+      aiPropertySummaryText: getReportPropertySummaryText(),
+      aiSummary: getReportSummaryText(),
+      aiRecommendedPropertyId: coaching.value?.aiRecommendedPropertyId,
+      aiAtp: coaching.value?.aiAtp,
+    });
     savedMsg.value = '리포트를 보관함에 저장했어요.';
     router.push('/reports');
   } catch (error) {
-    savedMsg.value = error?.message ?? '리포트 저장 중 오류가 발생했어요.';
+    savedMsgError.value = true;
+    if (import.meta.env.DEV) {
+      console.warn('[api] comparison report save failed:', error);
+    }
+    router.push('/reports');
   } finally {
     saving.value = false;
   }
@@ -1049,6 +1044,12 @@ function goBack() {
   font-size: 12.5px;
   font-weight: 800;
 }
+.metric-note {
+  margin-top: 8px;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--kb-gray);
+}
 .safety-table {
   width: 100%;
   border-collapse: collapse;
@@ -1128,6 +1129,9 @@ function goBack() {
   text-align: center;
   font-size: 12.5px;
   color: #2f9e69;
+}
+.saved-msg.error {
+  color: #d64545;
 }
 .modal-overlay {
   position: fixed;
