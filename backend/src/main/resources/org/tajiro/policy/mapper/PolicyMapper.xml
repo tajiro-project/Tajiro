@@ -12,8 +12,8 @@
                       ON p.id = ptr.policy_id
         WHERE p.id = #{id}
           AND ptr.sgg_code = #{region}
-          AND p.target_min_age <![CDATA[ <= ]]> #{age}
-          AND p.target_max_age <![CDATA[ >= ]]> #{age}
+          AND p.min_age <![CDATA[ <= ]]> #{age}
+          AND p.max_age <![CDATA[ >= ]]> #{age}
     </select>
 
 
@@ -23,8 +23,8 @@
         JOIN policy_target_region ptr
         ON p.id = ptr.policy_id
         WHERE ptr.sgg_code = #{region}
-        AND p.target_min_age <![CDATA[ <= ]]> #{age}
-        AND p.target_max_age <![CDATA[ >= ]]> #{age}
+        AND p.min_age <![CDATA[ <= ]]> #{age}
+        AND p.max_age <![CDATA[ >= ]]> #{age}
 
         <if test="keyword != null and keyword != ''">
             AND (

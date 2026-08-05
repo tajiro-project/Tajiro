@@ -16,12 +16,15 @@ public class PolicyVO{
     private Long id;
     private String title;
     private String region;
-    private String targetMinAge;
-    private String targetMaxAge;
+    private String minAge;
+    private String maxAge;
     private Integer benefitAmount;
     private String applicationPeriod;
     private String agency;
     private String applyMethod;
     private String requiredDocuments;
+    private String description;
+    private String sumDescription;
+
 }
 
