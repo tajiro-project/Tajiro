@@ -215,7 +215,7 @@
           v-if="!isReportMode"
           class="report-btn"
           type="button"
-          :disabled="saving"
+          :disabled="saving || !coaching?.reportId"
           @click="saveReport"
         >
           리포트 보관
@@ -616,7 +616,7 @@ function unwrapApiData(payload) {
 }
 
 async function getReportDetail(id) {
-  const response = await client.get(`/comparison-reports/${id}`);
+  const response = await client.get(`/users/me/comparison-reports/${id}`);
   return unwrapApiData(response.data);
 }
 
@@ -625,6 +625,7 @@ function createReportCoaching(report) {
   const summary = report.aiSummary ?? '';
 
   return {
+    reportId: report.reportId,
     aiPropertySummaryText: propertySummary || summary,
     aiSummary: summary === propertySummary ? '' : summary,
     aiRecommendedPropertyId: report.aiRecommendedPropertyId,
@@ -792,14 +793,8 @@ async function saveReport() {
   savedMsg.value = '';
   savedMsgError.value = false;
   try {
-    const propertyIds = items.value.map((item) => item.propertyId);
-    await client.post('/comparison-reports', {
-      title: `${items.value[0]?.title ?? '비교 리포트'} 외 ${Math.max(items.value.length - 1, 0)}건`,
-      comparedPropertyIds: propertyIds,
-      aiPropertySummaryText: getReportPropertySummaryText(),
-      aiSummary: getReportSummaryText(),
-      aiRecommendedPropertyId: coaching.value?.aiRecommendedPropertyId,
-      aiAtp: coaching.value?.aiAtp,
+    await client.post('/users/me/comparison-reports', {
+      reportId: coaching.value?.reportId,
     });
     savedMsg.value = '리포트를 보관함에 저장했어요.';
     router.push('/reports');

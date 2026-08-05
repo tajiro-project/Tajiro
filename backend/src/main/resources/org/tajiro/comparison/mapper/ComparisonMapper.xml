@@ -123,4 +123,11 @@
         </foreach>
         )
     </select>
+
+    <select id="findPreferencePriorities" resultType="string">
+        SELECT criterion
+        FROM preference_priority
+        WHERE user_id = #{userId}
+        ORDER BY priority_order
+    </select>
 </mapper>

@@ -23,4 +23,6 @@ public interface ComparisonMapper {
 
     List<ComparisonMetricDTO> findMetrics(@Param("userId") Long userId,
                                           @Param("propertyIds") List<Long> propertyIds);
+
+    List<String> findPreferencePriorities(@Param("userId") Long userId);
 }

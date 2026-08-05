@@ -1,54 +1,113 @@
 <template>
   <div class="cbox">
     <header class="local-header">
-      <button class="back" type="button" aria-label="뒤로 가기" @click="goBack">‹</button>
+      <button class="back" type="button" aria-label="뒤로 가기" @click="goBack">
+        ‹
+      </button>
       <span>비교함</span>
-      <button class="refresh" type="button" @click="loadCompareBox">새로고침</button>
+      <button class="refresh" type="button" @click="loadCompareBox">
+        새로고침
+      </button>
     </header>
 
     <div class="scroll-area">
       <h1 class="title">비교할 매물을 골라주세요 (최대 3개)</h1>
       <p class="sub">
         {{ checkedIds.length }}개 선택됨
-        <template v-if="items.length < 3"> · {{ 3 - items.length }}개 더 담을 수 있어요</template>
+        <template v-if="items.length < 3">
+          · {{ 3 - items.length }}개 더 담을 수 있어요</template
+        >
       </p>
 
       <div v-if="loading" class="state">비교함을 불러오는 중이에요.</div>
       <div v-else-if="errorMessage" class="state error">{{ errorMessage }}</div>
-      <div v-else-if="items.length === 0" class="state">아직 비교함에 담긴 매물이 없어요.</div>
+      <div v-else-if="items.length === 0" class="state">
+        아직 비교함에 담긴 매물이 없어요.
+      </div>
 
       <ul v-else class="items">
         <li v-for="item in items" :key="item.propertyId" class="item">
-          <button class="check" :class="{ on: checkedIds.includes(item.propertyId) }" type="button" @click="toggleCheck(item.propertyId)">
+          <button
+            class="check"
+            :class="{ on: checkedIds.includes(item.propertyId) }"
+            type="button"
+            @click="toggleCheck(item.propertyId)"
+          >
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-              <path d="M2 6.5L4.7 9L10 3.5" stroke="#545045" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+              <path
+                d="M2 6.5L4.7 9L10 3.5"
+                stroke="#545045"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
             </svg>
           </button>
 
           <div class="item-card">
             <span class="thumb">
               <img
-                v-if="item.thumbnailUrl && !imageErrorIds.includes(item.propertyId)"
+                v-if="
+                  item.thumbnailUrl && !imageErrorIds.includes(item.propertyId)
+                "
                 :src="item.thumbnailUrl"
                 alt=""
                 @error="markImageError(item.propertyId)"
               />
-              <svg v-else width="26" height="26" viewBox="0 0 30 30" fill="none">
-                <path d="M4 13.5L15 5l11 8.5" stroke="#8a8477" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                <path d="M7 12v12h16V12" stroke="#8a8477" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              <svg
+                v-else
+                width="26"
+                height="26"
+                viewBox="0 0 30 30"
+                fill="none"
+              >
+                <path
+                  d="M4 13.5L15 5l11 8.5"
+                  stroke="#8a8477"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <path
+                  d="M7 12v12h16V12"
+                  stroke="#8a8477"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
               </svg>
             </span>
 
             <div class="item-texts">
               <p class="item-title">{{ item.title }}</p>
-              <p class="item-sub">{{ item.propertyType || '매물' }}<template v-if="item.buildingName"> · {{ item.buildingName }}</template></p>
+              <p class="item-sub">
+                {{ item.propertyType || '매물'
+                }}<template v-if="item.buildingName">
+                  · {{ item.buildingName }}</template
+                >
+              </p>
               <p class="item-price">{{ formatTrade(item) }}</p>
-              <p class="item-meta">{{ formatArea(item.areaM2) }} · {{ item.floorInfo || '층수 정보 없음' }} · 관리비 {{ formatFee(item) }}</p>
+              <p class="item-meta">
+                {{ formatArea(item.areaM2) }} ·
+                {{ item.floorInfo || '층수 정보 없음' }} · 관리비
+                {{ formatFee(item) }}
+              </p>
             </div>
 
-            <button class="remove" type="button" aria-label="삭제" :disabled="deletingId === item.propertyId" @click="removeItem(item.propertyId)">
+            <button
+              class="remove"
+              type="button"
+              aria-label="삭제"
+              :disabled="deletingId === item.propertyId"
+              @click="removeItem(item.propertyId)"
+            >
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <path d="M3.5 3.5L10.5 10.5M10.5 3.5L3.5 10.5" stroke="#8a8d8f" stroke-width="1.4" stroke-linecap="round" />
+                <path
+                  d="M3.5 3.5L10.5 10.5M10.5 3.5L3.5 10.5"
+                  stroke="#8a8d8f"
+                  stroke-width="1.4"
+                  stroke-linecap="round"
+                />
               </svg>
             </button>
           </div>
@@ -56,17 +115,41 @@
       </ul>
 
       <button class="add-btn" type="button" @click="goPropertyListForAdd">
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2v10M2 7h10" stroke="#545045" stroke-width="1.5" stroke-linecap="round" /></svg>
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <path
+            d="M7 2v10M2 7h10"
+            stroke="#545045"
+            stroke-width="1.5"
+            stroke-linecap="round"
+          />
+        </svg>
         매물 리스트에서 추가하기
       </button>
       <p v-if="toastMessage" class="toast-msg">{{ toastMessage }}</p>
 
       <p class="tip">
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1.5a4.2 4.2 0 00-2.4 7.6c.5.4.9 1 .9 1.6v.3h3v-.3c0-.6.4-1.2.9-1.6A4.2 4.2 0 007 1.5z" stroke="#8a8477" stroke-width="1.2" /><path d="M5.8 12.5h2.4" stroke="#8a8477" stroke-width="1.2" stroke-linecap="round" /></svg>
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <path
+            d="M7 1.5a4.2 4.2 0 00-2.4 7.6c.5.4.9 1 .9 1.6v.3h3v-.3c0-.6.4-1.2.9-1.6A4.2 4.2 0 007 1.5z"
+            stroke="#8a8477"
+            stroke-width="1.2"
+          />
+          <path
+            d="M5.8 12.5h2.4"
+            stroke="#8a8477"
+            stroke-width="1.2"
+            stroke-linecap="round"
+          />
+        </svg>
         3개를 모두 담으면 AI가 가치관 기준으로 비교 코칭을 해드려요.
       </p>
 
-      <button class="btn-cta" type="button" :disabled="checkedIds.length < 2" @click="startCompare">
+      <button
+        class="btn-cta"
+        type="button"
+        :disabled="checkedIds.length < 2"
+        @click="startCompare"
+      >
         비교 시작 ({{ checkedIds.length }}개)
       </button>
     </div>
@@ -76,126 +159,126 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
-import AppTabBar from '@/components/AppTabBar.vue'
-import { getApiErrorMessage } from '@/api/client'
-import { comparisonApi } from '@/api/services'
+import { onMounted, ref } from 'vue';
+import { useRouter } from 'vue-router';
+import AppTabBar from '@/components/AppTabBar.vue';
+import { getApiErrorMessage } from '@/api/client';
+import { comparisonApi } from '@/api/services';
 
-const router = useRouter()
+const router = useRouter();
 
-const loading = ref(false)
-const deletingId = ref('')
-const errorMessage = ref('')
-const items = ref([])
-const checkedIds = ref([])
-const imageErrorIds = ref([])
-const toastMessage = ref('')
-let toastTimer = null
+const loading = ref(false);
+const deletingId = ref('');
+const errorMessage = ref('');
+const items = ref([]);
+const checkedIds = ref([]);
+const imageErrorIds = ref([]);
+const toastMessage = ref('');
+let toastTimer = null;
 
-onMounted(loadCompareBox)
+onMounted(loadCompareBox);
 
 async function loadCompareBox() {
-  loading.value = true
-  errorMessage.value = ''
+  loading.value = true;
+  errorMessage.value = '';
 
   try {
-    const data = await comparisonApi.box()
-    const payload = data?.data ?? data
-    const nextItems = Array.isArray(payload) ? payload : payload?.items ?? []
-    items.value = nextItems.slice(0, 3)
-    checkedIds.value = items.value.slice(0, 3).map((item) => item.propertyId)
-    imageErrorIds.value = []
+    const data = await comparisonApi.box();
+    const payload = data?.data ?? data;
+    const nextItems = Array.isArray(payload) ? payload : (payload?.items ?? []);
+    items.value = nextItems.slice(0, 3);
+    checkedIds.value = items.value.slice(0, 3).map((item) => item.propertyId);
+    imageErrorIds.value = [];
   } catch (error) {
     errorMessage.value = getApiErrorMessage(
       error,
       '비교함 서버와 연결하지 못했습니다. 잠시 후 다시 시도해주세요.',
-    )
+    );
   } finally {
-    loading.value = false
+    loading.value = false;
   }
 }
 
 function toggleCheck(id) {
-  const index = checkedIds.value.indexOf(id)
-  if (index >= 0) checkedIds.value.splice(index, 1)
-  else if (checkedIds.value.length < 3) checkedIds.value.push(id)
+  const index = checkedIds.value.indexOf(id);
+  if (index >= 0) checkedIds.value.splice(index, 1);
+  else if (checkedIds.value.length < 3) checkedIds.value.push(id);
 }
 
 async function removeItem(propertyId) {
-  deletingId.value = propertyId
+  deletingId.value = propertyId;
 
   try {
-    await comparisonApi.removeFromBox(propertyId)
-    items.value = items.value.filter((item) => item.propertyId !== propertyId)
-    checkedIds.value = checkedIds.value.filter((id) => id !== propertyId)
+    await comparisonApi.removeFromBox(propertyId);
+    items.value = items.value.filter((item) => item.propertyId !== propertyId);
+    checkedIds.value = checkedIds.value.filter((id) => id !== propertyId);
   } catch (error) {
     errorMessage.value = getApiErrorMessage(
       error,
       '비교함 서버와 연결하지 못해 삭제하지 못했습니다.',
-    )
+    );
   } finally {
-    deletingId.value = ''
+    deletingId.value = '';
   }
 }
 
 function markImageError(propertyId) {
   if (!imageErrorIds.value.includes(propertyId)) {
-    imageErrorIds.value.push(propertyId)
+    imageErrorIds.value.push(propertyId);
   }
 }
 
 function startCompare() {
-  if (checkedIds.value.length < 2) return
-  router.push({ path: '/compare', query: { propertyIds: checkedIds.value } })
+  if (checkedIds.value.length < 2) return;
+  router.push({ path: '/compare', query: { propertyIds: checkedIds.value } });
 }
 
 function goPropertyListForAdd() {
   if (items.value.length >= 3) {
-    showToast('비교함에는 최대 3개까지만 담을 수 있어요.\n매물을 삭제한 뒤 추가해주세요.')
-    return
+    showToast('비교함에는 최대 3개까지만 담을 수 있어요.');
+    return;
   }
 
-  router.push('/properties')
+  router.push('/properties');
 }
 
 function showToast(message) {
-  toastMessage.value = message
-  if (toastTimer) clearTimeout(toastTimer)
+  toastMessage.value = message;
+  if (toastTimer) clearTimeout(toastTimer);
   toastTimer = setTimeout(() => {
-    toastMessage.value = ''
-    toastTimer = null
-  }, 2200)
+    toastMessage.value = '';
+    toastTimer = null;
+  }, 2200);
 }
 
 function goBack() {
-  if (history.length > 1) router.back()
-  else router.push('/')
+  if (history.length > 1) router.back();
+  else router.push('/');
 }
 
 function formatTrade(item) {
-  const deposit = formatMoney(item.deposit)
-  const rent = formatMoney(item.monthlyRent)
+  const deposit = formatMoney(item.deposit);
+  const rent = formatMoney(item.monthlyRent);
 
-  if (item.tradeType === '전세') return `전세 ${deposit}`
-  if (item.tradeType === '매매') return `매매 ${deposit}`
-  return `월세 ${deposit}/${rent}`
+  if (item.tradeType === '전세') return `전세 ${deposit}`;
+  if (item.tradeType === '매매') return `매매 ${deposit}`;
+  return `월세 ${deposit}/${rent}`;
 }
 
 function formatMoney(value) {
-  if (value === null || value === undefined || value === '') return '-'
-  return `${Number(value).toLocaleString('ko-KR')}만`
+  if (value === null || value === undefined || value === '') return '-';
+  return `${Number(value).toLocaleString('ko-KR')}만`;
 }
 
 function formatArea(areaM2) {
-  if (!areaM2) return '면적 정보 없음'
-  return `${Math.round(areaM2 / 3.3)}평`
+  if (!areaM2) return '면적 정보 없음';
+  return `${Math.round(areaM2 / 3.3)}평`;
 }
 
 function formatFee(item) {
-  const fee = item.maintenanceFee
-  if (fee === null || fee === undefined || fee === '') return '-'
-  return `${Number(fee).toLocaleString('ko-KR')}만`
+  const fee = item.maintenanceFee;
+  if (fee === null || fee === undefined || fee === '') return '-';
+  return `${Number(fee).toLocaleString('ko-KR')}만`;
 }
 </script>
 
