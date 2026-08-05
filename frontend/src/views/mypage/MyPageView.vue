@@ -37,7 +37,7 @@
             </section>
 
             <nav class="menu-list">
-                <button class="menu-row" type="button" @click="router.push('/profile-edit')">
+                <button class="menu-row" type="button" @click="router.push('/profile-setup?mode=edit')">
                     <span>내 정보 관리 (소득 · 자산 · 직장)</span>
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                         <path d="M6 3.5l5 4.5-5 4.5" stroke="#8a8d8f" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
