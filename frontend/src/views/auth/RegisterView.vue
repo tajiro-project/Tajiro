@@ -57,8 +57,6 @@
 
                 <button class="btn-cta register-btn" type="submit" :disabled="!canSubmit || loading">가입하고 시작하기</button>
             </form>
-
-            <p class="flow-hint">가입 후 내 정보 입력(1/2) → 가치관 설정(2/2)으로 이어져요</p>
         </div>
 
         <div v-if="activeTerm" class="sheet-overlay" @click="closeTermsSheet">
@@ -304,13 +302,6 @@ async function handleRegister() {
     margin-top: 4px;
     font-size: 11px;
     color: var(--danger);
-}
-
-.flow-hint {
-    margin-top: 16px;
-    font-size: 11px;
-    color: var(--kb-silver);
-    text-align: center;
 }
 
 .sheet-overlay {
