@@ -69,7 +69,14 @@
               한도 {{ f.maxLimitAmount.toLocaleString() }}만원 · 연
               {{ f.minRate.toFixed(1) }}%
             </p> -->
-            <p class="item-sub">무보증 월세 자금 · 만 19~34세</p>
+            <div class="item-meta">
+              <!-- <p class="item-sub">무보증 월세 자금 · 만 19~34세</p> -->
+
+              <span class="rate-range">
+                연 {{ Number(f.minRate).toFixed(1) }}% ~
+                {{ Number(f.maxRate).toFixed(1) }}%
+              </span>
+            </div>
           </button>
         </li>
       </ul>
@@ -322,6 +329,24 @@ function shortAmount(v) {
 .item-sub {
   font-size: 11.5px;
   color: var(--kb-silver);
+}
+.item-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  margin-top: 3px;
+}
+.rate-range {
+  flex-shrink: 0;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  color: #6b5300;
+  background: var(--yellow-tint);
+  border-radius: 999px;
 }
 /* 12-1 모달 */
 .modal-overlay {
