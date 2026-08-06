@@ -4,7 +4,12 @@
 package org.tajiro.user.service;
 
 import org.tajiro.user.dto.UserProfileDTO;
+import org.tajiro.user.dto.UserProfileRequest;
+
+import java.time.LocalDateTime;
 
 public interface UserProfileService {
     public UserProfileDTO getUserProfileById(Long userId);
+
+    public LocalDateTime saveProfile(Long userId, UserProfileRequest request);
 }

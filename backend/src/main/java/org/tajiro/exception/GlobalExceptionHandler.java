@@ -2,6 +2,7 @@ package org.tajiro.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.tajiro.common.api.ApiResponse;
@@ -19,6 +20,14 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.valueOf(responseCode.getStatus()))
                 .body(ApiResponse.error(responseCode));
+    }
+
+    // 요청 바디 파싱 실패 (예: 생년월일 형식 오류) — 400으로 응답
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiResponse<Void>> handleHttpMessageNotReadableException(HttpMessageNotReadableException e) {
+        return ResponseEntity
+                .status(HttpStatus.valueOf(ErrorCode.INVALID_INPUT_VALUE.getStatus()))
+                .body(ApiResponse.error(ErrorCode.INVALID_INPUT_VALUE));
     }
 
     // 그 외 알 수 없는 서버 내부 시스템 에러 처리

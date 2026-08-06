@@ -17,10 +17,10 @@ public class UserProfileVO {
     private Long userId;
     private LocalDate birthDate;
     private String targetRegion;
-    private Integer mothlyIncome;
+    private Integer monthlyIncome;
     private Integer assetAmount;
     private String jobStatus;
-    private LocalDateTime updateAt;
+    private LocalDateTime updatedAt;
     private String targetSggCode;
 
 }

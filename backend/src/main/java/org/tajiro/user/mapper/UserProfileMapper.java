@@ -8,4 +8,6 @@ import org.tajiro.user.domain.UserProfileVO;
 @Mapper
 public interface UserProfileMapper {
     UserProfileVO getUserProfileById(@Param("userId") Long userId);
+
+    void upsertProfile(UserProfileVO vo);
 }
