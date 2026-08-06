@@ -2,56 +2,83 @@
   <div class="pinfra">
     <PageHeader title="주변 생활 인프라" />
 
-    <div class="scroll-area">
-      <!-- 기존 SVG 더미 지도를 KakaoMap 컴포넌트로 교체 -->
-      <div class="map-area">
-        <KakaoMap
-          :markers="markers"
-          :dots="dots"
-          :center="mapCenter"
-          :active-dot-key="activeDotKey"
-          :draggable="false"
-          @marker-click="onMarkerClick"
-          @dot-click="onDotClick"
-          @dot-hover="onDotHover"
-          @bounds-change="onBoundsChange"
-        />
-      </div>
+    <!-- 1. 지도는 상단 고정 -->
+    <div class="map-area">
+      <KakaoMap
+        :markers="markers"
+        :dots="dots"
+        :center="mapCenter"
+        :active-dot-key="activeDotKey"
+        :draggable="false"
+        @marker-click="onMarkerClick"
+        @dot-click="onDotClick"
+        @dot-hover="onDotHover"
+        @bounds-change="onBoundsChange"
+      />
+    </div>
 
-      <h1 class="title">{{ propertyName }} 기준 도보 거리예요</h1>
+    <!-- 2. 제목 및 탭 고정 -->
+    <h1 class="title">{{ propertyName }} 기준 도보 거리예요</h1>
 
-      <!-- 인프라 리스트 -->
+    <div class="tab-wrap">
+      <button
+        class="tab-btn"
+        :class="{ active: currentTab === 'infra' }"
+        @click="currentTab = 'infra'"
+      >
+        인프라 ({{ infraRows.length }})
+      </button>
+      <button
+        class="tab-btn"
+        :class="{ active: currentTab === 'amenity' }"
+        @click="currentTab = 'amenity'"
+      >
+        편의시설 ({{ amenityRows.length }})
+      </button>
+    </div>
+
+    <!-- 3. 하단 카드(리스트) 영역만 높이를 채우고 내부 스크롤 처리 -->
+    <div class="list-scroll-area">
       <section class="card">
-        <div
-          v-for="(item, i) in rows"
-          :key="i"
-          class="row"
-          :class="{
-            bordered: i > 0,
-            active: activeDotKey === `${item.lat},${item.lng}`,
-          }"
-          @mouseenter="onRowHover(item)"
-          @mouseleave="onRowHover(null)"
-        >
-          <span
-            class="r-icon"
-            v-html="item.icon"
-          />
-          <div class="r-main">
-            <p class="r-name">{{ item.name }}</p>
-            <div class="r-bar">
-              <div
-                class="r-fill"
-                :style="{ width: item.pct + '%' }"
+        <template v-if="activeRows.length > 0">
+          <div
+            v-for="(item, i) in activeRows"
+            :key="i"
+            class="row"
+            :class="{
+              bordered: i > 0,
+              active: activeDotKey === `${item.lat},${item.lng}`,
+            }"
+            @mouseenter="onRowHover(item)"
+            @mouseleave="onRowHover(null)"
+          >
+            <span class="r-icon">
+              <component
+                :is="item.icon"
+                :size="18"
               />
+            </span>
+
+            <div class="r-main">
+              <p class="r-name">{{ item.name }}</p>
+              <div class="r-bar">
+                <div
+                  class="r-fill"
+                  :style="{ width: item.pct + '%' }"
+                />
+              </div>
             </div>
+            <p class="r-dist">{{ item.dist }} · 도보 {{ item.walk }}분</p>
           </div>
-          <p class="r-dist">{{ item.dist }} · 도보 {{ item.walk }}분</p>
+        </template>
+        <div
+          v-else
+          class="empty-msg"
+        >
+          해당 정보가 없습니다.
         </div>
       </section>
     </div>
-
-    <AppTabBar active="home" />
   </div>
 </template>
 
@@ -60,183 +87,281 @@ import { computed, onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import PageHeader from '@/components/PageHeader.vue';
 import AppTabBar from '@/components/AppTabBar.vue';
-import KakaoMap from '@/components/KakaoMap.vue'; // 생성해두신 KakaoMap 위치
+import KakaoMap from '@/components/KakaoMap.vue';
 import { propertyApi } from '@/api/services';
+import {
+  INFRA_CATEGORIES,
+  AMENITY_CATEGORIES,
+} from '@/constants/preferenceOptions';
+import { MapPin } from 'lucide-vue-next';
 
 const route = useRoute();
 
 // 상태 관리
 const infras = ref([]);
 const propertyDetail = ref(null);
-const propertyName = ref('상남동 오피스텔');
+const propertyName = ref('매물');
 const activeDotKey = ref(null);
 
-// 지도 중심 좌표 (초기값: 서울역 또는 API 조회 후 매물 위치)
-const mapCenter = ref({ lat: 37.5563, lng: 126.9723 });
+// 탭 상태 ('infra' | 'amenity')
+const currentTab = ref('infra');
 
-// API 호출
+// 지도 중심 좌표
+const mapCenter = ref({ lat: 36.3320194, lng: 127.4570694 });
+
+// 카테고리 구분용 Set 생성 (빠른 비교를 위함)
+const infraKeySet = new Set(INFRA_CATEGORIES.map((c) => c.key));
+const amenityKeySet = new Set(AMENITY_CATEGORIES.map((c) => c.key));
+
+// 전체 카테고리 Map 생성 (Lucide 아이콘 및 라벨 매핑용)
+const ALL_CATEGORIES = [...INFRA_CATEGORIES, ...AMENITY_CATEGORIES];
+const categoryMap = computed(() => {
+  const map = {};
+  ALL_CATEGORIES.forEach((cat) => {
+    map[cat.key] = cat;
+  });
+  return map;
+});
+
+// API 데이터 로드
 onMounted(async () => {
   const propertyId = route.params.id;
   try {
-    // 1. 매물 정보 불러오기 (매물 위도/경도 필요)
     if (propertyApi.detail) {
       const res = await propertyApi.detail(propertyId);
       propertyDetail.value = res;
-      if (res?.lat && res?.lng) {
-        mapCenter.value = { lat: res.lat, lng: res.lng };
-      }
-      if (res?.name) {
-        propertyName.value = res.name;
+      if (res?.buildingName || res?.title || res?.name) {
+        propertyName.value = res.buildingName || res.title || res.name;
       }
     }
 
-    // 2. 주변 인프라 목록 불러오기
-    infras.value = (await propertyApi.infrastructures(propertyId)) ?? [];
+    const infraRes = await propertyApi.infrastructures(propertyId);
+    const rawData = infraRes?.data || infraRes || {};
+
+    if (rawData.propertyLatitude && rawData.propertyLongitude) {
+      mapCenter.value = {
+        lat: Number(rawData.propertyLatitude),
+        lng: Number(rawData.propertyLongitude),
+      };
+    }
+
+    if (Array.isArray(rawData.infrastructures)) {
+      infras.value = rawData.infrastructures.map((infra) => ({
+        category: infra.infraCategory,
+        name: infra.infraName,
+        distanceMeters: infra.distanceM ?? infra.distanceMeters,
+        walkMinutes: infra.walkMinutes,
+        lat: Number(infra.latitude),
+        lng: Number(infra.longitude),
+      }));
+    }
   } catch (e) {
     console.error('데이터 로드 실패:', e);
   }
 });
 
-// KakaoMap markers 계산 (현재 매물 위치 핀)
+// KakaoMap 중심 마커
 const markers = computed(() => {
-  if (!propertyDetail.value?.lat) return [];
+  if (!mapCenter.value?.lat) return [];
   return [
     {
-      lat: propertyDetail.value.lat,
-      lng: propertyDetail.value.lng,
+      lat: mapCenter.value.lat,
+      lng: mapCenter.value.lng,
       selected: true,
       count: 1,
     },
   ];
 });
 
-// KakaoMap dots 계산 (주변 인프라 핀들)
-const dots = computed(() => {
+// 💡 공통 데이터 포맷팅 함수
+function formatRowItem(item) {
+  const catConfig = categoryMap.value[item.category];
+  const categoryLabel = catConfig?.label || item.category;
+  const categoryIcon = catConfig?.icon || MapPin;
+
+  return {
+    icon: categoryIcon,
+    name: `${categoryLabel} (${item.name})`,
+    dist:
+      item.distanceMeters >= 1000
+        ? (item.distanceMeters / 1000).toFixed(1) + 'km'
+        : item.distanceMeters + 'm',
+    walk: item.walkMinutes,
+    pct: Math.min(100, Math.round((item.distanceMeters / 1200) * 100)),
+    lat: item.lat,
+    lng: item.lng,
+    category: item.category,
+  };
+}
+
+// INFRA_CATEGORIES에 해당하는 데이터만 필터링 (거리순 정렬)
+const infraRows = computed(() => {
   return infras.value
-    .filter((i) => i.lat != null && i.lng != null)
-    .map((i) => ({
-      lat: i.lat,
-      lng: i.lng,
-      category: i.category,
-      name: i.name,
-    }));
+    .filter((i) => infraKeySet.has(i.category))
+    .sort((a, b) => a.distanceMeters - b.distanceMeters)
+    .map(formatRowItem);
 });
 
-// SVG 및 레이아웃 관련 상수
-const ICONS = {
-  HOSPITAL:
-    '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 3v10M3 8h10" stroke="#a8842c" stroke-width="1.8" stroke-linecap="round"/></svg>',
-  CONVENIENCE:
-    '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2.5" y="5" width="11" height="8.5" rx="1.5" stroke="#a8842c" stroke-width="1.3"/><path d="M5.5 5V3.5A1.5 1.5 0 017 2h2a1.5 1.5 0 011.5 1.5V5" stroke="#a8842c" stroke-width="1.3"/></svg>',
-  MART: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 5.5h10l-1 8H4l-1-8z" stroke="#a8842c" stroke-width="1.3" stroke-linejoin="round"/><path d="M6 5.5V4a2 2 0 014 0v1.5" stroke="#a8842c" stroke-width="1.3"/></svg>',
-  BUS: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="3" y="2.5" width="10" height="9.5" rx="2" stroke="#a8842c" stroke-width="1.3"/><path d="M3 8h10M5 14l.8-2M11 14l-.8-2" stroke="#a8842c" stroke-width="1.3" stroke-linecap="round"/><circle cx="5.8" cy="10" r=".8" fill="#a8842c"/><circle cx="10.2" cy="10" r=".8" fill="#a8842c"/></svg>',
-  SUBWAY:
-    '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="3.5" y="2.5" width="9" height="9" rx="2.5" stroke="#a8842c" stroke-width="1.3"/><path d="M3.5 8h9M5.5 14l1-2M10.5 14l-1-2" stroke="#a8842c" stroke-width="1.3" stroke-linecap="round"/></svg>',
-  PARK: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2l3.5 5h-2L12 11H4l2.5-4h-2L8 2z" stroke="#a8842c" stroke-width="1.3" stroke-linejoin="round"/><path d="M8 11v3" stroke="#a8842c" stroke-width="1.3" stroke-linecap="round"/></svg>',
-  GYM: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 8h12M4 5.5v5M12 5.5v5M6 4v8M10 4v8" stroke="#a8842c" stroke-width="1.3" stroke-linecap="round"/></svg>',
-  CAFE: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 6h8v4a3 3 0 01-3 3H6a3 3 0 01-3-3V6z" stroke="#a8842c" stroke-width="1.3"/><path d="M11 7h1.5a1.5 1.5 0 010 3H11" stroke="#a8842c" stroke-width="1.3"/></svg>',
-};
+// AMENITY_CATEGORIES에 해당하는 데이터만 필터링 (거리순 정렬)
+const amenityRows = computed(() => {
+  return infras.value
+    .filter((i) => amenityKeySet.has(i.category))
+    .sort((a, b) => a.distanceMeters - b.distanceMeters)
+    .map(formatRowItem);
+});
 
-const NAME_FMT = {
-  HOSPITAL: (n) => `병원 (${n})`,
-  CONVENIENCE: (n) => `편의점 (${n})`,
-  MART: (n) => `마트 (${n})`,
-  BUS: () => '버스정류장',
-  SUBWAY: () => '지하철 (예정 노선)',
-  PARK: (n) => `공원·문화시설 (${n})`,
-  GYM: (n) => `헬스장 (${n})`,
-  CAFE: (n) => `카페 (${n})`,
-};
+// 현재 선택된 탭에 따라 리스트 선택
+const activeRows = computed(() => {
+  return currentTab.value === 'infra' ? infraRows.value : amenityRows.value;
+});
 
-const ORDER = ['HOSPITAL', 'CONVENIENCE', 'MART', 'BUS', 'SUBWAY', 'PARK'];
+// KakaoMap 핀(dot) 목록
+const dots = computed(() => {
+  // 좌표가 존재하는 유효 데이터 추출
+  const validInfras = infras.value.filter(
+    (i) => i.lat != null && i.lng != null,
+  );
 
-// 하단 리스트 계산
-const rows = computed(() =>
-  ORDER.map((cat) => {
-    const found = infras.value.find((i) => i.category === cat);
-    if (!found && cat === 'SUBWAY') {
-      return {
-        icon: ICONS[cat],
-        name: NAME_FMT[cat](),
-        dist: '1.2km',
-        walk: 18,
-        pct: 100,
-        lat: null,
-        lng: null,
-      };
+  // 현재 선택된 탭(infra / amenity)에 해당하는 카테고리만 1차 필터링
+  const filteredInfras = validInfras.filter((i) => {
+    if (currentTab.value === 'infra') {
+      return infraKeySet.has(i.category);
+    } else {
+      return amenityKeySet.has(i.category);
     }
-    if (!found) return null;
-    const shortName = found.name
-      ? found.name.replace(/(역|정류장).*$/, '$1')
-      : '';
-    return {
-      icon: ICONS[cat] ?? ICONS.PARK,
-      name: NAME_FMT[cat] ? NAME_FMT[cat](shortName) : found.name,
-      dist:
-        found.distanceMeters >= 1000
-          ? (found.distanceMeters / 1000).toFixed(1) + 'km'
-          : found.distanceMeters + 'm',
-      walk: found.walkMinutes,
-      pct: Math.min(100, Math.round((found.distanceMeters / 1200) * 100)),
-      lat: found.lat,
-      lng: found.lng,
-    };
-  }).filter(Boolean),
-);
+  });
 
-// 카카오맵 이벤트 핸들러
-const onMarkerClick = (marker) => {
-  console.log('매물 마커 클릭됨:', marker);
-};
+  if (!filteredInfras.length) return [];
 
+  // 지도 전달용 핀 데이터 매핑
+  const rawDots = filteredInfras.map((i) => ({
+    lat: i.lat,
+    lng: i.lng,
+    category: i.category,
+    name: i.name,
+  }));
+
+  // 매물 중심점 기준으로 현재 탭의 핀들만 들여오는 대칭점(Dummy) 계산
+  const centerLat = mapCenter.value?.lat;
+  const centerLng = mapCenter.value?.lng;
+  if (centerLat == null || centerLng == null) return rawDots;
+
+  let maxLatDiff = 0;
+  let maxLngDiff = 0;
+
+  // 현재 필터링된 인프라들 기준으로만 Bounds 범위 계산
+  filteredInfras.forEach((i) => {
+    const latDiff = Math.abs(i.lat - centerLat);
+    const lngDiff = Math.abs(i.lng - centerLng);
+    if (latDiff > maxLatDiff) maxLatDiff = latDiff;
+    if (lngDiff > maxLngDiff) maxLngDiff = lngDiff;
+  });
+
+  const dummyDots = [
+    {
+      lat: centerLat + maxLatDiff,
+      lng: centerLng + maxLngDiff,
+      category: '_dummy',
+    },
+    {
+      lat: centerLat - maxLatDiff,
+      lng: centerLng - maxLngDiff,
+      category: '_dummy',
+    },
+  ];
+
+  return [...rawDots, ...dummyDots];
+});
+
+// 핸들러
+const onMarkerClick = (marker) => console.log('매물 마커 클릭:', marker);
 const onDotClick = (dot) => {
   activeDotKey.value = `${dot.lat},${dot.lng}`;
 };
-
 const onDotHover = (dot) => {
   activeDotKey.value = dot ? `${dot.lat},${dot.lng}` : null;
 };
-
 const onRowHover = (item) => {
-  if (item && item.lat && item.lng) {
-    activeDotKey.value = `${item.lat},${item.lng}`;
-  } else {
-    activeDotKey.value = null;
-  }
+  activeDotKey.value =
+    item && item.lat && item.lng ? `${item.lat},${item.lng}` : null;
 };
-
-const onBoundsChange = (bounds) => {
-  // 지도가 움직일 때 필요한 추가 처리 (필요시)
-};
+const onBoundsChange = () => {};
 </script>
 
 <style scoped>
 .pinfra {
-  flex: 1;
+  height: 100vh;
   display: flex;
   flex-direction: column;
   background: var(--bg);
+  overflow: hidden; /* 전체 페이지 스크롤 방지 */
 }
-.scroll-area {
-  flex: 1;
-  overflow-y: auto;
-}
+
 .map-area {
-  height: 220px; /* 카카오 지도 영역 높이 조정 */
+  height: 200px;
   width: 100%;
+  flex-shrink: 0; /* 지도가 줄어들지 않도록 고정 */
 }
+
 .title {
-  padding: 16px 16px 0;
+  padding: 14px 16px 10px;
   font-size: 15px;
   font-weight: 900;
+  flex-shrink: 0;
 }
+
+.tab-wrap {
+  display: flex;
+  margin: 0 16px 8px;
+  background-color: #e9ecef;
+  border-radius: 10px;
+  padding: 3px;
+  flex-shrink: 0; /* 탭도 고정 */
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 8px 0;
+  border: none;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 700;
+  color: #6c757d;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tab-btn.active {
+  background: var(--white);
+  color: #212529;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+/* 💡 리스트 영역만 스크롤 설정 */
+.list-scroll-area {
+  flex: 1; /* 남은 하단 높이를 모두 차지 */
+  overflow-y: auto; /* 내부 요소가 넘치면 스크롤 생성 */
+  padding: 0 16px 16px;
+
+  /* 모바일 부드러운 스크롤 */
+  -webkit-overflow-scrolling: touch;
+}
+
 .card {
-  margin: 12px 16px 20px;
   background: var(--white);
   border: 1px solid var(--border);
   border-radius: 16px;
   padding: 4px 16px;
 }
+
+.empty-msg {
+  padding: 20px 0;
+  text-align: center;
+  font-size: 13px;
+  color: var(--kb-gray);
+}
+
 .row {
   display: flex;
   align-items: center;
@@ -244,14 +369,16 @@ const onBoundsChange = (bounds) => {
   padding: 13px 0;
   transition: background-color 0.2s;
 }
+
 .row.bordered {
   border-top: 1px solid var(--bg);
 }
-/* 리스트 항목과 지도 인프라 dot이 연결(Hover)될 때의 스타일 */
+
 .row.active {
   background-color: rgba(240, 168, 0, 0.08);
   border-radius: 8px;
 }
+
 .r-icon {
   display: flex;
   align-items: center;
@@ -261,11 +388,18 @@ const onBoundsChange = (bounds) => {
   border-radius: 100px;
   background: var(--yellow-tint);
   flex-shrink: 0;
+  color: #a8842c;
 }
+
+.lucide-icon {
+  display: block;
+}
+
 .r-main {
   flex: 1;
   min-width: 0;
 }
+
 .r-name {
   font-size: 13px;
   font-weight: 700;
@@ -273,6 +407,7 @@ const onBoundsChange = (bounds) => {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
 .r-bar {
   margin-top: 5px;
   height: 4px;
@@ -280,11 +415,13 @@ const onBoundsChange = (bounds) => {
   background: var(--border);
   overflow: hidden;
 }
+
 .r-fill {
   height: 100%;
   border-radius: 2px;
   background: var(--kb-yellow);
 }
+
 .r-dist {
   font-size: 11.5px;
   color: var(--kb-gray);
