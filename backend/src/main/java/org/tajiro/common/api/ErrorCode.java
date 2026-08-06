@@ -35,7 +35,10 @@ public enum ErrorCode {
     COMPARISON_REPORT_NOT_FOUND(404, "REPORT_404", "존재하지 않는 비교 리포트입니다."),
 
     // --- 주거 선호 조건 ---
-    PREFERENCE_NOT_FOUND(404, "PREF_404", "설정된 주거 선호 조건이 없습니다.");
+    PREFERENCE_NOT_FOUND(404, "PREF_404", "설정된 주거 선호 조건이 없습니다."),
+
+    // --- 찜한 매물 ---
+    FAVORITE_DUPLICATE(409, "FAV_409", "이미 찜한 매물입니다.");
 
     private final int status;
     private final String code;
