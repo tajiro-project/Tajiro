@@ -15,7 +15,7 @@ import org.tajiro.policy.service.PolicyService;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/policy")
+@RequestMapping("/api/policies")
 @RequiredArgsConstructor
 @Api(tags = "청년 정책 관리")
 public class PolicyController{
@@ -32,11 +32,12 @@ public class PolicyController{
     }
 
 
-    @GetMapping("")
+    @GetMapping("/{policyId}")
     public ResponseEntity<PolicyDTO> get(
 //            @AuthenticationPrincipal Long userId,
             @RequestHeader(value = "X-USER-ID", defaultValue = "1") Long userId,
-            @RequestParam(required = true) Long policyId){
+            @PathVariable("policyId") long policyId)
+    {
 
         return ResponseEntity.ok(service.get(policyId, userId));
     }

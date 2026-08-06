@@ -55,7 +55,8 @@ async function handleLogin() {
             () => client.post('/auth/login', { email: email.value, password: password.value }),
             mockLogin,
         );
-        localStorage.setItem('accessToken', data.accessToken);
+        const payload = data.data ?? data;
+        localStorage.setItem('accessToken', payload.accessToken);
         router.push('/home');
     } catch {
         errorMessage.value = '이메일 또는 비밀번호가 일치하지 않습니다.';

@@ -37,7 +37,7 @@
             </section>
 
             <nav class="menu-list">
-                <button class="menu-row" type="button" @click="router.push('/profile-edit')">
+                <button class="menu-row" type="button" @click="router.push('/profile-setup?mode=edit')">
                     <span>내 정보 관리 (소득 · 자산 · 직장)</span>
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                         <path d="M6 3.5l5 4.5-5 4.5" stroke="#8a8d8f" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
@@ -51,6 +51,8 @@
                 </button>
             </nav>
 
+            <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
+
             <button class="btn-cta logout-btn" type="button" @click="handleLogout">로그아웃</button>
             <button class="withdraw-link" type="button" @click="handleWithdraw">탈퇴하기</button>
         </div>
@@ -62,7 +64,7 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import client, { withMock } from '@/api/client';
+import client, { getApiErrorMessage, withMock } from '@/api/client';
 import { mockDashboard } from '@/api/mockData';
 import AppTabBar from '@/components/AppTabBar.vue';
 import PageHeader from '@/components/PageHeader.vue';
@@ -76,6 +78,7 @@ const CRITERION_LABELS = {
 };
 
 const router = useRouter();
+const errorMessage = ref('');
 const dashboard = ref({
     name: '',
     targetRegion: '',
@@ -127,13 +130,26 @@ function calcAge(birthDate) {
 
 async function handleLogout() {
     await withMock(() => client.post('/auth/logout'), {});
+    localStorage.removeItem('accessToken');
     router.push('/login');
 }
 
 async function handleWithdraw() {
     if (!confirm('정말 탈퇴하시겠어요? 탈퇴 시 계정 정보가 삭제됩니다.')) return;
 
-    await withMock(() => client.delete('/users/me'), {});
+    errorMessage.value = '';
+
+    try {
+        await client.delete('/users/me');
+    } catch (error) {
+        if (error.response) {
+            errorMessage.value = getApiErrorMessage(error, '탈퇴에 실패했어요. 잠시 후 다시 시도해주세요.');
+            return;
+        }
+        // 백엔드 자체가 없을 때만 mock으로 간주하고 진행
+    }
+
+    localStorage.removeItem('accessToken');
     router.push('/login');
 }
 </script>
@@ -269,6 +285,12 @@ async function handleWithdraw() {
     font-weight: 500;
     color: var(--text-primary);
     text-align: left;
+}
+
+.error-message {
+    font-size: 12px;
+    color: var(--danger);
+    text-align: center;
 }
 
 .logout-btn {
