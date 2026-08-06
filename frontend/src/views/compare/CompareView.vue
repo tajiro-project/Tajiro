@@ -346,6 +346,8 @@ const selectedIds = computed(() =>
     .flatMap((id) => String(id).split(','))
     .map((id) => id.trim())
     .filter(Boolean)
+    .map(Number)
+    .sort((a, b) => a - b)
     .slice(0, 3),
 );
 const reportId = computed(() => String(route.params.reportId ?? route.query.reportId ?? ''));

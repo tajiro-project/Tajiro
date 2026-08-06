@@ -130,6 +130,13 @@
           AND user_id = #{userId}
     </update>
 
+    <update id="updateCreatedAt">
+        UPDATE comparison_report
+        SET created_at = NOW()
+        WHERE id = #{reportId}
+          AND user_id = #{userId}
+    </update>
+
     <update id="markSaved">
         UPDATE comparison_report
         SET saved = 1

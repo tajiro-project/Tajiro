@@ -140,7 +140,12 @@ async function loadReports() {
     const nextReports = Array.isArray(payload)
       ? payload
       : (payload?.items ?? []);
-    reports.value = nextReports;
+    reports.value = nextReports.map((report) => ({
+      ...report,
+      comparedPropertyIds: [...(report.comparedPropertyIds ?? [])]
+        .map(Number)
+        .sort((a, b) => a - b),
+    }));
   } catch (error) {
     errorMessage.value = getApiErrorMessage(
       error,
