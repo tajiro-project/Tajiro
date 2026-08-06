@@ -115,6 +115,7 @@ const selected = reactive({
   address: '',
   lat: null,
   lng: null,
+  sggCode: null,
 });
 
 const hasSelection = computed(
@@ -195,6 +196,7 @@ function updatePosition(lat, lng, preferredName = '') {
   selected.lng = lng;
   selected.name = preferredName;
   selected.address = '';
+  selected.sggCode = null;
   selectedAddress.value = '주소를 확인하는 중이에요.';
 
   const requestId = ++addressRequestId;
@@ -217,6 +219,14 @@ function updatePosition(lat, lng, preferredName = '') {
     selected.address = coordinates;
     selected.name = preferredName || coordinates;
     selectedAddress.value = coordinates;
+  });
+
+  geocoder.coord2RegionCode(lng, lat, (result, status) => {
+    if (requestId !== addressRequestId) return;
+    if (status !== window.kakao.maps.services.Status.OK) return;
+
+    const legalDong = result.find((r) => r.region_type === 'B') ?? result[0];
+    selected.sggCode = legalDong?.code ? legalDong.code.slice(0, 5) : null;
   });
 }
 
@@ -248,6 +258,7 @@ function confirm() {
     address: selected.address,
     lat: selected.lat,
     lng: selected.lng,
+    sggCode: selected.sggCode,
   });
   close();
 }
