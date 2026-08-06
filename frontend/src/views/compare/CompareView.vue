@@ -1,14 +1,9 @@
 <template>
   <div class="cmp">
-    <header class="local-header">
-      <button class="back" type="button" aria-label="뒤로 가기" @click="goBack">
-        ‹
-      </button>
-      <span>{{ isReportMode ? '비교 리포트 상세' : '매물 비교' }}</span>
-      <button class="refresh" type="button" @click="loadComparison">
-        새로고침
-      </button>
-    </header>
+    <PageHeader
+      :title="isReportMode ? '비교 리포트 상세' : '매물 비교'"
+      :back-to="isReportMode ? '/reports' : '/compare-box'"
+    />
 
     <div class="scroll-area">
       <div v-if="loading" class="state">비교 결과를 불러오는 중이에요.</div>
@@ -288,6 +283,7 @@
 <script setup>
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import PageHeader from '@/components/PageHeader.vue';
 import {
   Chart,
   Filler,
@@ -912,7 +908,7 @@ function goBack() {
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  background: #eceae4;
+  background: #e9e7e2;
   color: var(--kb-silver);
   font-size: 13px;
   font-weight: 800;
@@ -936,7 +932,7 @@ function goBack() {
 .t-badge {
   font-size: 10px;
   font-weight: 700;
-  color: #a8842c;
+  color: var(--kb-gold);
 }
 .ai-card {
   margin-top: 14px;
@@ -951,12 +947,13 @@ function goBack() {
   gap: 7px;
   font-size: 14.5px;
   font-weight: 800;
-  color: #85714D;
+  color: var(--kb-gold);
   margin-bottom: 10px;
 }
 .ai-p {
   font-size: 13px;
   line-height: 1.65;
+  color: var(--kb-gray);
   margin-bottom: 10px;
 }
 .ai-p:last-child {
@@ -1056,6 +1053,7 @@ function goBack() {
 .bb-value {
   font-size: 12.5px;
   font-weight: 800;
+  color: var(--kb-gold);
 }
 .metric-note {
   margin-top: 8px;
@@ -1090,7 +1088,7 @@ function goBack() {
   justify-content: center;
   min-width: 52px;
   padding: 7px 10px;
-  border-radius: 9px;
+  border-radius: 99px;
   font-size: 12px;
   font-weight: 700;
   background: #f1efea;
@@ -1132,6 +1130,7 @@ function goBack() {
   background: var(--white);
   font-size: 14.5px;
   font-weight: 800;
+  color: var(--kb-dark-gray);
 }
 .report-btn:disabled {
   opacity: 0.45;

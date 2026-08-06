@@ -23,7 +23,7 @@
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
               <path
                 d="M5.5 3v9M5.5 12l-2.2-2.2M5.5 12l2.2-2.2M12.5 15V6M12.5 6l-2.2 2.2M12.5 6l2.2 2.2"
-                stroke="#545045"
+                stroke="var(--kb-gold)"
                 stroke-width="1.5"
                 stroke-linecap="round"
                 stroke-linejoin="round"
@@ -241,10 +241,10 @@ function openReport(r) {
 }
 .count {
   font-size: 12.5px;
-  color: var(--kb-gray);
+  color: var(--kb-silver);
 }
 .count b {
-  color: var(--text-primary);
+  color: var(--kb-silver);
 }
 .sort-label {
   display: flex;
@@ -252,6 +252,7 @@ function openReport(r) {
   gap: 4px;
   font-size: 12.5px;
   font-weight: 700;
+  color: var(--kb-gray);
 }
 .action-error {
   margin-top: 12px;
@@ -335,7 +336,7 @@ function openReport(r) {
   width: 26px;
   height: 26px;
   border-radius: 50%;
-  background: #e0ddd6;
+  background: #e9e7e2;
   color: var(--kb-silver);
   font-size: 12px;
   font-weight: 800;
@@ -381,6 +382,7 @@ function openReport(r) {
   border-radius: 10px;
   font-size: 12px;
   line-height: 1.55;
+  color: var(--kb-gray);
 }
 .summary-icon {
   flex-shrink: 0;
@@ -404,7 +406,7 @@ function openReport(r) {
 .rc-open {
   font-size: 12.5px;
   font-weight: 800;
-  color: #85714d;
+  color: var(--kb-gold);
 }
 .note {
   display: flex;
@@ -420,5 +422,6 @@ function openReport(r) {
 }
 .btn-cta {
   margin-top: 14px;
+  color: var(--kb-dark-gray);
 }
 </style>
