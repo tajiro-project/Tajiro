@@ -112,8 +112,6 @@
       </nav>
     </div>
 
-    <AppTabBar active="home" />
-
     <!-- 12-1 내 정보 입력 필요 모달 -->
     <Teleport to="body">
       <div v-if="needProfile" class="modal-overlay">
@@ -157,7 +155,6 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue';
 import PageHeader from '@/components/PageHeader.vue';
-import AppTabBar from '@/components/AppTabBar.vue';
 import { financeApi, policyApi } from '@/api/services';
 
 const props = defineProps({
