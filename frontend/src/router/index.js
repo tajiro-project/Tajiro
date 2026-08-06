@@ -79,6 +79,16 @@ const routes = [
     component: () => import('@/views/mypage/MyPageView.vue'),
   },
   {
+    path: '/favorites',
+    name: 'favorites',
+    component: () => import('@/views/favorite/FavoriteListView.vue'),
+  },
+  {
+    path: '/profile-setup',
+    name: 'profile-setup',
+    component: () => import('@/views/profile/ProfileSetupView.vue'),
+  },
+  {
     path: '/register',
     name: 'register',
     component: () => import('@/views/auth/RegisterView.vue'),
@@ -87,6 +97,21 @@ const routes = [
     path: '/login',
     name: 'login',
     component: () => import('@/views/auth/LoginView.vue'),
+  },
+  {
+    path: '/policies/:id',
+    name: 'policy-detail',
+    component: () => import('@/views/benefit/PolicyDetailView.vue'),
+  },
+  {
+    path: '/financial-products/:id',
+    name: 'financial-product-detail',
+    component: () => import('@/views/benefit/LoanDetailView.vue'),
+  },
+  {
+    path: '/safety-guide',
+    name: 'safety-guide',
+    component: () => import('@/views/safety/SafetyGuideView.vue'),
   },
 ];
 

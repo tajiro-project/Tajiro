@@ -1,3 +1,31 @@
+import {
+  TrainFront, // 지하철
+  Bus, // 버스터미널
+  TrainTrack, // 기차역
+  Plus, // 병원 (십자가)
+  Pill, // 약국
+  GraduationCap, // 학교
+  Baby, // 유치원
+  BookOpen, // 학원
+  Library, // 도서관
+  Trees, // 공원
+  ShieldCheck, // 경찰서
+  Flame, // 소방서
+  Building2, // 행정복지센터
+  Building, // 관공서
+  Mail, // 우체국
+  Landmark, // 은행
+  Store, // 편의점
+  ShoppingCart, // 마트
+  Coffee, // 카페
+  Utensils, // 음식점
+  Film, // 문화시설
+  Dumbbell, // 체육시설
+  Waves, // 수영장
+  SquareParking, // 주차장
+  Fuel, // 주유소
+} from 'lucide-vue-next';
+
 export const PREFERENCE_STEP_LABELS = [
   '이주·통근 정보',
   '희망 주거 조건',
@@ -13,37 +41,52 @@ export const HOUSING_OPTIONS = ['원룸', '아파트', '주택/빌라', '오피�
 
 export const TRADE_OPTIONS = ['월세', '전세', '매매'];
 
-export const FLOOR_OPTIONS = ['저층', '1층', '2층 이상', '옥탑'];
+export const FLOOR_OPTIONS = ['지하/반지하', '1층', '2층 이상', '옥탑'];
 
 export const INFRA_CATEGORIES = [
-  { key: 'SUBWAY', label: '지하철' },
-  { key: 'BUS_TERMINAL', label: '버스터미널' },
-  { key: 'TRAIN', label: '기차역' },
-  { key: 'HOSPITAL', label: '병원' },
-  { key: 'PHARMACY', label: '약국' },
-  { key: 'SCHOOL', label: '학교' },
-  { key: 'KINDERGARTEN', label: '유치원' },
-  { key: 'ACADEMY', label: '학원' },
-  { key: 'LIBRARY', label: '도서관' },
-  { key: 'PARK', label: '공원' },
-  { key: 'POLICE', label: '경찰서' },
-  { key: 'FIRE', label: '소방서' },
-  { key: 'GOV_OFFICE', label: '행정복지센터' },
-  { key: 'PUBLIC', label: '관공서' },
-  { key: 'POST_OFFICE', label: '우체국' },
-  { key: 'BANK', label: '은행' },
+  // 🚆 교통
+  { key: 'SUBWAY', label: '지하철', icon: TrainFront, color: '#2563EB' }, // 파랑 (지하철 대표색)
+  { key: 'BUS_TERMINAL', label: '버스터미널', icon: Bus, color: '#0284C7' }, // 스카이블루
+  { key: 'TRAIN', label: '기차역', icon: TrainTrack, color: '#1D4ED8' }, // 다크 블루
+
+  // 🏥 의료/건강
+  { key: 'HOSPITAL', label: '병원', icon: Plus, color: '#EF4444' }, // 적십자 빨강
+  { key: 'PHARMACY', label: '약국', icon: Pill, color: '#EC4899' }, // 핑크/장미색
+
+  // 🎓 교육
+  { key: 'SCHOOL', label: '학교', icon: GraduationCap, color: '#7C3AED' }, // 보라
+  { key: 'KINDERGARTEN', label: '유치원', icon: Baby, color: '#F43F5E' }, // 코랄/다홍 (아동 테마)
+  { key: 'ACADEMY', label: '학원', icon: BookOpen, color: '#8B5CF6' }, // 바이올렛
+  { key: 'LIBRARY', label: '도서관', icon: Library, color: '#6D28D9' }, // 딥 퍼플
+
+  // 🌲 자연/안전/공공
+  { key: 'PARK', label: '공원', icon: Trees, color: '#059669' }, // 딥 그린
+  { key: 'POLICE', label: '경찰서', icon: ShieldCheck, color: '#1E3A8A' }, // 경찰 제복/마크 남색
+  { key: 'FIRE', label: '소방서', icon: Flame, color: '#DC2626' }, // 소방차 빨강
+  {
+    key: 'GOV_OFFICE',
+    label: '행정복지센터',
+    icon: Building2,
+    color: '#4B5563',
+  }, // 슬레이트 그리
+  { key: 'PUBLIC', label: '관공서', icon: Building, color: '#374151' }, // 다크 차콜
+  { key: 'POST_OFFICE', label: '우체국', icon: Mail, color: '#EA580C' }, // 우체국 주황
+  { key: 'BANK', label: '은행', icon: Landmark, color: '#0D9488' }, // 틸(Teal)/금융 대표색
 ];
 
 export const AMENITY_CATEGORIES = [
-  { key: 'CONVENIENCE', label: '편의점' },
-  { key: 'MART', label: '마트' },
-  { key: 'CAFE', label: '카페' },
-  { key: 'FOOD', label: '음식점' },
-  { key: 'CULTURE', label: '문화시설' },
-  { key: 'SPORTS', label: '체육시설' },
-  { key: 'SWIMMING', label: '수영장' },
-  { key: 'PARKING', label: '주차장' },
-  { key: 'GAS', label: '주유소' },
+  // 🛒 쇼핑/음식
+  { key: 'CONVENIENCE', label: '편의점', icon: Store, color: '#10B981' }, // 초록 (CU/GS25 브랜드 톤)
+  { key: 'MART', label: '마트', icon: ShoppingCart, color: '#F59E0B' }, // 골드/앰버
+  { key: 'CAFE', label: '카페', icon: Coffee, color: '#B45309' }, // 커피 브라운
+  { key: 'FOOD', label: '음식점', icon: Utensils, color: '#F97316' }, // 식욕을 돋우는 주황
+
+  // 🎨 여가/체육/기타
+  { key: 'CULTURE', label: '문화시설', icon: Film, color: '#6366F1' }, // 인디고
+  { key: 'SPORTS', label: '체육시설', icon: Dumbbell, color: '#84CC16' }, // 라임 그린 (스포츠 톤)
+  { key: 'SWIMMING', label: '수영장', icon: Waves, color: '#06B6D4' }, // 시원한 민트/아쿠아
+  { key: 'PARKING', label: '주차장', icon: SquareParking, color: '#64748B' }, // 주차 표지판 블루-그레이
+  { key: 'GAS', label: '주유소', icon: Fuel, color: '#D97706' }, // 옐로우 브라운
 ];
 
 export const PREFERENCE_SLIDER_CONFIG = {
@@ -72,6 +115,12 @@ export const PREFERENCE_SLIDER_CONFIG = {
     step: 5000,
     marks: ['최소', '10억', '20억', '30억', '최대'],
   },
+  AREA: {
+    min: 0,
+    max: 200,
+    step: 1,
+    marks: ['0', '50m²', '100m²', '150m²', '200m²'],
+  },
 };
 
 export const PRIORITY_OPTIONS = [
@@ -97,7 +146,7 @@ export const PRIORITY_OPTIONS = [
     criterion: 'AMENITY',
     title: '편의시설',
     sub: '마트, 편의점, 카페 등',
-    icon: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2.5l6.5 3v5c0 4-2.8 6.4-6.5 7.5-3.7-1.1-6.5-3.5-6.5-7.5v-5l6.5-3z" stroke="#545045" stroke-width="1.5" stroke-linejoin="round"/><path d="M7.2 10l2 2 3.6-3.8" stroke="#545045" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    icon: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 7h12l-1 9H5L4 7z" stroke="#545045" stroke-width="1.5" stroke-linejoin="round"/><path d="M7.5 7V5.5a2.5 2.5 0 015 0V7" stroke="#545045" stroke-width="1.5"/></svg>',
   },
   {
     criterion: 'AREA',

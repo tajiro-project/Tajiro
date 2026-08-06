@@ -35,6 +35,7 @@ import javax.sql.DataSource;
         "org.tajiro.property.mapper",
         "org.tajiro.comparison.mapper",
         "org.tajiro.report.mapper",
+        "org.tajiro.preference.mapper",
         "org.tajiro.policy.mapper",
         "org.tajiro.finance.mapper",
         "org.tajiro.seller.mapper"
@@ -47,6 +48,7 @@ import javax.sql.DataSource;
         "org.tajiro.property.service",
         "org.tajiro.comparison.service",
         "org.tajiro.report.service",
+        "org.tajiro.preference.service",
         "org.tajiro.policy.service",
         "org.tajiro.finance.service",
         "org.tajiro.seller.service",
