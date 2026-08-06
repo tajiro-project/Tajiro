@@ -220,9 +220,9 @@
             :key="category.key"
             class="chip"
             :class="{
-              on: pref.desireAmenityCategories.includes(category.key),
+              on: pref.desiredAmenityCategories.includes(category.key),
             }"
-            @click="toggle(pref.desireAmenityCategories, category.key)"
+            @click="toggle(pref.desiredAmenityCategories, category.key)"
           >
             {{ category.label }}
           </button>
@@ -337,7 +337,7 @@ const pref = reactive({
   areaRange: [AREA_MIN_M2, AREA_MAX_M2],
   floorPreference: [],
   desiredInfraCategories: [],
-  desireAmenityCategories: [],
+  desiredAmenityCategories: [],
   priorities: [],
 });
 

@@ -22,6 +22,7 @@ import org.springframework.web.servlet.config.annotation.EnableWebMvc;
         "org.tajiro.property.controller",
         "org.tajiro.comparison.controller",
         "org.tajiro.report.controller",
+        "org.tajiro.preference.controller",
         "org.tajiro.policy.controller",
         "org.tajiro.finance.controller",
         "org.tajiro.seller.controller",

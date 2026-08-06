@@ -32,11 +32,12 @@ public class PolicyController{
     }
 
 
-    @GetMapping("")
+    @GetMapping("/{policyId}")
     public ResponseEntity<PolicyDTO> get(
 //            @AuthenticationPrincipal Long userId,
             @RequestHeader(value = "X-USER-ID", defaultValue = "1") Long userId,
-            @RequestParam(required = true) Long policyId){
+            @PathVariable("policyId") long policyId)
+    {
 
         return ResponseEntity.ok(service.get(policyId, userId));
     }

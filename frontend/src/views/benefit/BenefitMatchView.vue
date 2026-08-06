@@ -69,7 +69,14 @@
               한도 {{ f.maxLimitAmount.toLocaleString() }}만원 · 연
               {{ f.minRate.toFixed(1) }}%
             </p> -->
-            <p class="item-sub">무보증 월세 자금 · 만 19~34세</p>
+            <div class="item-meta">
+              <!-- <p class="item-sub">무보증 월세 자금 · 만 19~34세</p> -->
+
+              <span class="rate-range">
+                연 {{ Number(f.minRate).toFixed(1) }}% ~
+                {{ Number(f.maxRate).toFixed(1) }}%
+              </span>
+            </div>
           </button>
         </li>
       </ul>
@@ -111,8 +118,6 @@
         </button>
       </nav>
     </div>
-
-    <AppTabBar active="home" />
 
     <!-- 12-1 내 정보 입력 필요 모달 -->
     <Teleport to="body">
@@ -157,7 +162,6 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue';
 import PageHeader from '@/components/PageHeader.vue';
-import AppTabBar from '@/components/AppTabBar.vue';
 import { financeApi, policyApi } from '@/api/services';
 
 const props = defineProps({
@@ -318,12 +322,31 @@ function shortAmount(v) {
   font-weight: 800;
 }
 .item-amount {
-  font-size: 13px;
-  font-weight: 500;
+  font-size: 11.5px;
+  font-weight: 400;
+  color: var(--kb-silver);
 }
 .item-sub {
   font-size: 11.5px;
   color: var(--kb-silver);
+}
+.item-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  margin-top: 3px;
+}
+.rate-range {
+  flex-shrink: 0;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  color: #6b5300;
+  background: var(--yellow-tint);
+  border-radius: 999px;
 }
 /* 12-1 모달 */
 .modal-overlay {
