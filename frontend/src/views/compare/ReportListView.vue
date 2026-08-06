@@ -2,7 +2,7 @@
   <div class="reports">
     <PageHeader title="비교 리포트 보관함" />
 
-    <div class="scroll-area">
+    <simplebar class="scroll-area">
       <div class="top-row">
         <p class="count">
           저장된 비교 리포트 <b>{{ reports.length }}건</b>
@@ -10,17 +10,45 @@
         <span class="sort-label">최신순</span>
       </div>
 
-      <p v-if="deleteError" class="action-error">{{ deleteError }}</p>
-      <div v-if="loading" class="state">리포트를 불러오는 중이에요.</div>
-      <div v-else-if="errorMessage" class="state error">{{ errorMessage }}</div>
-      <div v-else-if="reports.length === 0" class="state">
+      <p
+        v-if="deleteError"
+        class="action-error"
+      >
+        {{ deleteError }}
+      </p>
+      <div
+        v-if="loading"
+        class="state"
+      >
+        리포트를 불러오는 중이에요.
+      </div>
+      <div
+        v-else-if="errorMessage"
+        class="state error"
+      >
+        {{ errorMessage }}
+      </div>
+      <div
+        v-else-if="reports.length === 0"
+        class="state"
+      >
         저장된 비교 리포트가 없어요.
       </div>
 
-      <div v-else v-for="r in reports" :key="r.reportId" class="report-card">
+      <div
+        v-else
+        v-for="r in reports"
+        :key="r.reportId"
+        class="report-card"
+      >
         <div class="rc-head">
           <span class="rc-icon">
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 18 18"
+              fill="none"
+            >
               <path
                 d="M5.5 3v9M5.5 12l-2.2-2.2M5.5 12l2.2-2.2M12.5 15V6M12.5 6l-2.2 2.2M12.5 6l2.2 2.2"
                 stroke="#545045"
@@ -43,15 +71,20 @@
             class="rc-prop"
             :class="{ on: recommendedOf(r) === pid }"
           >
-            <span class="rp-circle" :class="{ on: recommendedOf(r) === pid }">{{
-              letters[i]
-            }}</span>
+            <span
+              class="rp-circle"
+              :class="{ on: recommendedOf(r) === pid }"
+              >{{ letters[i] }}</span
+            >
             <p class="rp-name">{{ propName(r, pid) }}</p>
             <p class="rp-price">{{ propPrice(r, pid) }}</p>
           </div>
         </div>
 
-        <p v-if="hasUpdatedProperty(r)" class="update-notice">
+        <p
+          v-if="hasUpdatedProperty(r)"
+          class="update-notice"
+        >
           매물 정보가 저장 이후 업데이트됐어요.
         </p>
 
@@ -79,12 +112,22 @@
           >
             삭제
           </button>
-          <button class="rc-open" @click="openReport(r)">상세 보기 →</button>
+          <button
+            class="rc-open"
+            @click="openReport(r)"
+          >
+            상세 보기 →
+          </button>
         </div>
       </div>
 
       <p class="note">
-        <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+        <svg
+          width="13"
+          height="13"
+          viewBox="0 0 13 13"
+          fill="none"
+        >
           <circle
             cx="6.5"
             cy="6.5"
@@ -103,10 +146,13 @@
         표시될 수 있어요.
       </p>
 
-      <button class="btn-cta" @click="$router.push('/compare-box')">
+      <button
+        class="btn-cta"
+        @click="$router.push('/compare-box')"
+      >
         새 비교 시작하기
       </button>
-    </div>
+    </simplebar>
   </div>
 </template>
 
@@ -114,6 +160,7 @@
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import PageHeader from '@/components/PageHeader.vue';
+import simplebar from 'simplebar-vue';
 import client, { getApiErrorMessage } from '@/api/client';
 
 const router = useRouter();
@@ -167,7 +214,11 @@ function propName(report, pid) {
 function propPrice(report, pid) {
   const p = getProperty(report, pid);
   if (!p) return '';
-  if (p.monthlyRent === null || p.monthlyRent === undefined || p.monthlyRent === '') {
+  if (
+    p.monthlyRent === null ||
+    p.monthlyRent === undefined ||
+    p.monthlyRent === ''
+  ) {
     return `${p.tradeType ?? '전세'} ${p.deposit}`;
   }
   return `${p.deposit}/${p.monthlyRent}`;
@@ -230,8 +281,6 @@ function openReport(r) {
   background: var(--bg);
 }
 .scroll-area {
-  flex: 1;
-  overflow-y: auto;
   padding: 14px 16px 20px;
 }
 .top-row {

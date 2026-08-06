@@ -1,16 +1,25 @@
 <template>
   <div class="cbox">
     <header class="local-header">
-      <button class="back" type="button" aria-label="뒤로 가기" @click="goBack">
+      <button
+        class="back"
+        type="button"
+        aria-label="뒤로 가기"
+        @click="goBack"
+      >
         ‹
       </button>
       <span>비교함</span>
-      <button class="refresh" type="button" @click="loadCompareBox">
+      <button
+        class="refresh"
+        type="button"
+        @click="loadCompareBox"
+      >
         새로고침
       </button>
     </header>
 
-    <div class="scroll-area">
+    <simplebar class="scroll-area">
       <h1 class="title">비교할 매물을 골라주세요 (최대 3개)</h1>
       <p class="sub">
         {{ checkedIds.length }}개 선택됨
@@ -19,21 +28,46 @@
         >
       </p>
 
-      <div v-if="loading" class="state">비교함을 불러오는 중이에요.</div>
-      <div v-else-if="errorMessage" class="state error">{{ errorMessage }}</div>
-      <div v-else-if="items.length === 0" class="state">
+      <div
+        v-if="loading"
+        class="state"
+      >
+        비교함을 불러오는 중이에요.
+      </div>
+      <div
+        v-else-if="errorMessage"
+        class="state error"
+      >
+        {{ errorMessage }}
+      </div>
+      <div
+        v-else-if="items.length === 0"
+        class="state"
+      >
         아직 비교함에 담긴 매물이 없어요.
       </div>
 
-      <ul v-else class="items">
-        <li v-for="item in items" :key="item.propertyId" class="item">
+      <ul
+        v-else
+        class="items"
+      >
+        <li
+          v-for="item in items"
+          :key="item.propertyId"
+          class="item"
+        >
           <button
             class="check"
             :class="{ on: checkedIds.includes(item.propertyId) }"
             type="button"
             @click="toggleCheck(item.propertyId)"
           >
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 12 12"
+              fill="none"
+            >
               <path
                 d="M2 6.5L4.7 9L10 3.5"
                 stroke="#545045"
@@ -101,7 +135,12 @@
               :disabled="deletingId === item.propertyId"
               @click="removeItem(item.propertyId)"
             >
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 14 14"
+                fill="none"
+              >
                 <path
                   d="M3.5 3.5L10.5 10.5M10.5 3.5L3.5 10.5"
                   stroke="#8a8d8f"
@@ -114,8 +153,17 @@
         </li>
       </ul>
 
-      <button class="add-btn" type="button" @click="goPropertyListForAdd">
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+      <button
+        class="add-btn"
+        type="button"
+        @click="goPropertyListForAdd"
+      >
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 14 14"
+          fill="none"
+        >
           <path
             d="M7 2v10M2 7h10"
             stroke="#545045"
@@ -125,10 +173,20 @@
         </svg>
         매물 리스트에서 추가하기
       </button>
-      <p v-if="toastMessage" class="toast-msg">{{ toastMessage }}</p>
+      <p
+        v-if="toastMessage"
+        class="toast-msg"
+      >
+        {{ toastMessage }}
+      </p>
 
       <p class="tip">
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 14 14"
+          fill="none"
+        >
           <path
             d="M7 1.5a4.2 4.2 0 00-2.4 7.6c.5.4.9 1 .9 1.6v.3h3v-.3c0-.6.4-1.2.9-1.6A4.2 4.2 0 007 1.5z"
             stroke="#8a8477"
@@ -152,13 +210,14 @@
       >
         비교 시작 ({{ checkedIds.length }}개)
       </button>
-    </div>
+    </simplebar>
   </div>
 </template>
 
 <script setup>
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
+import simplebar from 'simplebar-vue';
 import { getApiErrorMessage } from '@/api/client';
 import { comparisonApi } from '@/api/services';
 
@@ -314,6 +373,11 @@ function formatFee(item) {
   flex: 1;
   overflow-y: auto;
   padding: 16px;
+}
+.scroll-area :deep(.simplebar-content) {
+  display: flex;
+  flex-direction: column;
+  padding: 0 16px;
 }
 .title {
   font-size: 16px;
