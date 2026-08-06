@@ -273,8 +273,6 @@
           {{ step === PREFERENCE_STEP_COUNT ? '설정 완료' : '다음' }}
         </button>
       </div>
-
-      <AppTabBar active="property" />
     </div>
 
     <KakaoLocation
@@ -289,7 +287,6 @@
 <script setup>
 import { computed, reactive, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import AppTabBar from '@/components/AppTabBar.vue';
 import DualSlider from '@/components/DualSlider.vue';
 import KakaoLocation from '@/components/KakaoLocation.vue';
 import PageHeader from '@/components/PageHeader.vue';
