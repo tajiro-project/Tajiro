@@ -18,7 +18,7 @@
                         <div class="card-texts">
                             <p class="card-price">{{ priceLabel(item) }}</p>
                             <p class="card-meta">{{ item.propertyType }} · {{ pyeong(item.areaM2) }}평 · {{ floorLabel(item.floorInfo) }}</p>
-                            <p class="card-address">{{ item.address }} · {{ item.commuteLabel }}</p>
+                            <p class="card-address">{{ item.address }}</p>
                         </div>
 
                         <button
