@@ -80,8 +80,6 @@
         </ul>
       </section>
     </div>
-
-    <AppTabBar active="home" />
   </div>
 </template>
 
@@ -89,7 +87,6 @@
 import { computed, onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import PageHeader from '@/components/PageHeader.vue';
-import AppTabBar from '@/components/AppTabBar.vue';
 import { policyApi } from '@/api/services';
 
 const route = useRoute();
