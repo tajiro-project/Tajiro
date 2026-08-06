@@ -1,5 +1,8 @@
 <template>
-  <div class="pdetail" v-if="p">
+  <div
+    class="pdetail"
+    v-if="p"
+  >
     <PageHeader title="매물 상세" />
 
     <div class="scroll-area">
@@ -32,7 +35,10 @@
           </button>
 
           <!-- 슬라이드 인디케이터 (Dots) -->
-          <div class="dots" v-if="p.images.length > 1">
+          <div
+            class="dots"
+            v-if="p.images.length > 1"
+          >
             <span
               v-for="(_, idx) in p.images"
               :key="idx"
@@ -44,8 +50,14 @@
         </template>
 
         <!-- 이미지가 없을 때 예비 화면 -->
-        <div v-else class="photo-placeholder">
-          <ImageIcon :size="44" color="#8a8477" />
+        <div
+          v-else
+          class="photo-placeholder"
+        >
+          <ImageIcon
+            :size="44"
+            color="#8a8477"
+          />
           <p>등록된 이미지가 없습니다.</p>
         </div>
       </div>
@@ -110,7 +122,7 @@
           </div>
           <div class="info-row">
             <dt>주차</dt>
-            <dd>{{ p.parkAvailability ? "가능" : "불가" }}</dd>
+            <dd>{{ p.parkAvailability ? '가능' : '불가' }}</dd>
           </div>
           <div class="info-row">
             <dt>입주 가능일</dt>
@@ -118,7 +130,7 @@
           </div>
           <div class="info-row">
             <dt>사용 승인일</dt>
-            <dd>{{ availableLine ?? "정보 없음" }}</dd>
+            <dd>{{ availableLine ?? '정보 없음' }}</dd>
           </div>
         </dl>
 
@@ -132,24 +144,33 @@
       <div class="mini-row">
         <div class="mini-card">
           <p class="mini-label">
-            <Receipt :size="14" color="#8a8d8f" />
+            <Receipt
+              :size="14"
+              color="#8a8d8f"
+            />
             관리비
           </p>
           <p class="mini-value">월 {{ p.maintenanceFee ?? 0 }}만원</p>
         </div>
         <div class="mini-card">
           <p class="mini-label">
-            <Clock :size="14" color="#8a8d8f" />
+            <Clock
+              :size="14"
+              color="#8a8d8f"
+            />
             통근
           </p>
-          <p class="mini-value">{{ p.commuteTime ?? "정보 없음" }}</p>
+          <p class="mini-value">{{ p.commuteTime ?? '정보 없음' }}</p>
         </div>
       </div>
 
       <!-- 인프라 및 편의시설 분리 카드 -->
       <div class="mini-card wide compact">
         <p class="mini-label">
-          <Building2 :size="14" color="#8a8d8f" />
+          <Building2
+            :size="14"
+            color="#8a8d8f"
+          />
           인프라 및 편의시설
         </p>
 
@@ -165,7 +186,10 @@
 
           <template v-else>
             <!-- 1. 인프라 섹션 -->
-            <div class="infra-row" v-if="formattedInfraList.length > 0">
+            <div
+              class="infra-row"
+              v-if="formattedInfraList.length > 0"
+            >
               <span class="group-badge">인프라</span>
               <div class="inline-list">
                 <template
@@ -176,7 +200,9 @@
                     <span class="name">{{ item.name }}</span>
                     <span class="count">{{ item.count }}</span>
                   </span>
-                  <span v-if="idx < formattedInfraList.length - 1" class="sep"
+                  <span
+                    v-if="idx < formattedInfraList.length - 1"
+                    class="sep"
                     >·</span
                   >
                 </template>
@@ -192,7 +218,10 @@
             />
 
             <!-- 2. 편의시설 섹션 -->
-            <div class="infra-row" v-if="formattedAmenityList.length > 0">
+            <div
+              class="infra-row"
+              v-if="formattedAmenityList.length > 0"
+            >
               <span class="group-badge amenity">편의시설</span>
               <div class="inline-list">
                 <template
@@ -203,7 +232,9 @@
                     <span class="name">{{ item.name }}</span>
                     <span class="count">{{ item.count }}</span>
                   </span>
-                  <span v-if="idx < formattedAmenityList.length - 1" class="sep"
+                  <span
+                    v-if="idx < formattedAmenityList.length - 1"
+                    class="sep"
                     >·</span
                   >
                 </template>
@@ -247,18 +278,24 @@
         <div class="realtor-card">
           <div class="realtor-head">
             <span class="realtor-icon">
-              <Building2 :size="18" color="#a8842c" />
+              <Building2
+                :size="18"
+                color="#a8842c"
+              />
             </span>
             <p class="realtor-name">
-              {{ p.realtorPreview?.name ?? "KB부동산공인중개사" }}
+              {{ p.realtorPreview?.name ?? 'KB부동산공인중개사' }}
             </p>
           </div>
           <p class="realtor-addr">
-            <MapPin :size="12" color="#8a8d8f" />
+            <MapPin
+              :size="12"
+              color="#8a8d8f"
+            />
             {{
               p.address
-                ? p.address.split(" ")[0] + " " + p.address.split(" ")[1]
-                : ""
+                ? p.address.split(' ')[0] + ' ' + p.address.split(' ')[1]
+                : ''
             }}
             · 매물 인근
           </p>
@@ -274,7 +311,10 @@
           </div>
         </div>
         <p class="kb-note">
-          <Info :size="13" color="#8a8d8f" />
+          <Info
+            :size="13"
+            color="#8a8d8f"
+          />
           KB 인증 중개사예요. 계약 전 등록번호를 꼭 확인하세요.
         </p>
       </section>
@@ -283,12 +323,19 @@
       <section class="card">
         <div class="benefit-head">
           <p class="card-head">이 매물로 받을 수 있는 혜택/상품</p>
-          <button class="see-all" @click="$router.push('/benefits/policies')">
+          <button
+            class="see-all"
+            @click="$router.push('/benefits/policies')"
+          >
             전체보기 →
           </button>
         </div>
         <div class="benefit-list">
-          <div v-for="b in benefits" :key="b.id" class="benefit-item">
+          <div
+            v-for="b in benefits"
+            :key="b.id"
+            class="benefit-item"
+          >
             <span class="b-texts">
               <span class="b-title">{{ b.title }}</span>
               <span class="b-sub">{{ b.sub }}</span>
@@ -321,23 +368,26 @@
           비교함 담기
         </button>
       </div>
-      <p v-if="compareMsg" class="compare-msg">{{ compareMsg }}</p>
+      <p
+        v-if="compareMsg"
+        class="compare-msg"
+      >
+        {{ compareMsg }}
+      </p>
     </div>
-
-    <AppTabBar active="home" />
   </div>
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from "vue";
-import { useRoute } from "vue-router";
-import PageHeader from "@/components/PageHeader.vue";
-import AppTabBar from "@/components/AppTabBar.vue";
-import { propertyApi, favoriteApi, comparisonApi } from "@/api/services";
+import { computed, onMounted, ref } from 'vue';
+import { useRoute } from 'vue-router';
+import PageHeader from '@/components/PageHeader.vue';
+import AppTabBar from '@/components/AppTabBar.vue';
+import { propertyApi, favoriteApi, comparisonApi } from '@/api/services';
 import {
   INFRA_CATEGORIES,
   AMENITY_CATEGORIES,
-} from "@/constants/preferenceOptions";
+} from '@/constants/preferenceOptions';
 
 import {
   Image as ImageIcon,
@@ -351,16 +401,16 @@ import {
   MessageSquare,
   Info,
   Heart,
-} from "lucide-vue-next";
+} from 'lucide-vue-next';
 
 const route = useRoute();
-const compareMsg = ref("");
+const compareMsg = ref('');
 const isSubmitting = ref(false); // 버튼 연타 방지용
 
 const p = ref(null);
 const market = ref(null);
 const isFavorite = ref(false);
-const profileName = ref("홍길동");
+const profileName = ref('홍길동');
 
 const id = route.params.id;
 
@@ -384,6 +434,7 @@ function handleTouchStart(e) {
 }
 
 function handleTouchEnd(e) {
+  ㅎ;
   const touchEndX = e.changedTouches[0].clientX;
   const diff = touchStartX - touchEndX;
   if (Math.abs(diff) > 40) {
@@ -403,23 +454,23 @@ onMounted(async () => {
     if (detailData?.data) {
       if (!detailData.data.images || detailData.data.images.length === 0) {
         detailData.data.images = [
-          "https://via.placeholder.com/600x400/f5efdb/8a8477?text=Room+Image+1",
+          'https://via.placeholder.com/600x400/f5efdb/8a8477?text=Room+Image+1',
         ];
       }
       p.value = detailData.data;
       isFavorite.value = detailData.isFavorite ?? false;
     }
   } catch (error) {
-    console.error("매물 상세 정보를 불러오는 데 실패했습니다:", error);
+    console.error('매물 상세 정보를 불러오는 데 실패했습니다:', error);
   }
 });
 
 // 숫자를 억/만 단위로 분리해 주는 헬퍼 함수
 const formatKoreanMoney = (value) => {
-  if (value === undefined || value === null || isNaN(value)) return "";
+  if (value === undefined || value === null || isNaN(value)) return '';
 
   const num = Number(value);
-  if (num === 0) return "0만원";
+  if (num === 0) return '0만원';
 
   const uk = Math.floor(num / 10000);
   const man = num % 10000;
@@ -435,16 +486,16 @@ const formatKoreanMoney = (value) => {
 
 // 거래 유형별 가격 포맷팅
 const formattedPrice = computed(() => {
-  if (!p.value) return "";
+  if (!p.value) return '';
   const type = p.value.tradeType;
 
-  if (type === "월세") {
-    const deposit = formatKoreanMoney(p.value.deposit).replace("만원", "");
+  if (type === '월세') {
+    const deposit = formatKoreanMoney(p.value.deposit).replace('만원', '');
     return `월세 ${deposit}/${p.value.monthlyRent}만원`;
-  } else if (type === "전세") {
+  } else if (type === '전세') {
     const price = formatKoreanMoney(p.value.jeonsePrice ?? p.value.deposit);
     return `전세 ${price}`;
-  } else if (type === "매매") {
+  } else if (type === '매매') {
     const price = formatKoreanMoney(p.value.sellingPrice ?? p.value.deposit);
     return `매매 ${price}`;
   }
@@ -454,17 +505,17 @@ const formattedPrice = computed(() => {
 
 // 거래 유형별 가격 상세 포맷팅
 const formattedPriceDetail = computed(() => {
-  if (!p.value) return "";
+  if (!p.value) return '';
   const type = p.value.tradeType;
 
-  if (type === "월세") {
-    const deposit = formatKoreanMoney(p.value.deposit).replace("만원", "");
+  if (type === '월세') {
+    const deposit = formatKoreanMoney(p.value.deposit).replace('만원', '');
     const rent = formatKoreanMoney(p.value.monthlyRent);
     return `월세 · ${deposit} / ${rent}`;
-  } else if (type === "전세") {
+  } else if (type === '전세') {
     const price = formatKoreanMoney(p.value.jeonsePrice ?? p.value.deposit);
     return `전세 · ${price}`;
-  } else if (type === "매매") {
+  } else if (type === '매매') {
     const price = formatKoreanMoney(p.value.sellingPrice ?? p.value.deposit);
     return `매매 · ${price}`;
   }
@@ -474,13 +525,13 @@ const formattedPriceDetail = computed(() => {
 
 // 층수 포맷팅
 const formatFloorInfo = (floorStr) => {
-  if (!floorStr) return "";
-  const parts = floorStr.split("/").map((item) => item.trim());
+  if (!floorStr) return '';
+  const parts = floorStr.split('/').map((item) => item.trim());
 
   if (parts.length < 2) return floorStr;
 
-  const currentFloor = parts[0].replace(/[^0-9-]/g, "");
-  const totalFloor = parts[1].replace(/[^0-9]/g, "");
+  const currentFloor = parts[0].replace(/[^0-9-]/g, '');
+  const totalFloor = parts[1].replace(/[^0-9]/g, '');
 
   return `${currentFloor}층 / 총 ${totalFloor}층`;
 };
@@ -493,32 +544,32 @@ const pyeong = computed(() =>
 
 // 주소/동 정보 기반 라인
 const regionLine = computed(() => {
-  if (!p.value) return "";
+  if (!p.value) return '';
   const addrPart = p.value.address
-    ? p.value.address.split(" ").slice(0, 3).join(" ")
-    : "";
-  const dongPart = p.value.dong ? ` ${p.value.dong}` : "";
-  return `${addrPart}${dongPart} · ${p.value.propertyType || ""} ${pyeong.value}평 · ${formattedFloor.value}`;
+    ? p.value.address.split(' ').slice(0, 3).join(' ')
+    : '';
+  const dongPart = p.value.dong ? ` ${p.value.dong}` : '';
+  return `${addrPart}${dongPart} · ${p.value.propertyType || ''} ${pyeong.value}평 · ${formattedFloor.value}`;
 });
 
 // 건물명 (title을 기본으로 활용)
 const buildingLine = computed(() => {
-  if (!p.value?.title) return "건물명 정보 없음";
-  return p.value.title.replace(/\s*\d+호$/, "").trim();
+  if (!p.value?.title) return '건물명 정보 없음';
+  return p.value.title.replace(/\s*\d+호$/, '').trim();
 });
 
-const formatDateStr = (dateStr, delimiter = ".") => {
-  if (!dateStr) return "";
-  const dateOnly = dateStr.split("T")[0];
-  return dateOnly.replaceAll("-", delimiter);
+const formatDateStr = (dateStr, delimiter = '.') => {
+  if (!dateStr) return '';
+  const dateOnly = dateStr.split('T')[0];
+  return dateOnly.replaceAll('-', delimiter);
 };
 
 // 입주 가능일 및 협의 가능 여부 처리
 const moveInLine = computed(() => {
-  if (!p.value?.moveInDate) return "협의 가능";
+  if (!p.value?.moveInDate) return '협의 가능';
   const formattedDate = formatDateStr(p.value.moveInDate);
   const isDiscussable = p.value?.discussionStatus ?? p.value?.discussion_status;
-  const statusStr = isDiscussable ? "협의 가능" : "협의 불가능";
+  const statusStr = isDiscussable ? '협의 가능' : '협의 불가능';
 
   return `${formattedDate} (${statusStr})`;
 });
@@ -566,12 +617,12 @@ const formattedAmenityList = computed(() => {
 });
 
 const benefits = [
-  { id: 1, title: "청년 월세/전세 지원", sub: "조건 충족 시 지원 혜택 제공" },
-  { id: 2, title: "청년 전입지원금", sub: "1회 지원" },
+  { id: 1, title: '청년 월세/전세 지원', sub: '조건 충족 시 지원 혜택 제공' },
+  { id: 2, title: '청년 전입지원금', sub: '1회 지원' },
   {
     id: 3,
-    title: "KB 청년 전월세보증금 대출",
-    sub: "실질 우대 금리 혜택 적용",
+    title: 'KB 청년 전월세보증금 대출',
+    sub: '실질 우대 금리 혜택 적용',
   },
 ];
 
@@ -587,7 +638,7 @@ async function toggleFavorite() {
       isFavorite.value = true;
     }
   } catch (err) {
-    console.error("찜 상태 변경 실패:", err);
+    console.error('찜 상태 변경 실패:', err);
   }
 }
 
@@ -600,47 +651,97 @@ async function addToCompare() {
 
     // 백엔드 API 직접 호출
     await comparisonApi.addToBox(p.value.id);
-    compareMsg.value = "비교함에 담았어요.";
+    compareMsg.value = '비교함에 담았어요.';
   } catch (error) {
-    console.error("비교함 담기 실패:", error);
+    console.error('비교함 담기 실패:', error);
 
     const status = error.response?.status;
 
     if (status === 409) {
       const serverMessage = error.response?.data?.message;
       compareMsg.value =
-        serverMessage || "비교함에는 매물을 최대 3개까지 담을 수 있습니다.";
+        serverMessage || '비교함에는 매물을 최대 3개까지 담을 수 있습니다.';
     } else if (status === 404) {
-      compareMsg.value = "존재하지 않는 매물입니다.";
+      compareMsg.value = '존재하지 않는 매물입니다.';
     } else {
-      compareMsg.value = "비교함 추가 중 오류가 발생했습니다.";
+      compareMsg.value = '비교함 추가 중 오류가 발생했습니다.';
     }
   } finally {
     isSubmitting.value = false;
 
     setTimeout(() => {
-      compareMsg.value = "";
+      compareMsg.value = '';
     }, 2500);
   }
 }
 </script>
 
 <style scoped>
+/* 1. 전체 컨테이너를 flex-column 및 height: 100%로 설정 */
 .pdetail {
+  height: 100%;
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  max-width: 430px;
-  margin: 0 auto;
-  position: relative;
-  background-color: #fff;
+  background: var(--bg);
   overflow: hidden;
 }
-.scroll-area {
-  flex: 1;
-  overflow-y: auto;
-  padding-bottom: 20px;
+
+/* 3. 하단 액션 바 고정 (줄어들지 않고 하단 위치) */
+.bottom-actions-wrap {
+  flex-shrink: 0;
+  background: var(--white);
+  border-top: 1px solid var(--border);
+  padding: 12px 16px;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05); /* 상단 경계 그림자 */
+  z-index: 10;
 }
+
+.bottom-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* 찜 버튼 */
+.fav-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-input);
+  background: var(--white);
+  flex-shrink: 0;
+}
+
+.fav-btn.on {
+  border-color: var(--kb-yellow);
+}
+
+/* 비교함 담기 버튼 */
+.compare-btn {
+  flex: 1;
+  height: 48px;
+  border-radius: var(--radius-input);
+  background: var(--kb-yellow-header);
+  color: var(--text-primary);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.compare-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.compare-msg {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--kb-gray);
+  text-align: center;
+}
+
 .photo-slider {
   position: relative;
   height: 220px;
@@ -1082,43 +1183,5 @@ async function addToCompare() {
   display: flex;
   align-items: center;
   gap: 10px;
-}
-
-.fav-btn {
-  width: 48px;
-  height: 48px;
-  border: 1px solid #e5e5e5;
-  border-radius: 8px;
-  background: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-}
-.compare-btn {
-  flex: 1;
-  height: 48px;
-  background-color: #f7f7f8;
-  border: 1px solid #e5e5e5;
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: 15px;
-  cursor: pointer;
-}
-.compare-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-.compare-msg {
-  position: absolute;
-  top: -36px;
-  left: 50%;
-  transform: translateX(-50%);
-  background-color: rgba(0, 0, 0, 0.8);
-  color: #fff;
-  font-size: 12px;
-  padding: 6px 12px;
-  border-radius: 16px;
-  white-space: nowrap;
 }
 </style>
