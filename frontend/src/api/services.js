@@ -118,18 +118,22 @@ export const comparisonApi = {
     (await client.post(`/users/me/compare/${propertyId}`)).data,
   removeFromBox: async (propertyId) =>
     (await client.delete(`/users/me/compare/${propertyId}`)).data,
-  metrics: async (propertyIds) =>
-    (
+  metrics: async (propertyIds) => {
+    const sortedIds = [...(propertyIds ?? [])].map(Number).sort((a, b) => a - b);
+    return (
       await client.get("/comparisons/metrics", {
-        params: { propertyIds: [...propertyIds].sort().join(",") },
+        params: { propertyIds: sortedIds.join(",") },
       })
-    ).data,
-  analyze: async (propertyIds) =>
-    (
+    ).data;
+  },
+  analyze: async (propertyIds) => {
+    const sortedIds = [...(propertyIds ?? [])].map(Number).sort((a, b) => a - b);
+    return (
       await client.post(
         "/comparisons/analyze",
-        { propertyIds },
+        { propertyIds: sortedIds },
         { timeout: 35000 },
       )
-    ).data,
+    ).data;
+  },
 };

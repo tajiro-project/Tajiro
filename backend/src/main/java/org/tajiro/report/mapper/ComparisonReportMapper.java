@@ -24,6 +24,9 @@ public interface ComparisonReportMapper {
 
     int updateGeneratedReport(ComparisonReportVO report);
 
+    int updateCreatedAt(@Param("reportId") Long reportId,
+                       @Param("userId") Long userId);
+
     int markSaved(@Param("reportId") Long reportId,
                   @Param("userId") Long userId);
 
