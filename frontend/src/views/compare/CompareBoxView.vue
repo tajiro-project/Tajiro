@@ -1,23 +1,6 @@
 <template>
   <div class="cbox">
-    <header class="local-header">
-      <button
-        class="back"
-        type="button"
-        aria-label="뒤로 가기"
-        @click="goBack"
-      >
-        ‹
-      </button>
-      <span>비교함</span>
-      <button
-        class="refresh"
-        type="button"
-        @click="loadCompareBox"
-      >
-        새로고침
-      </button>
-    </header>
+    <PageHeader title="비교함" />
 
     <simplebar class="scroll-area">
       <h1 class="title">비교할 매물을 골라주세요 (최대 3개)</h1>
@@ -97,14 +80,14 @@
               >
                 <path
                   d="M4 13.5L15 5l11 8.5"
-                  stroke="#8a8477"
+                  stroke="var(--kb-gold)"
                   stroke-width="2"
                   stroke-linecap="round"
                   stroke-linejoin="round"
                 />
                 <path
                   d="M7 12v12h16V12"
-                  stroke="#8a8477"
+                  stroke="var(--kb-gold)"
                   stroke-width="2"
                   stroke-linecap="round"
                   stroke-linejoin="round"
@@ -123,7 +106,7 @@
               <p class="item-price">{{ formatTrade(item) }}</p>
               <p class="item-meta">
                 {{ formatArea(item.areaM2) }} ·
-                {{ item.floorInfo || '층수 정보 없음' }} · 관리비
+                {{ formatFloorInfo(item.floorInfo) }} · 관리비
                 {{ formatFee(item) }}
               </p>
             </div>
@@ -166,7 +149,7 @@
         >
           <path
             d="M7 2v10M2 7h10"
-            stroke="#545045"
+            stroke="var(--kb-gold)"
             stroke-width="1.5"
             stroke-linecap="round"
           />
@@ -217,6 +200,7 @@
 <script setup>
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
+import PageHeader from '@/components/PageHeader.vue';
 import simplebar from 'simplebar-vue';
 import { getApiErrorMessage } from '@/api/client';
 import { comparisonApi } from '@/api/services';
@@ -336,6 +320,14 @@ function formatFee(item) {
   if (fee === null || fee === undefined || fee === '') return '-';
   return `${Number(fee).toLocaleString('ko-KR')}만`;
 }
+
+function formatFloorInfo(floorInfo) {
+  if (!floorInfo) return '층수 정보 없음';
+  const head = String(floorInfo).split('/')[0].trim();
+  if (!head) return '층수 정보 없음';
+  if (head.endsWith('층') || head === '옥탑') return head;
+  return `${head}층`;
+}
 </script>
 
 <style scoped>
@@ -451,7 +443,7 @@ function formatFee(item) {
   width: 56px;
   height: 56px;
   border-radius: 12px;
-  background: var(--bg);
+  background: var(--yellow-tint);
   border: 1px solid var(--border);
   overflow: hidden;
   flex-shrink: 0;
@@ -528,11 +520,12 @@ function formatFee(item) {
   width: 100%;
   height: 48px;
   margin-top: 16px;
-  border: 1.5px dashed #d0ccc2;
+  border: 1.5px dashed var(--kb-gold);
   border-radius: 14px;
   background: var(--white);
   font-size: 13.5px;
   font-weight: 700;
+  color: var(--kb-gold);
 }
 .tip {
   display: flex;
@@ -552,5 +545,6 @@ function formatFee(item) {
 }
 .btn-cta {
   margin-top: 16px;
+  color: var(--kb-dark-gray);
 }
 </style>

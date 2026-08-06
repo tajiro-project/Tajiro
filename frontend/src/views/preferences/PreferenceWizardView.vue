@@ -22,325 +22,357 @@
     </div>
 
     <!-- STEP 1 — 이주·통근 정보 -->
-    <simplebar
+    <p
+      v-if="isLoading"
+      class="status-message"
+      role="status"
+    >
+      저장된 설정을 불러오는 중입니다.
+    </p>
+    <p
+      v-else-if="errorMessage"
+      class="status-message error"
+      role="alert"
+    >
+      {{ errorMessage }}
+    </p>
+
+    <div
       v-if="step === 1"
       class="content"
     >
-      <div class="field">
-        <label class="section-title"
-          >선호위치(직장 / 학교 등)<span class="req">*</span></label
-        >
-        <input
-          class="field-input"
-          type="text"
-          readonly
-          :value="pref.workplace?.name ?? ''"
-          placeholder="예) 창원시 성산구 상남동"
-          @click="goLocationSelect"
-          @keydown.enter.prevent="goLocationSelect"
-        />
-      </div>
-      <div class="field">
-        <label class="section-title">
-          희망 통학·통근 거리
-          <span class="range-value">{{ commuteDistanceLabel }}</span>
-        </label>
-        <SingleSlider
-          v-model="pref.maxCommuteDistanceMeters"
-          :min="PREFERENCE_SLIDER_CONFIG.COMMUTE_DISTANCE.min"
-          :max="PREFERENCE_SLIDER_CONFIG.COMMUTE_DISTANCE.max"
-          :step="PREFERENCE_SLIDER_CONFIG.COMMUTE_DISTANCE.step"
-          :marks="PREFERENCE_SLIDER_CONFIG.COMMUTE_DISTANCE.marks"
-          aria-label="희망 통학·통근 거리"
-        />
-      </div>
-      <div class="field">
-        <label class="section-title">자차 보유 여부</label>
-        <div class="check-row">
-          <label
-            class="check-item"
-            @click="pref.hasCar = true"
-          >
-            <span
-              class="checkbox"
-              :class="{ on: pref.hasCar }"
-            >
-              <svg
-                width="12"
-                height="12"
-                viewBox="0 0 12 12"
-                fill="none"
-              >
-                <path
-                  d="M2 6.5L4.7 9L10 3.5"
-                  stroke="#545045"
-                  stroke-width="1.8"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-              </svg>
-            </span>
-            자차 보유 O
-          </label>
-          <label
-            class="check-item"
-            @click="pref.hasCar = false"
-          >
-            <span
-              class="checkbox"
-              :class="{ on: !pref.hasCar }"
-            >
-              <svg
-                width="12"
-                height="12"
-                viewBox="0 0 12 12"
-                fill="none"
-              >
-                <path
-                  d="M2 6.5L4.7 9L10 3.5"
-                  stroke="#545045"
-                  stroke-width="1.8"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-              </svg>
-            </span>
-            자차 보유 X
-          </label>
-        </div>
-      </div>
-    </simplebar>
-
-    <!-- STEP 2 — 희망 주거 조건 -->
-    <simplebar
-      v-else-if="step === 2"
-      class="content"
-    >
-      <div class="group">
-        <p class="section-title">매물 유형</p>
-        <div class="chips">
-          <button
-            v-for="t in HOUSING_OPTIONS"
-            :key="t"
-            class="chip"
-            :class="{ on: pref.housingTypes.includes(t) }"
-            @click="toggle(pref.housingTypes, t)"
-          >
-            {{ t }}
-          </button>
-        </div>
-      </div>
-      <div class="group">
-        <p class="section-title">희망 주거 형태</p>
-        <div class="chips">
-          <button
-            v-for="t in TRADE_OPTIONS"
-            :key="t"
-            class="chip"
-            :class="{ on: pref.tradeTypes.includes(t) }"
-            @click="toggle(pref.tradeTypes, t)"
-          >
-            {{ t }}
-          </button>
-        </div>
-      </div>
-
-      <div
-        v-if="pref.tradeTypes.length"
-        class="range-card"
+      <simplebar
+        v-if="step === 1"
+        class="content"
       >
-        <div
-          v-if="
-            pref.tradeTypes.includes('월세') || pref.tradeTypes.includes('전세')
-          "
-          class="range-group"
-        >
-          <p class="range-title">
-            보증금/전세금
-            <span class="range-value">{{ depositJeonseLabel }}</span>
-          </p>
-          <DualSlider
-            v-model="pref.depositJeonseRange"
-            :min="PREFERENCE_SLIDER_CONFIG.DEPOSIT_JEONSE.min"
-            :max="PREFERENCE_SLIDER_CONFIG.DEPOSIT_JEONSE.max"
-            :step="PREFERENCE_SLIDER_CONFIG.DEPOSIT_JEONSE.step"
-            :marks="PREFERENCE_SLIDER_CONFIG.DEPOSIT_JEONSE.marks"
-          />
-        </div>
-
-        <div
-          v-if="pref.tradeTypes.includes('월세')"
-          class="range-group"
-        >
-          <p class="range-title">
-            월세 <span class="range-value">{{ monthlyRentLabel }}</span>
-          </p>
-          <DualSlider
-            v-model="pref.monthlyRentRange"
-            :min="PREFERENCE_SLIDER_CONFIG.MONTHLY_RENT.min"
-            :max="PREFERENCE_SLIDER_CONFIG.MONTHLY_RENT.max"
-            :step="PREFERENCE_SLIDER_CONFIG.MONTHLY_RENT.step"
-            :marks="PREFERENCE_SLIDER_CONFIG.MONTHLY_RENT.marks"
-          />
-        </div>
-
-        <div
-          v-if="pref.tradeTypes.includes('매매')"
-          class="range-group"
-        >
-          <p class="range-title">
-            매매가 <span class="range-value">{{ salePriceLabel }}</span>
-          </p>
-          <DualSlider
-            v-model="pref.salePriceRange"
-            :min="PREFERENCE_SLIDER_CONFIG.SALE_PRICE.min"
-            :max="PREFERENCE_SLIDER_CONFIG.SALE_PRICE.max"
-            :step="PREFERENCE_SLIDER_CONFIG.SALE_PRICE.step"
-            :marks="PREFERENCE_SLIDER_CONFIG.SALE_PRICE.marks"
-          />
-        </div>
-      </div>
-
-      <div class="area-group">
-        <p class="range-title">
-          매물 면적
-          <span class="range-value">{{ areaLabel }}</span>
-        </p>
-        <DualSlider
-          v-model="pref.areaRange"
-          :min="AREA_MIN_M2"
-          :max="AREA_MAX_M2"
-          :step="AREA_STEP_M2"
-          :marks="AREA_MARKS"
-        />
-      </div>
-
-      <div class="group">
-        <p class="section-title">매물 층수</p>
-        <div class="chips">
-          <button
-            v-for="f in FLOOR_OPTIONS"
-            :key="f"
-            class="chip"
-            :class="{ on: pref.floorPreference.includes(f) }"
-            @click="toggle(pref.floorPreference, f)"
+        <div class="field">
+          <label class="section-title"
+            >선호위치(직장 / 학교 등)<span class="req">*</span></label
           >
-            {{ f }}
+          <input
+            class="field-input"
+            type="text"
+            readonly
+            :value="pref.workplace?.name ?? ''"
+            placeholder="예) 창원시 성산구 상남동"
+            @click="goLocationSelect"
+            @keydown.enter.prevent="goLocationSelect"
+          />
+        </div>
+        <div class="field">
+          <label class="section-title">
+            희망 통학·통근 거리
+            <span class="range-value">{{ commuteDistanceLabel }}</span>
+          </label>
+          <SingleSlider
+            v-model="pref.maxCommuteDistanceMeters"
+            :min="PREFERENCE_SLIDER_CONFIG.COMMUTE_DISTANCE.min"
+            :max="PREFERENCE_SLIDER_CONFIG.COMMUTE_DISTANCE.max"
+            :step="PREFERENCE_SLIDER_CONFIG.COMMUTE_DISTANCE.step"
+            :marks="PREFERENCE_SLIDER_CONFIG.COMMUTE_DISTANCE.marks"
+            aria-label="희망 통학·통근 거리"
+          />
+        </div>
+        <div class="field">
+          <label class="section-title">자차 보유 여부</label>
+          <div class="check-row">
+            <label
+              class="check-item"
+              @click="pref.hasCar = true"
+            >
+              <span
+                class="checkbox"
+                :class="{ on: pref.hasCar }"
+              >
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 12 12"
+                  fill="none"
+                >
+                  <path
+                    d="M2 6.5L4.7 9L10 3.5"
+                    stroke="#545045"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </span>
+              자차 보유 O
+            </label>
+            <label
+              class="check-item"
+              @click="pref.hasCar = false"
+            >
+              <span
+                class="checkbox"
+                :class="{ on: !pref.hasCar }"
+              >
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 12 12"
+                  fill="none"
+                >
+                  <path
+                    d="M2 6.5L4.7 9L10 3.5"
+                    stroke="#545045"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </span>
+              자차 보유 X
+            </label>
+          </div>
+        </div>
+      </simplebar>
+
+      <!-- STEP 2 — 희망 주거 조건 -->
+      <simplebar
+        v-else-if="step === 2"
+        class="content"
+      >
+        <div class="group">
+          <p class="section-title">매물 유형</p>
+          <div class="chips">
+            <button
+              v-for="t in HOUSING_OPTIONS"
+              :key="t"
+              class="chip"
+              :class="{ on: pref.housingTypes.includes(t) }"
+              @click="toggle(pref.housingTypes, t)"
+            >
+              {{ t }}
+            </button>
+          </div>
+        </div>
+        <div class="group">
+          <p class="section-title">희망 주거 형태</p>
+          <div class="chips">
+            <button
+              v-for="t in TRADE_OPTIONS"
+              :key="t"
+              class="chip"
+              :class="{ on: pref.tradeTypes.includes(t) }"
+              @click="toggle(pref.tradeTypes, t)"
+            >
+              {{ t }}
+            </button>
+          </div>
+        </div>
+
+        <div
+          v-if="pref.tradeTypes.length"
+          class="range-card"
+        >
+          <div
+            v-if="
+              pref.tradeTypes.includes('월세') ||
+              pref.tradeTypes.includes('전세')
+            "
+            class="range-group"
+          >
+            <p class="range-title">
+              보증금/전세금
+              <span class="range-value">{{ depositJeonseLabel }}</span>
+            </p>
+            <DualSlider
+              v-model="pref.depositJeonseRange"
+              :min="PREFERENCE_SLIDER_CONFIG.DEPOSIT_JEONSE.min"
+              :max="PREFERENCE_SLIDER_CONFIG.DEPOSIT_JEONSE.max"
+              :step="PREFERENCE_SLIDER_CONFIG.DEPOSIT_JEONSE.step"
+              :marks="PREFERENCE_SLIDER_CONFIG.DEPOSIT_JEONSE.marks"
+            />
+          </div>
+
+          <div
+            v-if="pref.tradeTypes.includes('월세')"
+            class="range-group"
+          >
+            <p class="range-title">
+              월세 <span class="range-value">{{ monthlyRentLabel }}</span>
+            </p>
+            <DualSlider
+              v-model="pref.monthlyRentRange"
+              :min="PREFERENCE_SLIDER_CONFIG.MONTHLY_RENT.min"
+              :max="PREFERENCE_SLIDER_CONFIG.MONTHLY_RENT.max"
+              :step="PREFERENCE_SLIDER_CONFIG.MONTHLY_RENT.step"
+              :marks="PREFERENCE_SLIDER_CONFIG.MONTHLY_RENT.marks"
+            />
+          </div>
+
+          <div
+            v-if="pref.tradeTypes.includes('매매')"
+            class="range-group"
+          >
+            <p class="range-title">
+              매매가 <span class="range-value">{{ salePriceLabel }}</span>
+            </p>
+            <DualSlider
+              v-model="pref.salePriceRange"
+              :min="PREFERENCE_SLIDER_CONFIG.SALE_PRICE.min"
+              :max="PREFERENCE_SLIDER_CONFIG.SALE_PRICE.max"
+              :step="PREFERENCE_SLIDER_CONFIG.SALE_PRICE.step"
+              :marks="PREFERENCE_SLIDER_CONFIG.SALE_PRICE.marks"
+            />
+          </div>
+        </div>
+
+        <div class="area-group">
+          <p class="range-title">
+            매물 면적
+            <span class="range-value">{{ areaLabel }}</span>
+          </p>
+          <DualSlider
+            v-model="pref.areaRange"
+            :min="AREA_MIN_M2"
+            :max="AREA_MAX_M2"
+            :step="AREA_STEP_M2"
+            :marks="AREA_MARKS"
+          />
+        </div>
+
+        <div class="group">
+          <p class="section-title">매물 층수</p>
+          <div class="chips">
+            <button
+              v-for="f in FLOOR_OPTIONS"
+              :key="f"
+              class="chip"
+              :class="{ on: pref.floorPreference.includes(f) }"
+              @click="toggle(pref.floorPreference, f)"
+            >
+              {{ f }}
+            </button>
+          </div>
+        </div>
+      </simplebar>
+
+      <!-- STEP 3 — 인프라·편의시설 -->
+      <simplebar
+        v-else-if="step === 3"
+        class="content"
+      >
+        <div class="group">
+          <p class="section-title">희망 인프라</p>
+          <p class="caption">반경 2km 이내만 표시</p>
+          <div class="chips wrap">
+            <button
+              v-for="category in INFRA_CATEGORIES"
+              :key="category.key"
+              class="chip"
+              :class="{
+                on: pref.desiredInfraCategories.includes(category.key),
+              }"
+              @click="toggle(pref.desiredInfraCategories, category.key)"
+            >
+              {{ category.label }}
+            </button>
+          </div>
+        </div>
+        <div class="group">
+          <p class="section-title">희망 편의시설</p>
+          <p class="caption">반경 2km 이내만 표시</p>
+          <div class="chips wrap">
+            <button
+              v-for="category in AMENITY_CATEGORIES"
+              :key="category.key"
+              class="chip"
+              :class="{
+                on: pref.desiredAmenityCategories.includes(category.key),
+              }"
+              @click="toggle(pref.desiredAmenityCategories, category.key)"
+            >
+              {{ category.label }}
+            </button>
+          </div>
+        </div>
+      </simplebar>
+
+      <!-- STEP 4 — 가치관 우선순위 (1~3개 선택) -->
+      <simplebar
+        v-else
+        class="content"
+      >
+        <div class="priority-head">
+          <p class="section-title big">주거 가치관 우선순위</p>
+          <p class="caption">중요한 순서대로 최대 3개까지 선택하세요.</p>
+        </div>
+        <div class="priority-list">
+          <button
+            v-for="opt in PRIORITY_OPTIONS"
+            :key="opt.criterion"
+            class="priority-card"
+            :class="{ on: priorityOrder(opt.criterion) }"
+            @click="onTogglePriority(opt.criterion)"
+          >
+            <span
+              class="p-icon"
+              v-html="opt.icon"
+            />
+            <span class="p-texts">
+              <span class="p-title">{{ opt.title }}</span>
+              <span class="p-sub">{{ opt.sub }}</span>
+            </span>
+            <span
+              v-if="priorityOrder(opt.criterion)"
+              class="p-badge"
+              >{{ priorityOrder(opt.criterion) }}</span
+            >
+          </button>
+        </div>
+      </simplebar>
+
+      <div class="fixed-footer">
+        <!-- 하단 버튼 -->
+        <div class="bottom-bar">
+          <button
+            v-if="step > 1"
+            class="btn-prev"
+            :disabled="isSaving"
+            @click="go(step - 1)"
+          >
+            이전
+          </button>
+          <button
+            class="btn-cta"
+            :disabled="
+              isLoading ||
+              isSaving ||
+              (step === 1 && !pref.workplace) ||
+              (step === PREFERENCE_STEP_COUNT && pref.priorities.length < 1)
+            "
+            @click="onNext"
+          >
+            {{
+              isSaving
+                ? '저장 중...'
+                : step === PREFERENCE_STEP_COUNT
+                  ? '설정 완료'
+                  : '다음'
+            }}
           </button>
         </div>
       </div>
-    </simplebar>
 
-    <!-- STEP 3 — 인프라·편의시설 -->
-    <simplebar
-      v-else-if="step === 3"
-      class="content"
-    >
-      <div class="group">
-        <p class="section-title">희망 인프라</p>
-        <p class="caption">반경 2km 이내만 표시</p>
-        <div class="chips wrap">
-          <button
-            v-for="category in INFRA_CATEGORIES"
-            :key="category.key"
-            class="chip"
-            :class="{
-              on: pref.desiredInfraCategories.includes(category.key),
-            }"
-            @click="toggle(pref.desiredInfraCategories, category.key)"
-          >
-            {{ category.label }}
-          </button>
-        </div>
-      </div>
-      <div class="group">
-        <p class="section-title">희망 편의시설</p>
-        <p class="caption">반경 2km 이내만 표시</p>
-        <div class="chips wrap">
-          <button
-            v-for="category in AMENITY_CATEGORIES"
-            :key="category.key"
-            class="chip"
-            :class="{
-              on: pref.desiredAmenityCategories.includes(category.key),
-            }"
-            @click="toggle(pref.desiredAmenityCategories, category.key)"
-          >
-            {{ category.label }}
-          </button>
-        </div>
-      </div>
-    </simplebar>
-
-    <!-- STEP 4 — 가치관 우선순위 (1~3개 선택) -->
-    <simplebar
-      v-else
-      class="content"
-    >
-      <div class="priority-head">
-        <p class="section-title big">주거 가치관 우선순위</p>
-        <p class="caption">중요한 순서대로 최대 3개까지 선택하세요.</p>
-      </div>
-      <div class="priority-list">
-        <button
-          v-for="opt in PRIORITY_OPTIONS"
-          :key="opt.criterion"
-          class="priority-card"
-          :class="{ on: priorityOrder(opt.criterion) }"
-          @click="onTogglePriority(opt.criterion)"
-        >
-          <span
-            class="p-icon"
-            v-html="opt.icon"
-          />
-          <span class="p-texts">
-            <span class="p-title">{{ opt.title }}</span>
-            <span class="p-sub">{{ opt.sub }}</span>
-          </span>
-          <span
-            v-if="priorityOrder(opt.criterion)"
-            class="p-badge"
-            >{{ priorityOrder(opt.criterion) }}</span
-          >
-        </button>
-      </div>
-    </simplebar>
-
-    <div class="fixed-footer">
-      <!-- 하단 버튼 -->
-      <div class="bottom-bar">
-        <button
-          v-if="step > 1"
-          class="btn-prev"
-          @click="go(step - 1)"
-        >
-          이전
-        </button>
-        <button
-          class="btn-cta"
-          :disabled="
-            (step === 1 && !pref.workplace) ||
-            (step === PREFERENCE_STEP_COUNT && pref.priorities.length < 1)
-          "
-          @click="onNext"
-        >
-          {{ step === PREFERENCE_STEP_COUNT ? '설정 완료' : '다음' }}
-        </button>
-      </div>
+      <KakaoLocation
+        :open="isLocationPickerOpen"
+        :initial-location="pref.workplace"
+        @close="isLocationPickerOpen = false"
+        @select="selectWorkplace"
+      />
     </div>
-
-    <KakaoLocation
-      :open="isLocationPickerOpen"
-      :initial-location="pref.workplace"
-      @close="isLocationPickerOpen = false"
-      @select="selectWorkplace"
-    />
   </div>
 </template>
 
 <script setup>
-import { computed, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { getApiErrorMessage } from '@/api/client';
+import { preferenceApi } from '@/api/services';
 import DualSlider from '@/components/DualSlider.vue';
 import KakaoLocation from '@/components/KakaoLocation.vue';
 import simplebar from 'simplebar-vue';
@@ -366,35 +398,48 @@ const AREA_MAX_M2 = 200;
 const AREA_STEP_M2 = 5;
 const AREA_MARKS = ['0', '50m²', '100m²', '150m²', '200m²'];
 const PYEONG_M2 = 3.3058;
+const PREFERENCE_DRAFT_KEY = 'tajiro-preferences';
+const BASEMENT_UI_VALUE = '지하/반지하';
+const BASEMENT_API_VALUE = '반지하';
 
-const pref = reactive({
-  workplace: null,
-  hasCar: false,
-  maxCommuteDistanceMeters:
-    PREFERENCE_SLIDER_CONFIG.COMMUTE_DISTANCE.defaultValue,
-  housingTypes: [],
-  tradeTypes: [],
-  depositJeonseRange: [
-    PREFERENCE_SLIDER_CONFIG.DEPOSIT_JEONSE.min,
-    PREFERENCE_SLIDER_CONFIG.DEPOSIT_JEONSE.max,
-  ],
-  monthlyRentRange: [
-    PREFERENCE_SLIDER_CONFIG.MONTHLY_RENT.min,
-    PREFERENCE_SLIDER_CONFIG.MONTHLY_RENT.max,
-  ],
-  salePriceRange: [
-    PREFERENCE_SLIDER_CONFIG.SALE_PRICE.min,
-    PREFERENCE_SLIDER_CONFIG.SALE_PRICE.max,
-  ],
-  areaRange: [AREA_MIN_M2, AREA_MAX_M2],
-  floorPreference: [],
-  desiredInfraCategories: [],
-  desiredAmenityCategories: [],
-  priorities: [],
-});
+function createDefaultPreference() {
+  return {
+    workplace: null,
+    hasCar: false,
+    maxCommuteDistanceMeters:
+      PREFERENCE_SLIDER_CONFIG.COMMUTE_DISTANCE.defaultValue,
+    housingTypes: [],
+    tradeTypes: [],
+    depositJeonseRange: [
+      PREFERENCE_SLIDER_CONFIG.DEPOSIT_JEONSE.min,
+      PREFERENCE_SLIDER_CONFIG.DEPOSIT_JEONSE.max,
+    ],
+    monthlyRentRange: [
+      PREFERENCE_SLIDER_CONFIG.MONTHLY_RENT.min,
+      PREFERENCE_SLIDER_CONFIG.MONTHLY_RENT.max,
+    ],
+    salePriceRange: [
+      PREFERENCE_SLIDER_CONFIG.SALE_PRICE.min,
+      PREFERENCE_SLIDER_CONFIG.SALE_PRICE.max,
+    ],
+    areaRange: [AREA_MIN_M2, AREA_MAX_M2],
+    floorPreference: [],
+    desiredInfraCategories: [],
+    desiredAmenityCategories: [],
+    priorities: [],
+  };
+}
+
+const pref = reactive(createDefaultPreference());
 
 const step = computed(() => Number(route.params.step) || 1);
 const isLocationPickerOpen = ref(false);
+const isLoading = ref(false);
+const isSaving = ref(false);
+const hasSavedPreference = ref(false);
+const errorMessage = ref('');
+
+onMounted(loadPreference);
 
 const commuteDistanceLabel = computed(
   () => `${pref.maxCommuteDistanceMeters.toLocaleString()}m 이내`,
@@ -478,16 +523,153 @@ function selectWorkplace(location) {
   isLocationPickerOpen.value = false;
 }
 
-function go(n) {
-  router.push(`/preferences/${n}`);
+function copyList(value, fallback) {
+  return Array.isArray(value) ? [...value] : [...fallback];
 }
 
-function onNext() {
+function applyPreference(value) {
+  if (!value || typeof value !== 'object') return;
+
+  const defaults = createDefaultPreference();
+  Object.assign(pref, {
+    workplace: value.workplace ? { ...value.workplace } : defaults.workplace,
+    hasCar: value.hasCar ?? defaults.hasCar,
+    maxCommuteDistanceMeters:
+      value.maxCommuteDistanceMeters ?? defaults.maxCommuteDistanceMeters,
+    housingTypes: copyList(value.housingTypes, defaults.housingTypes),
+    tradeTypes: copyList(value.tradeTypes, defaults.tradeTypes),
+    depositJeonseRange: copyList(
+      value.depositJeonseRange,
+      defaults.depositJeonseRange,
+    ),
+    monthlyRentRange: copyList(
+      value.monthlyRentRange,
+      defaults.monthlyRentRange,
+    ),
+    salePriceRange: copyList(value.salePriceRange, defaults.salePriceRange),
+    areaRange: copyList(value.areaRange, defaults.areaRange),
+    floorPreference: copyList(
+      value.floorPreference,
+      defaults.floorPreference,
+    ).map((floor) =>
+      floor === BASEMENT_API_VALUE ? BASEMENT_UI_VALUE : floor,
+    ),
+    desiredInfraCategories: copyList(
+      value.desiredInfraCategories,
+      defaults.desiredInfraCategories,
+    ),
+    desiredAmenityCategories: copyList(
+      value.desiredAmenityCategories,
+      defaults.desiredAmenityCategories,
+    ),
+    priorities: copyList(value.priorities, defaults.priorities).map(
+      (priority) => ({ ...priority }),
+    ),
+  });
+}
+
+function toRequestPayload() {
+  return {
+    workplace: pref.workplace
+      ? {
+          name: pref.workplace.name,
+          address: pref.workplace.address,
+          lat: pref.workplace.lat,
+          lng: pref.workplace.lng,
+        }
+      : null,
+    hasCar: pref.hasCar,
+    maxCommuteDistanceMeters: pref.maxCommuteDistanceMeters,
+    housingTypes: [...pref.housingTypes],
+    tradeTypes: [...pref.tradeTypes],
+    depositJeonseRange: [...pref.depositJeonseRange],
+    monthlyRentRange: [...pref.monthlyRentRange],
+    salePriceRange: [...pref.salePriceRange],
+    areaRange: [...pref.areaRange],
+    floorPreference: pref.floorPreference.map((floor) =>
+      floor === BASEMENT_UI_VALUE ? BASEMENT_API_VALUE : floor,
+    ),
+    desiredInfraCategories: [...pref.desiredInfraCategories],
+    desiredAmenityCategories: [...pref.desiredAmenityCategories],
+    priorities: pref.priorities.map((priority) => ({ ...priority })),
+  };
+}
+
+function saveDraft() {
+  localStorage.setItem(PREFERENCE_DRAFT_KEY, JSON.stringify(pref));
+}
+
+function restoreDraft() {
+  const draft = localStorage.getItem(PREFERENCE_DRAFT_KEY);
+  if (!draft) return;
+
+  try {
+    applyPreference(JSON.parse(draft));
+  } catch {
+    localStorage.removeItem(PREFERENCE_DRAFT_KEY);
+  }
+}
+
+function isPreferenceNotFound(error) {
+  return (
+    error?.response?.status === 404 ||
+    error?.response?.data?.code === 'PREF_404'
+  );
+}
+
+async function loadPreference() {
+  isLoading.value = true;
+  errorMessage.value = '';
+
+  try {
+    const savedPreference = await preferenceApi.get();
+    applyPreference(savedPreference);
+    hasSavedPreference.value = true;
+    restoreDraft();
+  } catch (error) {
+    restoreDraft();
+    if (!isPreferenceNotFound(error)) {
+      errorMessage.value = getApiErrorMessage(
+        error,
+        '저장된 주거 선호 조건을 불러오지 못했습니다.',
+      );
+    }
+  } finally {
+    isLoading.value = false;
+  }
+}
+
+function go(n) {
+  saveDraft();
+  return router.push(`/preferences/${n}`);
+}
+
+async function onNext() {
   if (step.value < PREFERENCE_STEP_COUNT) {
-    go(step.value + 1);
-  } else {
-    localStorage.setItem('tajiro-preferences', JSON.stringify(pref));
-    router.push('/properties');
+    await go(step.value + 1);
+    return;
+  }
+
+  isSaving.value = true;
+  errorMessage.value = '';
+  saveDraft();
+
+  try {
+    const requestPayload = toRequestPayload();
+    const savedPreference = hasSavedPreference.value
+      ? await preferenceApi.update(requestPayload)
+      : await preferenceApi.create(requestPayload);
+    applyPreference(savedPreference);
+    hasSavedPreference.value = true;
+    localStorage.removeItem(PREFERENCE_DRAFT_KEY);
+    await router.push('/properties');
+  } catch (error) {
+    errorMessage.value = getApiErrorMessage(
+      error,
+      '주거 선호 조건을 저장하지 못했습니다. 잠시 후 다시 시도해주세요.',
+    );
+  } finally {
+    isSaving.value = false;
   }
 }
 </script>
@@ -508,6 +690,19 @@ function onNext() {
 .step-head {
   flex-shrink: 0;
   padding: 14px 16px 12px;
+}
+.status-message {
+  flex-shrink: 0;
+  margin: 0 16px 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--kb-gray);
+  font-size: 12px;
+}
+.status-message.error {
+  background: #fff3f3;
+  color: var(--danger);
 }
 .step-line {
   display: flex;
@@ -750,6 +945,11 @@ function onNext() {
   background: var(--white);
   font-size: 14px;
   font-weight: 700;
+}
+.btn-prev:disabled,
+.btn-cta:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 
 .field-input[readonly] {

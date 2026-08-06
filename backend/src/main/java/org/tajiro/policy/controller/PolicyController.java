@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import org.tajiro.finance.dto.FinanceDTO;
 import org.tajiro.policy.dto.PolicyDTO;
 import org.tajiro.policy.service.PolicyService;
+import springfox.documentation.annotations.ApiIgnore;
 
 import java.util.List;
 
@@ -24,8 +25,8 @@ public class PolicyController{
 
     @GetMapping("/matches")
     public ResponseEntity<List<PolicyDTO>> getMatches(
-//            @AuthenticationPrincipal Long userId,
-            @RequestHeader(value = "X-USER-ID", defaultValue = "1") Long userId,
+            @ApiIgnore @AuthenticationPrincipal Long userId,
+//            @RequestHeader(value = "X-USER-ID", defaultValue = "1") Long userId,
             @RequestParam(required = false) String keyword
     ) {
         return ResponseEntity.ok(service.getList(keyword,userId));
@@ -34,8 +35,8 @@ public class PolicyController{
 
     @GetMapping("/{policyId}")
     public ResponseEntity<PolicyDTO> get(
-//            @AuthenticationPrincipal Long userId,
-            @RequestHeader(value = "X-USER-ID", defaultValue = "1") Long userId,
+            @ApiIgnore @AuthenticationPrincipal Long userId,
+//            @RequestHeader(value = "X-USER-ID", defaultValue = "1") Long userId,
             @PathVariable("policyId") long policyId)
     {
 
