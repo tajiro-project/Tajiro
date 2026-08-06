@@ -1,0 +1,58 @@
+package org.tajiro.property.service;
+
+import lombok.ToString;
+import lombok.extern.log4j.Log4j2;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.tajiro.common.api.ErrorCode;
+import org.tajiro.config.RootConfig;
+import org.tajiro.config.TestConfig;
+import org.tajiro.exception.BusinessException;
+import org.tajiro.property.domain.PropertyVO;
+
+import java.math.BigDecimal;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+@ExtendWith(SpringExtension.class)
+@ContextConfiguration(classes = { RootConfig.class, TestConfig.class })
+@Log4j2
+class PropertyServiceImplTest {
+    @Autowired
+    private PropertyService propertyService;
+    @Test
+    @DisplayName("가치관 조건으로 매물 가져오기")
+    void findMatchingProperties() {
+        List<PropertyVO> list = propertyService.findMatchingProperties(2L);
+
+        list.forEach(p -> log.info(String.format(
+                "%d %s %s %s %d/%d %s㎡ %dm",
+                p.getId(), p.getPropertyType(), p.getTradeType(), p.getFloorInfo(),
+                p.getDeposit(), p.getMonthlyRent(), p.getAreaM2(), p.getDistanceMeters())));
+        log.info("user 2 조건 통과 " + list.size() + "건");
+
+        assertFalse(list.isEmpty());
+
+        assertTrue(list.stream().allMatch(p ->
+                (p.getTradeType().equals("월세") || p.getTradeType().equals("전세"))
+                        && p.getDeposit() >= 1000
+                        && p.getDeposit() <= 20000
+                        && p.getAreaM2().compareTo(new BigDecimal("59")) >= 0
+                        && p.getAreaM2().compareTo(new BigDecimal("112")) <= 0
+                        && p.getDistanceMeters() <= 3000));
+    }
+
+    @Test
+    @DisplayName("가치관이 없으면 PREFERENCE_NOT_FOUND")
+    public void findMatchingPropertiesWithoutPreference() {
+        BusinessException e = assertThrows(BusinessException.class,
+                () -> propertyService.findMatchingProperties(999L));
+
+        assertEquals(ErrorCode.PREFERENCE_NOT_FOUND, e.getResponseCode());
+    }
+}
