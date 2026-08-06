@@ -34,7 +34,7 @@ public class PropertyServiceImpl implements PropertyService{
         List<PropertyVO> properties;
 
         if(centerLat != null && centerLng != null) {
-            properties = findByRegion(userId, centerLat, centerLng);
+            properties = findByRegion(centerLat, centerLng);
         }
         else {
             properties = findMatchingProperties(userId);
@@ -46,9 +46,8 @@ public class PropertyServiceImpl implements PropertyService{
                 .collect(Collectors.toList());
     }
 
-    private List<PropertyVO> findByRegion(Long userId, BigDecimal centerLat, BigDecimal centerLng) {
+    private List<PropertyVO> findByRegion(BigDecimal centerLat, BigDecimal centerLng) {
         return propertyMapper.getList(PropertySearchRequest.builder()
-                .userId(userId)
                 .refLat(centerLat)
                 .refLng(centerLng)
                 .radiusMeters(REGION_RADIUS_METERS)
