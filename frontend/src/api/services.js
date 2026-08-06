@@ -1,6 +1,22 @@
 import client, { withMock } from './client';
 import * as mock from './mockData';
 
+// ---------- preference ----------
+export const preferenceApi = {
+  get: async () => {
+    const response = await client.get('/users/me/preferences');
+    return response.data?.data ?? response.data;
+  },
+  create: async (preference) => {
+    const response = await client.post('/users/me/preferences', preference);
+    return response.data?.data ?? response.data;
+  },
+  update: async (preference) => {
+    const response = await client.put('/users/me/preferences', preference);
+    return response.data?.data ?? response.data;
+  },
+};
+
 // ---------- finance ----------
 export const financeApi = {
   list: (keyword) =>
