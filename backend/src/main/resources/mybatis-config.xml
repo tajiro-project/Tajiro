@@ -9,7 +9,7 @@
     </settings>
     <typeAliases>
         <typeAlias alias="PropertyVO" type="org.tajiro.property.domain.PropertyVO"/>
-        <typeAlias alias="PropertySearchRequest" type="org.tajiro.property.dto.PropertySearchRequest"/>
+        <typeAlias alias="PropertySearchRequest" type="org.tajiro.preference.dto.PropertySearchRequest"/>
         <typeAlias alias="UserVO" type="org.tajiro.auth.domain.UserVO"/>
         <typeAlias alias="FinanceVO" type="org.tajiro.finance.domain.FinanceVO"/>
         <typeAlias alias="PolicyVO" type="org.tajiro.policy.domain.PolicyVO"/>
@@ -18,5 +18,7 @@
         <typeAlias alias="InfraSummaryDTO" type="org.tajiro.property.dto.PropertyDetailDTO$InfraSummaryDTO"/>
         <typeAlias alias="BuildingVO" type="org.tajiro.property.domain.BuildingVO"/>
         <typeAlias alias="InfrastructureInfoDTO" type="org.tajiro.property.dto.PropertyInfrastructureDTO$InfrastructureInfoDTO"/>
+        <typeAlias alias="HousingPreferenceVO" type="org.tajiro.preference.domain.HousingPreferenceVO"/>
+        <typeAlias alias="PropertyValueAnalysisResultVO" type="org.tajiro.property.domain.PropertyValueAnalysisResultVO"/>
     </typeAliases>
 </configuration>

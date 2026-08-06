@@ -1,7 +1,7 @@
 package org.tajiro.property.mapper;
 
 import org.tajiro.property.domain.PropertyVO;
-import org.tajiro.property.dto.PropertySearchRequest;
+import org.tajiro.preference.dto.PropertySearchRequest;
 
 import java.util.List;
 

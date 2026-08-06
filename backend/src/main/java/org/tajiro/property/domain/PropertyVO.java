@@ -38,8 +38,16 @@ public class PropertyVO {
     private String dong;
     private Integer evaluationScore;
 
+    private Integer distanceMeters;
+    private Integer desiredInfraCount;
+    private Integer desiredAmenityCount;
+
+    // property_image
+    private String thumbnailUrl;
+
     // building
     private BuildingVO buildingVO;
 
-    private String thumbnailUrl;
+    // property_value_analysis_result
+    private PropertyValueAnalysisResultVO propertyValueAnalysisResultVO;
 }
