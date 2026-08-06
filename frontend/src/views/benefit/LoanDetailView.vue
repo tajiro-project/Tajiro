@@ -1,8 +1,11 @@
 <template>
-  <div v-if="product" class="loan-detail">
+  <div
+    v-if="product"
+    class="loan-detail"
+  >
     <PageHeader title="대출상품 상세" />
 
-    <div class="scroll-area">
+    <simplebar class="scroll-area">
       <!-- 상품 요약 (다크 카드) -->
       <div class="hero-card">
         <h1 class="hero-title">{{ product.productName }}</h1>
@@ -16,9 +19,7 @@
             <p class="hero-type">{{ rateInfo.base_type || '정보 없음' }}</p>
           </div>
         </div>
-        <div class="hero-foot">
-          한도 · {{ limitText }}
-        </div>
+        <div class="hero-foot">한도 · {{ limitText }}</div>
       </div>
 
       <!-- 금리 안내 -->
@@ -28,19 +29,38 @@
           <span class="rate-badge">{{ rateBadge }}</span>
         </div>
         <ul class="rate-list">
-          <li v-for="item in rateItems" :key="item.label" class="rate-row">
+          <li
+            v-for="item in rateItems"
+            :key="item.label"
+            class="rate-row"
+          >
             <div class="rate-item-main">
               <div>
                 <p class="rate-name">{{ item.label }}</p>
-                <p v-if="item.meta?.length" class="rate-subline">
-                  <span v-for="meta in item.meta" :key="meta.label">
+                <p
+                  v-if="item.meta?.length"
+                  class="rate-subline"
+                >
+                  <span
+                    v-for="meta in item.meta"
+                    :key="meta.label"
+                  >
                     {{ meta.label }} {{ meta.value }}
                   </span>
                 </p>
               </div>
-              <strong v-if="item.highlight" class="rate-highlight">{{ item.highlight }}</strong>
+              <strong
+                v-if="item.highlight"
+                class="rate-highlight"
+                >{{ item.highlight }}</strong
+              >
             </div>
-            <p v-if="item.value" class="rate-description">{{ item.value }}</p>
+            <p
+              v-if="item.value"
+              class="rate-description"
+            >
+              {{ item.value }}
+            </p>
           </li>
         </ul>
       </section>
@@ -49,9 +69,18 @@
       <section class="card">
         <p class="card-head">신청 대상</p>
         <ul class="targets">
-          <li v-for="t in targets" :key="t" class="target">
+          <li
+            v-for="t in targets"
+            :key="t"
+            class="target"
+          >
             <span class="t-check"
-              ><svg width="10" height="10" viewBox="0 0 12 12" fill="none">
+              ><svg
+                width="10"
+                height="10"
+                viewBox="0 0 12 12"
+                fill="none"
+              >
                 <path
                   d="M2 6.5L4.7 9L10 3.5"
                   stroke="#545045"
@@ -79,7 +108,9 @@
           </div>
           <div class="info-row">
             <dt>판매상태</dt>
-            <dd class="strong">{{ product.isActive ? '판매 중' : '판매 종료' }}</dd>
+            <dd class="strong">
+              {{ product.isActive ? '판매 중' : '판매 종료' }}
+            </dd>
           </div>
         </dl>
       </section>
@@ -87,16 +118,29 @@
       <!-- 필요 서류 -->
       <section class="docs-card">
         <p class="docs-head">필요 서류</p>
-        <template v-for="group in documentGroups" :key="group.category">
+        <template
+          v-for="group in documentGroups"
+          :key="group.category"
+        >
           <p class="docs-sub">{{ group.category }}</p>
           <ul class="docs">
-            <li v-for="d in group.items" :key="d">{{ d }}</li>
+            <li
+              v-for="d in group.items"
+              :key="d"
+            >
+              {{ d }}
+            </li>
           </ul>
         </template>
       </section>
 
       <p class="note">
-        <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+        <svg
+          width="13"
+          height="13"
+          viewBox="0 0 13 13"
+          fill="none"
+        >
           <circle
             cx="6.5"
             cy="6.5"
@@ -111,13 +155,20 @@
             stroke-linecap="round"
           />
         </svg>
-        {{ rateInfo.note || '금리·조건은 기준일 시점 기준이며 실제 심사 결과와 다를 수 있어요.' }}
+        {{
+          rateInfo.note ||
+          '금리·조건은 기준일 시점 기준이며 실제 심사 결과와 다를 수 있어요.'
+        }}
       </p>
 
-      <button v-if="product.applicationUrl" class="btn-cta go-btn" @click="openApplication">바로가기</button>
-    </div>
-
-
+      <button
+        v-if="product.applicationUrl"
+        class="btn-cta go-btn"
+        @click="openApplication"
+      >
+        바로가기
+      </button>
+    </simplebar>
   </div>
 </template>
 
@@ -125,6 +176,7 @@
 import { computed, onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import PageHeader from '@/components/PageHeader.vue';
+import simplebar from 'simplebar-vue';
 import { financeApi } from '@/api/services';
 
 const route = useRoute();
@@ -156,7 +208,10 @@ const documentGroups = computed(() => {
   }
   return parsed.map((group, index) => ({
     category: group.category || `제출서류 ${index + 1}`,
-    items: Array.isArray(group.items) && group.items.length ? group.items : ['정보 없음'],
+    items:
+      Array.isArray(group.items) && group.items.length
+        ? group.items
+        : ['정보 없음'],
   }));
 });
 const rateItems = computed(() => {
@@ -168,16 +223,31 @@ const rateItems = computed(() => {
       const parsedDetail = parseJson(detail, detail);
       if (parsedDetail && typeof parsedDetail === 'object') {
         detailItems.push({
-          label: parsedDetail.category || parsedDetail.name || `세부 금리 ${index + 1}`,
-          highlight: parsedDetail.final_rate || parsedDetail.finalRate || parsedDetail.rate,
+          label:
+            parsedDetail.category ||
+            parsedDetail.name ||
+            `세부 금리 ${index + 1}`,
+          highlight:
+            parsedDetail.final_rate ||
+            parsedDetail.finalRate ||
+            parsedDetail.rate,
           value: parsedDetail.description || parsedDetail.value,
           meta: [
-            { label: '기준금리', value: parsedDetail.base_rate || parsedDetail.baseRate },
-            { label: '가산금리', value: parsedDetail.spread_rate || parsedDetail.spreadRate },
+            {
+              label: '기준금리',
+              value: parsedDetail.base_rate || parsedDetail.baseRate,
+            },
+            {
+              label: '가산금리',
+              value: parsedDetail.spread_rate || parsedDetail.spreadRate,
+            },
           ].filter((meta) => meta.value),
         });
       } else if (parsedDetail) {
-        detailItems.push({ label: `세부 금리 ${index + 1}`, value: parsedDetail });
+        detailItems.push({
+          label: `세부 금리 ${index + 1}`,
+          value: parsedDetail,
+        });
       }
     });
   }
@@ -192,7 +262,9 @@ const rateItems = computed(() => {
   ].filter((item) => item.value);
 });
 const rateBadge = computed(() =>
-  rateInfo.value.base_type?.includes('COFIX') ? 'COFIX 연동 변동금리' : '금리 정보',
+  rateInfo.value.base_type?.includes('COFIX')
+    ? 'COFIX 연동 변동금리'
+    : '금리 정보',
 );
 const rateRange = computed(() => {
   const min = Number(product.value?.minRate);
@@ -203,7 +275,8 @@ const rateRange = computed(() => {
 });
 const limitText = computed(() => {
   const amount = product.value?.maxLimitAmount;
-  if (amount != null && Number(amount) > 0) return `최고 ${Number(amount).toLocaleString()}만원`;
+  if (amount != null && Number(amount) > 0)
+    return `최고 ${Number(amount).toLocaleString()}만원`;
   return product.value?.loanLimit || '정보 없음';
 });
 

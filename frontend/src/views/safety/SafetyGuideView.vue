@@ -2,7 +2,7 @@
   <div class="guide">
     <PageHeader title="안전 거래 가이드" />
 
-    <div class="scroll-area">
+    <simplebar class="scroll-area">
       <section class="intro-card">
         <p class="intro-title">전세사기·계약 실수, 미리 막아요</p>
         <p class="intro-sub">
@@ -10,7 +10,11 @@
         </p>
       </section>
 
-      <div class="tabs" role="tablist" aria-label="안전 거래 가이드 종류">
+      <div
+        class="tabs"
+        role="tablist"
+        aria-label="안전 거래 가이드 종류"
+      >
         <button
           class="tab"
           :class="{ on: tab === 'contract' }"
@@ -49,16 +53,29 @@
         </div>
 
         <ul class="guide-list">
-          <li v-for="item in section.items" :key="item">
-            <span class="item-dot" aria-hidden="true" />
+          <li
+            v-for="item in section.items"
+            :key="item"
+          >
+            <span
+              class="item-dot"
+              aria-hidden="true"
+            />
             <p>{{ item }}</p>
           </li>
         </ul>
       </section>
 
-      <section v-if="tab === 'insurance'" class="links-card">
+      <section
+        v-if="tab === 'insurance'"
+        class="links-card"
+      >
         <div class="links-title">
-          <span class="links-icon" aria-hidden="true">↗</span>
+          <span
+            class="links-icon"
+            aria-hidden="true"
+            >↗</span
+          >
           <div>
             <p>공식 사이트에서 확인하기</p>
             <span>필요한 정보를 직접 조회해보세요.</span>
@@ -73,7 +90,12 @@
           rel="noopener noreferrer"
         >
           {{ link.label }}
-          <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+          <svg
+            width="13"
+            height="13"
+            viewBox="0 0 13 13"
+            fill="none"
+          >
             <path
               d="M3.5 9.5L9.5 3.5M5 3.5h4.5V8"
               stroke="currentColor"
@@ -86,7 +108,11 @@
       </section>
 
       <aside class="notice-card">
-        <span class="notice-mark" aria-hidden="true">!</span>
+        <span
+          class="notice-mark"
+          aria-hidden="true"
+          >!</span
+        >
         <div>
           <strong>꼭 기억하세요</strong>
           <p>
@@ -95,16 +121,14 @@
           </p>
         </div>
       </aside>
-    </div>
-
-    <AppTabBar active="home" />
+    </simplebar>
   </div>
 </template>
 
 <script setup>
 import { computed, ref } from 'vue';
 import PageHeader from '@/components/PageHeader.vue';
-import AppTabBar from '@/components/AppTabBar.vue';
+import simplebar from 'simplebar-vue';
 
 const tab = ref('contract');
 

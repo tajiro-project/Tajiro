@@ -13,18 +13,28 @@
           @dot-hover="onDotHover"
         />
 
-        <div v-if="activeDot" class="dot-info">
+        <div
+          v-if="activeDot"
+          class="dot-info"
+        >
           <span
             class="dot-info-swatch"
             :style="{ background: activeDotColor }"
           />
           <span class="dot-info-text">{{ activeDotText }}</span>
-          <button v-if="pinnedDot" class="dot-info-close" @click="closePanel">
+          <button
+            v-if="pinnedDot"
+            class="dot-info-close"
+            @click="closePanel"
+          >
             ×
           </button>
         </div>
 
-        <div v-if="selectedBuildingId" class="map-overlay">
+        <div
+          v-if="selectedBuildingId"
+          class="map-overlay"
+        >
           <InfraTogglePanel
             v-model="mapLayers"
             :categories="layerCategories"
@@ -41,7 +51,10 @@
         </button>
       </div>
 
-      <div class="filter-chips" @wheel="onWheelX">
+      <div
+        class="filter-chips"
+        @wheel="onWheelX"
+      >
         <button
           class="fchip"
           :class="{ on: commuteChipOn }"
@@ -69,9 +82,17 @@
         <p class="result-count">
           조건에 맞는 매물 <b>{{ totalCount }}건</b>
         </p>
-        <button class="sort-btn" @click="openSheet('sort')">
+        <button
+          class="sort-btn"
+          @click="openSheet('sort')"
+        >
           {{ sortLabel }}
-          <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+          <svg
+            width="10"
+            height="10"
+            viewBox="0 0 10 10"
+            fill="none"
+          >
             <path
               d="M2 3.5L5 6.5L8 3.5"
               stroke="#545045"
@@ -118,22 +139,40 @@
           />
         </svg>
 
-        <span v-for="p in priorityChips" :key="p.criterion" class="pchip">
+        <span
+          v-for="p in priorityChips"
+          :key="p.criterion"
+          class="pchip"
+        >
           <b class="pnum">{{ p.priorityOrder }}</b>
           {{ criterionLabel(p.criterion) }}
         </span>
       </div>
     </div>
-    <div ref="scrollArea" class="scroll-area">
-      <ul v-if="listItems.length" class="cards">
-        <li v-for="p in listItems" :key="p.propertyId">
+    <sidebar
+      ref="scrollArea"
+      class="scroll-area"
+    >
+      <ul
+        v-if="listItems.length"
+        class="cards"
+      >
+        <li
+          v-for="p in listItems"
+          :key="p.propertyId"
+        >
           <div
             class="card"
             :class="{ selected: p.selected }"
             @click="onCardClick(p)"
           >
             <span class="thumb">
-              <svg width="30" height="30" viewBox="0 0 30 30" fill="none">
+              <svg
+                width="30"
+                height="30"
+                viewBox="0 0 30 30"
+                fill="none"
+              >
                 <path
                   d="M4 13.5L15 5l11 8.5"
                   stroke="#8a8477"
@@ -172,7 +211,12 @@
               aria-label="상세 보기"
               @click.stop="goDetail(p)"
             >
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 14 14"
+                fill="none"
+              >
                 <path
                   d="M5 3l4 4-4 4"
                   :stroke="p.selected ? '#fff' : '#8a8d8f'"
@@ -183,15 +227,32 @@
               </svg>
             </button>
           </div>
-          <div v-if="p.dividerAfter" class="list-divider">
+          <div
+            v-if="p.dividerAfter"
+            class="list-divider"
+          >
             <span>그 외 매물</span>
           </div>
         </li>
       </ul>
 
-      <div v-else class="empty">
-        <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
-          <circle cx="18" cy="18" r="11" stroke="#c9c5bd" stroke-width="2.2" />
+      <div
+        v-else
+        class="empty"
+      >
+        <svg
+          width="40"
+          height="40"
+          viewBox="0 0 40 40"
+          fill="none"
+        >
+          <circle
+            cx="18"
+            cy="18"
+            r="11"
+            stroke="#c9c5bd"
+            stroke-width="2.2"
+          />
           <path
             d="M26 26l7 7"
             stroke="#c9c5bd"
@@ -202,9 +263,9 @@
         <p class="empty-title">조건에 맞는 매물이 없어요</p>
         <p class="empty-sub">필터를 조금 넓혀보세요</p>
       </div>
-    </div>
+    </sidebar>
   </div>
-  <AppTabBar active="property" />
+
   <!-- 희망 주거 조건 -->
   <BottomSheet
     :model-value="openedSheet === 'housing'"
@@ -241,7 +302,10 @@
       </div>
     </div>
 
-    <div v-if="draft.tradeTypes.length" class="range-card">
+    <div
+      v-if="draft.tradeTypes.length"
+      class="range-card"
+    >
       <div
         v-if="
           draft.tradeTypes.includes('월세') || draft.tradeTypes.includes('전세')
@@ -261,7 +325,10 @@
         />
       </div>
 
-      <div v-if="draft.tradeTypes.includes('월세')" class="range-group">
+      <div
+        v-if="draft.tradeTypes.includes('월세')"
+        class="range-group"
+      >
         <p class="range-title">
           월세
           <span class="range-value">{{ rentValueLabel }}</span>
@@ -275,7 +342,10 @@
         />
       </div>
 
-      <div v-if="draft.tradeTypes.includes('매매')" class="range-group">
+      <div
+        v-if="draft.tradeTypes.includes('매매')"
+        class="range-group"
+      >
         <p class="range-title">
           매매가
           <span class="range-value">{{ salePriceLabel }}</span>
@@ -320,8 +390,16 @@
     </div>
 
     <div class="sheet-actions">
-      <button class="btn-ghost" @click="resetHousing">초기화</button>
-      <button class="btn-primary" @click="applyHousing">
+      <button
+        class="btn-ghost"
+        @click="resetHousing"
+      >
+        초기화
+      </button>
+      <button
+        class="btn-primary"
+        @click="applyHousing"
+      >
         이 조건으로 적용
       </button>
     </div>
@@ -364,9 +442,20 @@
     <div class="field">
       <p class="field-name">자차 보유 여부</p>
       <div class="check-row">
-        <label class="check-item" @click="draft.hasCar = true">
-          <span class="checkbox" :class="{ on: draft.hasCar }">
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+        <label
+          class="check-item"
+          @click="draft.hasCar = true"
+        >
+          <span
+            class="checkbox"
+            :class="{ on: draft.hasCar }"
+          >
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 12 12"
+              fill="none"
+            >
               <path
                 d="M2 6.5L4.7 9L10 3.5"
                 stroke="#545045"
@@ -378,9 +467,20 @@
           </span>
           자차 보유 O
         </label>
-        <label class="check-item" @click="draft.hasCar = false">
-          <span class="checkbox" :class="{ on: !draft.hasCar }">
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+        <label
+          class="check-item"
+          @click="draft.hasCar = false"
+        >
+          <span
+            class="checkbox"
+            :class="{ on: !draft.hasCar }"
+          >
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 12 12"
+              fill="none"
+            >
               <path
                 d="M2 6.5L4.7 9L10 3.5"
                 stroke="#545045"
@@ -396,8 +496,16 @@
     </div>
 
     <div class="sheet-actions">
-      <button class="btn-ghost" @click="resetCommute">초기화</button>
-      <button class="btn-primary" @click="applyCommute">
+      <button
+        class="btn-ghost"
+        @click="resetCommute"
+      >
+        초기화
+      </button>
+      <button
+        class="btn-primary"
+        @click="applyCommute"
+      >
         이 조건으로 적용
       </button>
     </div>
@@ -442,8 +550,18 @@
     </div>
 
     <div class="sheet-actions">
-      <button class="btn-ghost" @click="resetInfra">초기화</button>
-      <button class="btn-primary" @click="applyInfra">이 조건으로 적용</button>
+      <button
+        class="btn-ghost"
+        @click="resetInfra"
+      >
+        초기화
+      </button>
+      <button
+        class="btn-primary"
+        @click="applyInfra"
+      >
+        이 조건으로 적용
+      </button>
     </div>
   </BottomSheet>
 
@@ -454,7 +572,10 @@
     @update:model-value="closeSheet"
   >
     <ul class="sort-list">
-      <li v-for="o in SORT_OPTIONS" :key="o.key">
+      <li
+        v-for="o in SORT_OPTIONS"
+        :key="o.key"
+      >
         <button
           class="sort-item"
           :class="{ on: filter.sort === o.key }"
@@ -496,18 +617,29 @@
         :class="{ on: priorityRank(opt.criterion) != null }"
         @click="togglePriority(opt.criterion)"
       >
-        <span class="p-icon" v-html="opt.icon" />
+        <span
+          class="p-icon"
+          v-html="opt.icon"
+        />
         <span class="p-texts">
           <span class="p-title">{{ opt.title }}</span>
           <span class="p-sub">{{ opt.sub }}</span>
         </span>
-        <span v-if="priorityRank(opt.criterion)" class="p-badge">
+        <span
+          v-if="priorityRank(opt.criterion)"
+          class="p-badge"
+        >
           {{ priorityRank(opt.criterion) }}
         </span>
       </button>
     </div>
     <div class="sheet-actions">
-      <button class="btn-ghost" @click="draft.priorities = []">초기화</button>
+      <button
+        class="btn-ghost"
+        @click="draft.priorities = []"
+      >
+        초기화
+      </button>
       <button
         class="btn-primary"
         :disabled="draft.priorities.length === 0"
@@ -528,8 +660,8 @@
 
 <script setup>
 import PageHeader from '@/components/PageHeader.vue';
-import AppTabBar from '@/components/AppTabBar.vue';
 import KakaoMap from '@/components/KakaoMap.vue';
+import Sidebar from 'simplebar-vue';
 import BottomSheet from '@/components/BottomSheet.vue';
 import DualSlider from '@/components/DualSlider.vue';
 import SingleSlider from '@/components/SingleSlider.vue';

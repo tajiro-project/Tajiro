@@ -1,19 +1,41 @@
 <template>
   <div class="cmp">
     <header class="local-header">
-      <button class="back" type="button" aria-label="뒤로 가기" @click="goBack">
+      <button
+        class="back"
+        type="button"
+        aria-label="뒤로 가기"
+        @click="goBack"
+      >
         ‹
       </button>
       <span>{{ isReportMode ? '비교 리포트 상세' : '매물 비교' }}</span>
-      <button class="refresh" type="button" @click="loadComparison">
+      <button
+        class="refresh"
+        type="button"
+        @click="loadComparison"
+      >
         새로고침
       </button>
     </header>
 
-    <div class="scroll-area">
-      <div v-if="loading" class="state">비교 결과를 불러오는 중이에요.</div>
-      <div v-else-if="errorMessage" class="state error">{{ errorMessage }}</div>
-      <div v-else-if="items.length < 2" class="state">
+    <simplebar class="scroll-area">
+      <div
+        v-if="loading"
+        class="state"
+      >
+        비교 결과를 불러오는 중이에요.
+      </div>
+      <div
+        v-else-if="errorMessage"
+        class="state error"
+      >
+        {{ errorMessage }}
+      </div>
+      <div
+        v-else-if="items.length < 2"
+        class="state"
+      >
         비교할 매물이 부족해요. 비교함에서 2개 이상 선택해주세요.
       </div>
 
@@ -32,7 +54,9 @@
             >
             <p class="t-name">{{ item.title }}</p>
             <p class="t-price">{{ item.deposit }}/{{ item.monthlyRent }}</p>
-            <span v-if="hasAiRecommendation && recommendedId === item.propertyId" class="t-badge"
+            <span
+              v-if="hasAiRecommendation && recommendedId === item.propertyId"
+              class="t-badge"
               >AI 추천</span
             >
           </div>
@@ -40,7 +64,12 @@
 
         <section class="ai-card">
           <p class="ai-head">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 16 16"
+              fill="none"
+            >
               <path
                 d="M8 1L9.9 6.1L15 8L9.9 9.9L8 15L6.1 9.9L1 8L6.1 6.1L8 1Z"
                 fill="#ffbc00"
@@ -49,14 +78,31 @@
             AI 의사결정 코치
           </p>
 
-          <p v-if="aiPrimaryText" class="ai-p" :class="{ error: coachingError }">
+          <p
+            v-if="aiPrimaryText"
+            class="ai-p"
+            :class="{ error: coachingError }"
+          >
             {{ aiPrimaryText }}
           </p>
-          <p v-if="aiSecondaryText" class="ai-p">{{ aiSecondaryText }}</p>
+          <p
+            v-if="aiSecondaryText"
+            class="ai-p"
+          >
+            {{ aiSecondaryText }}
+          </p>
         </section>
 
-        <p v-if="warningText" class="warn">
-          <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+        <p
+          v-if="warningText"
+          class="warn"
+        >
+          <svg
+            width="15"
+            height="15"
+            viewBox="0 0 15 15"
+            fill="none"
+          >
             <path
               d="M7.5 1.8L14 13H1L7.5 1.8z"
               stroke="#8a7a55"
@@ -80,7 +126,12 @@
             @click="showOverall = !showOverall"
           >
             <span class="ph-left">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+                fill="none"
+              >
                 <path
                   d="M2 14V7M6 14V3M10 14V9M14 14V5"
                   stroke="#85714D"
@@ -110,13 +161,26 @@
               </svg>
             </span>
           </button>
-          <div v-show="showOverall" class="panel-body">
+          <div
+            v-show="showOverall"
+            class="panel-body"
+          >
             <div class="radar-wrap">
-              <canvas ref="radarEl" class="radar-canvas" />
+              <canvas
+                ref="radarEl"
+                class="radar-canvas"
+              />
             </div>
             <div class="legend">
-              <span v-for="(item, i) in items" :key="i" class="lg">
-                <i class="dot" :style="{ background: colors[i].dot }" />
+              <span
+                v-for="(item, i) in items"
+                :key="i"
+                class="lg"
+              >
+                <i
+                  class="dot"
+                  :style="{ background: colors[i].dot }"
+                />
                 {{ letters[i] }} {{ shortName(item.title) }}
               </span>
             </div>
@@ -124,7 +188,10 @@
               <span class="bb-label">가장 높은 영역</span>
               <b class="bb-value">{{ bestAreaText }}</b>
             </div>
-            <p v-if="unavailableAxes.length" class="metric-note">
+            <p
+              v-if="unavailableAxes.length"
+              class="metric-note"
+            >
               데이터 부족으로 제외된 지표: {{ unavailableAxes.join(', ') }}
             </p>
           </div>
@@ -137,7 +204,12 @@
             @click="showSafety = !showSafety"
           >
             <span class="ph-left">
-              <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 15 15"
+                fill="none"
+              >
                 <path
                   d="M7.5 1.5l5 2.2v3.6c0 3.2-2.1 5-5 6.2-2.9-1.2-5-3-5-6.2V3.7l5-2.2z"
                   stroke="#85714D"
@@ -174,19 +246,37 @@
               </svg>
             </span>
           </button>
-          <div v-show="showSafety" class="panel-body">
+          <div
+            v-show="showSafety"
+            class="panel-body"
+          >
             <table class="safety-table">
               <thead>
                 <tr>
                   <th></th>
-                  <th v-for="(item, i) in items" :key="i">{{ letters[i] }}</th>
+                  <th
+                    v-for="(item, i) in items"
+                    :key="i"
+                  >
+                    {{ letters[i] }}
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="row in safetyRows" :key="row.label">
+                <tr
+                  v-for="row in safetyRows"
+                  :key="row.label"
+                >
                   <td class="row-label">{{ row.label }}</td>
-                  <td v-for="(cell, i) in row.cells" :key="i">
-                    <span class="cell" :class="cell.tone">{{ cell.text }}</span>
+                  <td
+                    v-for="(cell, i) in row.cells"
+                    :key="i"
+                  >
+                    <span
+                      class="cell"
+                      :class="cell.tone"
+                      >{{ cell.text }}</span
+                    >
                   </td>
                 </tr>
               </tbody>
@@ -220,14 +310,21 @@
         >
           리포트 보관
         </button>
-        <p v-if="savedMsg" class="saved-msg" :class="{ error: savedMsgError }">
+        <p
+          v-if="savedMsg"
+          class="saved-msg"
+          :class="{ error: savedMsgError }"
+        >
           {{ savedMsg }}
         </p>
       </template>
-    </div>
+    </simplebar>
 
     <Teleport to="body">
-      <div v-if="showAiRefreshModal" class="modal-overlay">
+      <div
+        v-if="showAiRefreshModal"
+        class="modal-overlay"
+      >
         <div
           class="modal"
           role="dialog"
@@ -235,7 +332,12 @@
           aria-labelledby="ai-refresh-title"
         >
           <span class="m-icon">
-            <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+            <svg
+              width="22"
+              height="22"
+              viewBox="0 0 22 22"
+              fill="none"
+            >
               <rect
                 x="5"
                 y="2.5"
@@ -253,7 +355,11 @@
               />
             </svg>
           </span>
-          <p id="ai-refresh-title" class="m-title">
+          <p
+            id="ai-refresh-title"
+            v
+            class="m-title"
+          >
             AI 코칭 업데이트가 필요해요
           </p>
           <p class="m-text">
@@ -298,6 +404,7 @@ import {
 } from 'chart.js';
 import client, { getApiErrorMessage } from '@/api/client';
 import { comparisonApi } from '@/api/services';
+import simplebar from 'simplebar-vue';
 
 Chart.register(
   RadarController,
@@ -348,7 +455,9 @@ const selectedIds = computed(() =>
     .sort((a, b) => a - b)
     .slice(0, 3),
 );
-const reportId = computed(() => String(route.params.reportId ?? route.query.reportId ?? ''));
+const reportId = computed(() =>
+  String(route.params.reportId ?? route.query.reportId ?? ''),
+);
 const isReportMode = computed(() => Boolean(reportId.value));
 // AI가 추천한 매물 ID를 결정
 const hasAiRecommendation = computed(() =>
@@ -362,7 +471,9 @@ const recommendedId = computed(() =>
 );
 const aiPrimaryText = computed(() => {
   if (coachingError.value) return coachingError.value;
-  return coaching.value?.aiPropertySummaryText || AI_COACHING_UNAVAILABLE_MESSAGE;
+  return (
+    coaching.value?.aiPropertySummaryText || AI_COACHING_UNAVAILABLE_MESSAGE
+  );
 });
 
 const aiSecondaryText = computed(() => {
@@ -370,7 +481,6 @@ const aiSecondaryText = computed(() => {
   const summary = coaching.value?.aiSummary ?? '';
   return summary === aiPrimaryText.value ? '' : summary;
 });
-
 
 const warningText = computed(() => {
   const worst = [...metrics.value]
@@ -380,8 +490,7 @@ const warningText = computed(() => {
         Math.abs(metric.evaluationScore) >= 10,
     )
     .sort(
-      (a, b) =>
-        Math.abs(b.evaluationScore) - Math.abs(a.evaluationScore),
+      (a, b) => Math.abs(b.evaluationScore) - Math.abs(a.evaluationScore),
     )[0];
   if (!worst) return '';
   const index = Math.max(0, metrics.value.indexOf(worst));
@@ -419,8 +528,7 @@ const allScoreSpecs = computed(() => {
       label: '안전',
       available: metrics.value.every(
         (m) =>
-          hasNumber(m.cctvCountWithin500m) &&
-          hasNumber(m.bellCountWithin500m),
+          hasNumber(m.cctvCountWithin500m) && hasNumber(m.bellCountWithin500m),
       ),
       values: metrics.value.map(
         (m) => Number(m.cctvCountWithin500m) + Number(m.bellCountWithin500m),
@@ -564,8 +672,9 @@ async function loadComparison() {
     const savedReport = isReportMode.value
       ? await getReportDetail(reportId.value)
       : null;
-    const propertyIds = (savedReport?.comparedPropertyIds ?? selectedIds.value)
-      .slice(0, 3);
+    const propertyIds = (
+      savedReport?.comparedPropertyIds ?? selectedIds.value
+    ).slice(0, 3);
 
     currentPropertyIds.value = propertyIds;
 
@@ -591,12 +700,10 @@ async function loadComparison() {
       }
     }
 
-    applyComparisonResult(
-      {
-        metrics: metricsResult,
-        coaching: coachingDto,
-      },
-    );
+    applyComparisonResult({
+      metrics: metricsResult,
+      coaching: coachingDto,
+    });
 
     if (savedReport && shouldShowAiRefreshModal(savedReport)) {
       showAiRefreshModal.value = true;
@@ -682,8 +789,7 @@ async function getCoaching(propertyIds) {
     return unwrapApiData(await comparisonApi.analyze(propertyIds));
   } catch (error) {
     const message =
-      error.response?.data?.message ??
-      AI_COACHING_UNAVAILABLE_MESSAGE;
+      error.response?.data?.message ?? AI_COACHING_UNAVAILABLE_MESSAGE;
     throw new Error(message);
   }
 }
@@ -736,7 +842,9 @@ function normalize(values, invert = false) {
 }
 
 function hasNumber(value) {
-  return value !== null && value !== undefined && Number.isFinite(Number(value));
+  return (
+    value !== null && value !== undefined && Number.isFinite(Number(value))
+  );
 }
 
 function scheduleRenderChart() {
@@ -812,7 +920,6 @@ async function saveReport() {
   }
 }
 
-
 function getReportPropertySummaryText() {
   return coaching.value?.aiPropertySummaryText ?? '';
 }
@@ -826,9 +933,7 @@ function shortName(title) {
 }
 
 function feeValue(item) {
-  return Number(
-    item.maintenanceFee ?? 0,
-  );
+  return Number(item.maintenanceFee ?? 0);
 }
 
 function goBack() {
@@ -1213,4 +1318,5 @@ function goBack() {
 .m-go:disabled {
   opacity: 0.55;
   cursor: default;
-}</style>
+}
+</style>
