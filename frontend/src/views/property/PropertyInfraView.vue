@@ -179,15 +179,27 @@ function formatRowItem(item) {
   const categoryLabel = catConfig?.label || item.category;
   const categoryIcon = catConfig?.icon || MapPin;
 
+  // 최대 기준 거리 2000m (2km)
+  const MAX_DISTANCE = 2000;
+  const distMeters = item.distanceMeters ?? 0;
+
+  // 거리가 가까울수록 100%에 가까워지도록 역산 수식 적용
+  // 2000m 이상일 경우 최소 5% 유지
+  const calculatedPct =
+    distMeters >= MAX_DISTANCE
+      ? 5
+      : Math.round(((MAX_DISTANCE - distMeters) / MAX_DISTANCE) * 100);
+
   return {
     icon: categoryIcon,
     name: `${categoryLabel} (${item.name})`,
     dist:
-      item.distanceMeters >= 1000
-        ? (item.distanceMeters / 1000).toFixed(1) + 'km'
-        : item.distanceMeters + 'm',
+      distMeters >= 1000
+        ? (distMeters / 1000).toFixed(1) + 'km'
+        : distMeters + 'm',
     walk: item.walkMinutes,
-    pct: Math.min(100, Math.round((item.distanceMeters / 1200) * 100)),
+    // 최소 5% ~ 최대 100% 범위로 반환
+    pct: Math.max(5, Math.min(100, calculatedPct)),
     lat: item.lat,
     lng: item.lng,
     category: item.category,
