@@ -108,6 +108,11 @@ const routes = [
     name: 'financial-product-detail',
     component: () => import('@/views/benefit/LoanDetailView.vue'),
   },
+  {
+    path: '/safety-guide',
+    name: 'safety-guide',
+    component: () => import('@/views/safety/SafetyGuideView.vue'),
+  },
 ];
 
 const router = createRouter({
