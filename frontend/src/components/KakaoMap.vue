@@ -1,25 +1,23 @@
 <template>
-  <div ref="mapElement" class="kakao-map"></div>
+  <div
+    ref="mapElement"
+    class="kakao-map"
+  ></div>
 </template>
 
 <script setup>
-import { onMounted, onUnmounted, ref, watch, computed } from 'vue';
+import { onMounted, onUnmounted, ref, watch, computed, h, render } from 'vue';
 import { loadKakaoSdk } from '@/utils/kakaoSdk';
 import {
-  infraColor,
-  infraIconSvg,
-  INFRA_ICON_PATHS,
-} from '@/constants/infraIcons';
-import {
-  safetyColor,
-  safetyIconSvg,
-  SAFETY_ICON_PATHS,
-} from '@/constants/safetyIcons';
+  INFRA_CATEGORIES,
+  AMENITY_CATEGORIES,
+} from '@/constants/preferenceOptions';
+import { MapPin } from 'lucide-vue-next';
 
 const props = defineProps({
   markers: { type: Array, default: () => [] },
   dots: { type: Array, default: () => [] },
-  center: { type: Object, default: () => ({ lat: 37.5563, lng: 126.9723 }) }, // default : 서울역
+  center: { type: Object, default: () => ({ lat: 37.5563, lng: 126.9723 }) },
   activeDotKey: { type: String, default: null },
   level: { type: Number, default: 5 },
 });
@@ -33,13 +31,50 @@ const emit = defineEmits([
 
 const mapElement = ref(null);
 
-const DEFAULT_DOT_ICON =
-  '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="1.5"><circle cx="8" cy="8" r="2.5"/></svg>';
-
 let map = null;
 let overlays = [];
-let boundsFit = false;
 let dotElements = new Map();
+
+// 카테고리별 Lucide 아이콘 및 색상 매핑
+const ALL_CATEGORIES = [...INFRA_CATEGORIES, ...AMENITY_CATEGORIES];
+const categoryIconMap = {};
+const categoryColorMap = {};
+
+ALL_CATEGORIES.forEach((cat) => {
+  categoryIconMap[cat.key] = cat.icon;
+  if (cat.color) {
+    categoryColorMap[cat.key] = cat.color;
+  }
+});
+
+// 💡 카테고리별 고유 색상 정의 (하나로 통일되지 않도록 구별되는 고유 파스텔/비비드 톤 적용)
+const DEFAULT_CATEGORY_COLORS = {
+  // 교통 / 공공기관
+  subway: '#3B82F6', // 지하철 - 파랑
+  bus: '#06B6D4', // 버스 - 스카이블루
+  police: '#1E40AF', // 경찰서 - 남색
+  fire: '#EF4444', // 소방서 - 강렬한 빨강
+  post: '#F43F5E', // 우체국 - 로즈/핑크
+  bank: '#2563EB', // 은행 - 로열 블루
+
+  // 교육 / 학군
+  school: '#8B5CF6', // 학교 - 보라
+  academy: '#A855F7', // 학원 - 라이트 바이올렛
+
+  // 의료 / 건강
+  hospital: '#E11D48', // 병원 - 다크 레드
+  pharmacy: '#EC4899', // 약국 - 핫핑크
+
+  // 편의 / 쇼핑
+  mart: '#F59E0B', // 마트 - 골드/옐로우
+  convenience: '#10B981', // 편의점 - 에메랄드 초록
+  cafe: '#D97706', // 카페 - 브라운/앰버
+  restaurant: '#FB923C', // 음식점 - 연주황
+
+  // 자연 / 휴식
+  park: '#059669', // 공원/산책로 - 딥 그린
+  culture: '#6366F1', // 문화시설 - 인디고
+};
 
 function pinSvg(selected, count) {
   const label =
@@ -53,16 +88,6 @@ function pinSvg(selected, count) {
     <circle cx="13" cy="12.5" r="7" fill="#fff"/>
     ${label}
   </svg>`;
-}
-
-function dotSvg(category) {
-  return infraIconSvg(category) || safetyIconSvg(category) || DEFAULT_DOT_ICON;
-}
-
-function dotColor(category) {
-  if (INFRA_ICON_PATHS[category]) return infraColor(category);
-  if (SAFETY_ICON_PATHS[category]) return safetyColor();
-  return '#8a8d8f';
 }
 
 function createPinElement(marker) {
@@ -79,8 +104,30 @@ function createPinElement(marker) {
 function createDotElement(dot) {
   const element = document.createElement('div');
   element.className = 'infra-dot-wrap';
-  const bg = dot.color || dotColor(dot.category);
-  element.innerHTML = `<span class="infra-dot" style="background:${bg}">${dotSvg(dot.category)}</span>`;
+
+  const dotSpan = document.createElement('span');
+  dotSpan.className = 'infra-dot';
+
+  // 💡 카테고리별 고유 색상(DEFAULT_CATEGORY_COLORS)을 우선 적용하여 아이콘별로 색이 다르게 설정
+  const backgroundColor =
+    DEFAULT_CATEGORY_COLORS[dot.category] ||
+    dot.color ||
+    categoryColorMap[dot.category] ||
+    '#6B7280'; // 정의되지 않은 경우 기본 회색
+
+  dotSpan.style.background = backgroundColor;
+
+  const IconComponent = categoryIconMap[dot.category] || MapPin;
+
+  const vnode = h(IconComponent, {
+    size: 14,
+    color: '#ffffff',
+    strokeWidth: 2.5,
+  });
+  render(vnode, dotSpan);
+
+  element.appendChild(dotSpan);
+
   element.addEventListener('click', (e) => {
     e.stopPropagation();
     emit('dot-click', dot);
@@ -113,7 +160,7 @@ function fitToPoints(rawPoints) {
     bounds.extend(new window.kakao.maps.LatLng(p.lat, p.lng));
   });
 
-  map.setBounds(bounds, 52, 20, 48, 20);
+  map.setBounds(bounds, 0, 0, 0, 0);
 }
 
 function fitAllMarkers() {
@@ -148,6 +195,8 @@ function redraw() {
 
   props.dots.forEach((dot) => {
     if (dot.lat == null || dot.lng == null) return;
+    if (dot.category === '_dummy') return;
+
     const latlng = new window.kakao.maps.LatLng(dot.lat, dot.lng);
     const element = createDotElement(dot);
     const dotElement = element.querySelector('.infra-dot');
@@ -170,9 +219,8 @@ function redraw() {
     overlays.push(overlay);
   });
 
-  if (!boundsFit && (props.markers.length > 0 || props.dots.length > 0)) {
+  if (props.markers.length > 0 || props.dots.length > 0) {
     fitToPoints([...props.markers, ...props.dots]);
-    boundsFit = true;
   }
 }
 
@@ -235,14 +283,17 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
-  overlays.forEach((o) => o.setMap(null));
+  overlays.forEach((o) => {
+    const dotSpan = o.getContent()?.querySelector?.('.infra-dot');
+    if (dotSpan) render(null, dotSpan);
+    o.setMap(null);
+  });
   overlays = [];
   dotElements.clear();
   if (map) {
     window.kakao.maps.event.removeListener(map, 'idle', handleIdle);
     map = null;
   }
-  boundsFit = false;
 });
 </script>
 
