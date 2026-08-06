@@ -20,6 +20,13 @@
     </div>
 
     <!-- STEP 1 — 이주·통근 정보 -->
+    <p v-if="isLoading" class="status-message" role="status">
+      저장된 설정을 불러오는 중입니다.
+    </p>
+    <p v-else-if="errorMessage" class="status-message error" role="alert">
+      {{ errorMessage }}
+    </p>
+
     <div v-if="step === 1" class="content">
       <div class="field">
         <label class="section-title"
@@ -259,18 +266,31 @@
     <div class="fixed-footer">
       <!-- 하단 버튼 -->
       <div class="bottom-bar">
-        <button v-if="step > 1" class="btn-prev" @click="go(step - 1)">
+        <button
+          v-if="step > 1"
+          class="btn-prev"
+          :disabled="isSaving"
+          @click="go(step - 1)"
+        >
           이전
         </button>
         <button
           class="btn-cta"
           :disabled="
+            isLoading ||
+            isSaving ||
             (step === 1 && !pref.workplace) ||
             (step === PREFERENCE_STEP_COUNT && pref.priorities.length < 1)
           "
           @click="onNext"
         >
-          {{ step === PREFERENCE_STEP_COUNT ? '설정 완료' : '다음' }}
+          {{
+            isSaving
+              ? '저장 중...'
+              : step === PREFERENCE_STEP_COUNT
+                ? '설정 완료'
+                : '다음'
+          }}
         </button>
       </div>
     </div>
@@ -285,8 +305,10 @@
 </template>
 
 <script setup>
-import { computed, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { getApiErrorMessage } from '@/api/client';
+import { preferenceApi } from '@/api/services';
 import DualSlider from '@/components/DualSlider.vue';
 import KakaoLocation from '@/components/KakaoLocation.vue';
 import PageHeader from '@/components/PageHeader.vue';
@@ -311,35 +333,48 @@ const AREA_MAX_M2 = 200;
 const AREA_STEP_M2 = 5;
 const AREA_MARKS = ['0', '50m²', '100m²', '150m²', '200m²'];
 const PYEONG_M2 = 3.3058;
+const PREFERENCE_DRAFT_KEY = 'tajiro-preferences';
+const BASEMENT_UI_VALUE = '지하/반지하';
+const BASEMENT_API_VALUE = '반지하';
 
-const pref = reactive({
-  workplace: null,
-  hasCar: false,
-  maxCommuteDistanceMeters:
-    PREFERENCE_SLIDER_CONFIG.COMMUTE_DISTANCE.defaultValue,
-  housingTypes: [],
-  tradeTypes: [],
-  depositJeonseRange: [
-    PREFERENCE_SLIDER_CONFIG.DEPOSIT_JEONSE.min,
-    PREFERENCE_SLIDER_CONFIG.DEPOSIT_JEONSE.max,
-  ],
-  monthlyRentRange: [
-    PREFERENCE_SLIDER_CONFIG.MONTHLY_RENT.min,
-    PREFERENCE_SLIDER_CONFIG.MONTHLY_RENT.max,
-  ],
-  salePriceRange: [
-    PREFERENCE_SLIDER_CONFIG.SALE_PRICE.min,
-    PREFERENCE_SLIDER_CONFIG.SALE_PRICE.max,
-  ],
-  areaRange: [AREA_MIN_M2, AREA_MAX_M2],
-  floorPreference: [],
-  desiredInfraCategories: [],
-  desiredAmenityCategories: [],
-  priorities: [],
-});
+function createDefaultPreference() {
+  return {
+    workplace: null,
+    hasCar: false,
+    maxCommuteDistanceMeters:
+      PREFERENCE_SLIDER_CONFIG.COMMUTE_DISTANCE.defaultValue,
+    housingTypes: [],
+    tradeTypes: [],
+    depositJeonseRange: [
+      PREFERENCE_SLIDER_CONFIG.DEPOSIT_JEONSE.min,
+      PREFERENCE_SLIDER_CONFIG.DEPOSIT_JEONSE.max,
+    ],
+    monthlyRentRange: [
+      PREFERENCE_SLIDER_CONFIG.MONTHLY_RENT.min,
+      PREFERENCE_SLIDER_CONFIG.MONTHLY_RENT.max,
+    ],
+    salePriceRange: [
+      PREFERENCE_SLIDER_CONFIG.SALE_PRICE.min,
+      PREFERENCE_SLIDER_CONFIG.SALE_PRICE.max,
+    ],
+    areaRange: [AREA_MIN_M2, AREA_MAX_M2],
+    floorPreference: [],
+    desiredInfraCategories: [],
+    desiredAmenityCategories: [],
+    priorities: [],
+  };
+}
+
+const pref = reactive(createDefaultPreference());
 
 const step = computed(() => Number(route.params.step) || 1);
 const isLocationPickerOpen = ref(false);
+const isLoading = ref(false);
+const isSaving = ref(false);
+const hasSavedPreference = ref(false);
+const errorMessage = ref('');
+
+onMounted(loadPreference);
 
 const commuteDistanceLabel = computed(
   () => `${pref.maxCommuteDistanceMeters.toLocaleString()}m 이내`,
@@ -426,16 +461,146 @@ function selectWorkplace(location) {
   isLocationPickerOpen.value = false;
 }
 
-function go(n) {
-  router.push(`/preferences/${n}`);
+function copyList(value, fallback) {
+  return Array.isArray(value) ? [...value] : [...fallback];
 }
 
-function onNext() {
+function applyPreference(value) {
+  if (!value || typeof value !== 'object') return;
+
+  const defaults = createDefaultPreference();
+  Object.assign(pref, {
+    workplace: value.workplace ? { ...value.workplace } : defaults.workplace,
+    hasCar: value.hasCar ?? defaults.hasCar,
+    maxCommuteDistanceMeters:
+      value.maxCommuteDistanceMeters ?? defaults.maxCommuteDistanceMeters,
+    housingTypes: copyList(value.housingTypes, defaults.housingTypes),
+    tradeTypes: copyList(value.tradeTypes, defaults.tradeTypes),
+    depositJeonseRange: copyList(
+      value.depositJeonseRange,
+      defaults.depositJeonseRange,
+    ),
+    monthlyRentRange: copyList(
+      value.monthlyRentRange,
+      defaults.monthlyRentRange,
+    ),
+    salePriceRange: copyList(value.salePriceRange, defaults.salePriceRange),
+    areaRange: copyList(value.areaRange, defaults.areaRange),
+    floorPreference: copyList(
+      value.floorPreference,
+      defaults.floorPreference,
+    ).map((floor) =>
+      floor === BASEMENT_API_VALUE ? BASEMENT_UI_VALUE : floor,
+    ),
+    desiredInfraCategories: copyList(
+      value.desiredInfraCategories,
+      defaults.desiredInfraCategories,
+    ),
+    desiredAmenityCategories: copyList(
+      value.desiredAmenityCategories,
+      defaults.desiredAmenityCategories,
+    ),
+    priorities: copyList(value.priorities, defaults.priorities).map(
+      (priority) => ({ ...priority }),
+    ),
+  });
+}
+
+function toRequestPayload() {
+  return {
+    workplace: pref.workplace ? { ...pref.workplace } : null,
+    hasCar: pref.hasCar,
+    maxCommuteDistanceMeters: pref.maxCommuteDistanceMeters,
+    housingTypes: [...pref.housingTypes],
+    tradeTypes: [...pref.tradeTypes],
+    depositJeonseRange: [...pref.depositJeonseRange],
+    monthlyRentRange: [...pref.monthlyRentRange],
+    salePriceRange: [...pref.salePriceRange],
+    areaRange: [...pref.areaRange],
+    floorPreference: pref.floorPreference.map((floor) =>
+      floor === BASEMENT_UI_VALUE ? BASEMENT_API_VALUE : floor,
+    ),
+    desiredInfraCategories: [...pref.desiredInfraCategories],
+    desiredAmenityCategories: [...pref.desiredAmenityCategories],
+    priorities: pref.priorities.map((priority) => ({ ...priority })),
+  };
+}
+
+function saveDraft() {
+  localStorage.setItem(PREFERENCE_DRAFT_KEY, JSON.stringify(pref));
+}
+
+function restoreDraft() {
+  const draft = localStorage.getItem(PREFERENCE_DRAFT_KEY);
+  if (!draft) return;
+
+  try {
+    applyPreference(JSON.parse(draft));
+  } catch {
+    localStorage.removeItem(PREFERENCE_DRAFT_KEY);
+  }
+}
+
+function isPreferenceNotFound(error) {
+  return (
+    error?.response?.status === 404 ||
+    error?.response?.data?.code === 'PREF_404'
+  );
+}
+
+async function loadPreference() {
+  isLoading.value = true;
+  errorMessage.value = '';
+
+  try {
+    const savedPreference = await preferenceApi.get();
+    applyPreference(savedPreference);
+    hasSavedPreference.value = true;
+    restoreDraft();
+  } catch (error) {
+    restoreDraft();
+    if (!isPreferenceNotFound(error)) {
+      errorMessage.value = getApiErrorMessage(
+        error,
+        '저장된 주거 선호 조건을 불러오지 못했습니다.',
+      );
+    }
+  } finally {
+    isLoading.value = false;
+  }
+}
+
+function go(n) {
+  saveDraft();
+  return router.push(`/preferences/${n}`);
+}
+
+async function onNext() {
   if (step.value < PREFERENCE_STEP_COUNT) {
-    go(step.value + 1);
-  } else {
-    localStorage.setItem('tajiro-preferences', JSON.stringify(pref));
-    router.push('/properties');
+    await go(step.value + 1);
+    return;
+  }
+
+  isSaving.value = true;
+  errorMessage.value = '';
+  saveDraft();
+
+  try {
+    const requestPayload = toRequestPayload();
+    const savedPreference = hasSavedPreference.value
+      ? await preferenceApi.update(requestPayload)
+      : await preferenceApi.create(requestPayload);
+    applyPreference(savedPreference);
+    hasSavedPreference.value = true;
+    localStorage.removeItem(PREFERENCE_DRAFT_KEY);
+    await router.push('/properties');
+  } catch (error) {
+    errorMessage.value = getApiErrorMessage(
+      error,
+      '주거 선호 조건을 저장하지 못했습니다. 잠시 후 다시 시도해주세요.',
+    );
+  } finally {
+    isSaving.value = false;
   }
 }
 </script>
@@ -454,6 +619,19 @@ function onNext() {
 .step-head {
   flex-shrink: 0;
   padding: 14px 16px 12px;
+}
+.status-message {
+  flex-shrink: 0;
+  margin: 0 16px 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--kb-gray);
+  font-size: 12px;
+}
+.status-message.error {
+  background: #fff3f3;
+  color: var(--danger);
 }
 .step-line {
   display: flex;
@@ -687,6 +865,11 @@ function onNext() {
   background: var(--white);
   font-size: 14px;
   font-weight: 700;
+}
+.btn-prev:disabled,
+.btn-cta:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 
 .field-input[readonly] {
