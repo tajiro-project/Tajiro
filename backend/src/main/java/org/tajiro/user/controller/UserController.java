@@ -15,6 +15,7 @@ import org.tajiro.user.dto.ProfileUpdateResponse;
 import org.tajiro.user.dto.UserProfileDTO;
 import org.tajiro.user.dto.UserProfileRequest;
 import org.tajiro.user.service.UserProfileService;
+import springfox.documentation.annotations.ApiIgnore;
 
 import java.time.LocalDateTime;
 
@@ -27,7 +28,7 @@ public class UserController {
     private final UserProfileService userProfileService;
 
     @GetMapping("/profile")
-    public ResponseEntity<ApiResponse<UserProfileDTO>> getProfile(@AuthenticationPrincipal Long userId) {
+    public ResponseEntity<ApiResponse<UserProfileDTO>> getProfile(@ApiIgnore @AuthenticationPrincipal Long userId) {
         if (userId == null) {
             throw new BusinessException(ErrorCode.AUTH_REQUIRED);
         }
@@ -37,7 +38,7 @@ public class UserController {
 
     @PutMapping("/profile")
     public ResponseEntity<ApiResponse<ProfileUpdateResponse>> updateProfile(
-            @AuthenticationPrincipal Long userId,
+            @ApiIgnore @AuthenticationPrincipal Long userId,
             @RequestBody UserProfileRequest request) {
         if (userId == null) {
             throw new BusinessException(ErrorCode.AUTH_REQUIRED);
