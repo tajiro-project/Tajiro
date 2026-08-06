@@ -28,7 +28,10 @@ public enum ErrorCode {
     REQUIRED_TERMS_NOT_AGREED(400, "AUTH_400", "필수 약관에 동의해야 합니다."),
 
     // --- 비교 리포트 ---
-    COMPARISON_REPORT_NOT_FOUND(404, "REPORT_404", "존재하지 않는 비교 리포트입니다.");
+    COMPARISON_REPORT_NOT_FOUND(404, "REPORT_404", "존재하지 않는 비교 리포트입니다."),
+
+    // --- 주거 선호 조건 ---
+    PREFERENCE_NOT_FOUND(404, "PREF_404", "설정된 주거 선호 조건이 없습니다.");
 
     private final int status;
     private final String code;
