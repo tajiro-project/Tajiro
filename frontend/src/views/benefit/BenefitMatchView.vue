@@ -318,8 +318,9 @@ function shortAmount(v) {
   font-weight: 800;
 }
 .item-amount {
-  font-size: 13px;
-  font-weight: 500;
+  font-size: 11.5px;
+  font-weight: 400;
+  color: var(--kb-silver);
 }
 .item-sub {
   font-size: 11.5px;
