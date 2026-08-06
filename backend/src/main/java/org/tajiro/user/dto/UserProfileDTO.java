@@ -3,6 +3,7 @@
  */
 package org.tajiro.user.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -20,10 +21,12 @@ public class UserProfileDTO {
     private Long userId;
     private LocalDate birthDate;
     private String targetRegion;
-    private Integer mothlyIncome;
+    private Integer monthlyIncome;
     private Integer assetAmount;
     private String jobStatus;
     private LocalDateTime updatedAt;
+
+    @JsonProperty("target_sgg_code")
     private String targetSggCode;
 
     public static UserProfileDTO of(UserProfileVO vo){
@@ -35,10 +38,10 @@ public class UserProfileDTO {
                 .userId(vo.getUserId())
                 .birthDate(vo.getBirthDate())
                 .targetRegion(vo.getTargetRegion())
-                .mothlyIncome(vo.getMothlyIncome())
+                .monthlyIncome(vo.getMonthlyIncome())
                 .assetAmount(vo.getAssetAmount())
                 .jobStatus(vo.getJobStatus())
-                .updatedAt(vo.getUpdateAt())
+                .updatedAt(vo.getUpdatedAt())
                 .targetSggCode(vo.getTargetSggCode())
                 .build();
     }
