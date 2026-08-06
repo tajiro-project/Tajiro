@@ -10,7 +10,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.tajiro.config.RootConfig;
 import org.tajiro.config.TestConfig;
 import org.tajiro.preference.domain.HousingPreferenceVO;
-import org.tajiro.preference.mapper.HousingPreferenceMapper;
+import org.tajiro.preference.mapper.PreferenceMapper;
 import org.tajiro.property.domain.PropertyVO;
 import org.tajiro.preference.dto.PropertySearchRequest;
 
@@ -30,7 +30,7 @@ public class PropertyMapperTest {
     private PropertyMapper propertyMapper;
 
     @Autowired
-    private HousingPreferenceMapper housingPreferenceMapper;
+    private PreferenceMapper housingPreferenceMapper;
 
     @Test
     @DisplayName("지역 검색 경로")
