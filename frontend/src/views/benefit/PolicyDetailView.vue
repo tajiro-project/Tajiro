@@ -8,19 +8,28 @@
         <p class="sub">{{ summary }}</p>
       </div>
 
-      <!-- 지원 금액 -->
+      <!-- 지원 금액
       <div class="amount-bar">
         <span class="amount-label">지원 금액</span>
         <b class="amount-value">{{ formattedBenefitAmount }}</b>
-      </div>
+      </div> -->
 
       <!-- 신청 정보 -->
       <section class="card">
         <p class="card-head">신청 정보</p>
         <dl class="rows">
-          <div class="row"><dt>신청 기간</dt><dd>{{ displayValue(policy.applicationPeriod) }}</dd></div>
-          <div class="row"><dt>신청 기관</dt><dd>{{ displayValue(policy.agency) }}</dd></div>
-          <div class="row"><dt>신청 방법</dt><dd>{{ displayValue(policy.applyMethod) }}</dd></div>
+          <div class="row">
+            <dt>신청 기간</dt>
+            <dd>{{ displayValue(policy.applicationPeriod) }}</dd>
+          </div>
+          <div class="row">
+            <dt>신청 기관</dt>
+            <dd>{{ displayValue(policy.agency) }}</dd>
+          </div>
+          <div class="row">
+            <dt>신청 방법</dt>
+            <dd>{{ displayValue(policy.applyMethod) }}</dd>
+          </div>
         </dl>
       </section>
 
@@ -28,12 +37,30 @@
       <section class="card">
         <ul class="conds">
           <li class="cond">
-            <span class="c-check"><svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 6.5L4.7 9L10 3.5" stroke="#545045" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
+            <span class="c-check"
+              ><svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+                <path
+                  d="M2 6.5L4.7 9L10 3.5"
+                  stroke="#545045"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                /></svg
+            ></span>
             <span class="c-label">지원 지역</span>
             <b class="c-value">{{ displayValue(policy.region) }}</b>
           </li>
           <li class="cond">
-            <span class="c-check"><svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 6.5L4.7 9L10 3.5" stroke="#545045" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
+            <span class="c-check"
+              ><svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+                <path
+                  d="M2 6.5L4.7 9L10 3.5"
+                  stroke="#545045"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                /></svg
+            ></span>
             <span class="c-label">나이 조건</span>
             <b class="c-value">{{ ageRange }}</b>
           </li>
@@ -59,50 +86,58 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
-import { useRoute } from 'vue-router'
-import PageHeader from '@/components/PageHeader.vue'
-import AppTabBar from '@/components/AppTabBar.vue'
-import { policyApi } from '@/api/services'
+import { computed, onMounted, ref } from 'vue';
+import { useRoute } from 'vue-router';
+import PageHeader from '@/components/PageHeader.vue';
+import AppTabBar from '@/components/AppTabBar.vue';
+import { policyApi } from '@/api/services';
 
-const route = useRoute()
-const policy = ref(null)
+const route = useRoute();
+const policy = ref(null);
 
 onMounted(async () => {
-  policy.value = await policyApi.detail(route.params.id)
-})
+  policy.value = await policyApi.detail(route.params.id);
+});
 
 const displayValue = (value) => {
-  if (value === null || value === undefined || String(value).trim() === '' || value === '-') {
-    return '정보 없음'
+  if (
+    value === null ||
+    value === undefined ||
+    String(value).trim() === '' ||
+    value === '-'
+  ) {
+    return '정보 없음';
   }
-  return value
-}
+  return value;
+};
 
 const summary = computed(() =>
   displayValue(policy.value?.sumDescription || policy.value?.description),
-)
+);
 
 const formattedBenefitAmount = computed(() => {
-  const amount = policy.value?.benefitAmount
-  if (!amount) return '정보 없음'
-  return amount.replace(/\s*\((\d+)개월\)/, ' × $1개월')
-})
+  const amount = policy.value?.benefitAmount;
+  if (!amount) return '정보 없음';
+  return amount.replace(/\s*\((\d+)개월\)/, ' × $1개월');
+});
 
 const ageRange = computed(() => {
-  const min = policy.value?.minAge
-  const max = policy.value?.maxAge
-  if (min == null && max == null) return '정보 없음'
-  if (min == null) return `만 ${max}세 이하`
-  if (max == null) return `만 ${min}세 이상`
-  return `만 ${min}세 ~ ${max}세`
-})
+  const min = policy.value?.minAge;
+  const max = policy.value?.maxAge;
+  if (min == null && max == null) return '정보 없음';
+  if (min == null) return `만 ${max}세 이하`;
+  if (max == null) return `만 ${min}세 이상`;
+  return `만 ${min}세 ~ ${max}세`;
+});
 
 const docs = computed(() => {
-  const raw = policy.value?.requiredDocuments
-  if (!raw || raw.trim() === '-') return ['정보 없음']
-  return raw.split(',').map((s) => s.trim()).filter(Boolean)
-})
+  const raw = policy.value?.requiredDocuments;
+  if (!raw || raw.trim() === '-') return ['정보 없음'];
+  return raw
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+});
 </script>
 
 <style scoped>
