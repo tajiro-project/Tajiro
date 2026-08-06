@@ -38,7 +38,7 @@
     </div>
 
     <!-- 3. 하단 카드(리스트) 영역만 높이를 채우고 내부 스크롤 처리 -->
-    <div class="list-scroll-area">
+    <div class="scroll-area">
       <section class="card">
         <template v-if="activeRows.length > 0">
           <div
@@ -86,7 +86,6 @@
 import { computed, onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import PageHeader from '@/components/PageHeader.vue';
-import AppTabBar from '@/components/AppTabBar.vue';
 import KakaoMap from '@/components/KakaoMap.vue';
 import { propertyApi } from '@/api/services';
 import {
@@ -109,11 +108,11 @@ const currentTab = ref('infra');
 // 지도 중심 좌표
 const mapCenter = ref({ lat: 36.3320194, lng: 127.4570694 });
 
-// 카테고리 구분용 Set 생성 (빠른 비교를 위함)
+// 카테고리 구분용 Set 생성
 const infraKeySet = new Set(INFRA_CATEGORIES.map((c) => c.key));
 const amenityKeySet = new Set(AMENITY_CATEGORIES.map((c) => c.key));
 
-// 전체 카테고리 Map 생성 (Lucide 아이콘 및 라벨 매핑용)
+// 전체 카테고리 Map 생성
 const ALL_CATEGORIES = [...INFRA_CATEGORIES, ...AMENITY_CATEGORIES];
 const categoryMap = computed(() => {
   const map = {};
@@ -173,18 +172,15 @@ const markers = computed(() => {
   ];
 });
 
-// 💡 공통 데이터 포맷팅 함수
+// 공통 데이터 포맷팅 함수
 function formatRowItem(item) {
   const catConfig = categoryMap.value[item.category];
   const categoryLabel = catConfig?.label || item.category;
   const categoryIcon = catConfig?.icon || MapPin;
 
-  // 최대 기준 거리 2000m (2km)
   const MAX_DISTANCE = 2000;
   const distMeters = item.distanceMeters ?? 0;
 
-  // 거리가 가까울수록 100%에 가까워지도록 역산 수식 적용
-  // 2000m 이상일 경우 최소 5% 유지
   const calculatedPct =
     distMeters >= MAX_DISTANCE
       ? 5
@@ -198,7 +194,6 @@ function formatRowItem(item) {
         ? (distMeters / 1000).toFixed(1) + 'km'
         : distMeters + 'm',
     walk: item.walkMinutes,
-    // 최소 5% ~ 최대 100% 범위로 반환
     pct: Math.max(5, Math.min(100, calculatedPct)),
     lat: item.lat,
     lng: item.lng,
@@ -206,7 +201,7 @@ function formatRowItem(item) {
   };
 }
 
-// INFRA_CATEGORIES에 해당하는 데이터만 필터링 (거리순 정렬)
+// INFRA_CATEGORIES
 const infraRows = computed(() => {
   return infras.value
     .filter((i) => infraKeySet.has(i.category))
@@ -214,7 +209,7 @@ const infraRows = computed(() => {
     .map(formatRowItem);
 });
 
-// AMENITY_CATEGORIES에 해당하는 데이터만 필터링 (거리순 정렬)
+// AMENITY_CATEGORIES
 const amenityRows = computed(() => {
   return infras.value
     .filter((i) => amenityKeySet.has(i.category))
@@ -222,19 +217,17 @@ const amenityRows = computed(() => {
     .map(formatRowItem);
 });
 
-// 현재 선택된 탭에 따라 리스트 선택
+// 현재 선택된 탭에 따른 리스트
 const activeRows = computed(() => {
   return currentTab.value === 'infra' ? infraRows.value : amenityRows.value;
 });
 
 // KakaoMap 핀(dot) 목록
 const dots = computed(() => {
-  // 좌표가 존재하는 유효 데이터 추출
   const validInfras = infras.value.filter(
     (i) => i.lat != null && i.lng != null,
   );
 
-  // 현재 선택된 탭(infra / amenity)에 해당하는 카테고리만 1차 필터링
   const filteredInfras = validInfras.filter((i) => {
     if (currentTab.value === 'infra') {
       return infraKeySet.has(i.category);
@@ -245,7 +238,6 @@ const dots = computed(() => {
 
   if (!filteredInfras.length) return [];
 
-  // 지도 전달용 핀 데이터 매핑
   const rawDots = filteredInfras.map((i) => ({
     lat: i.lat,
     lng: i.lng,
@@ -253,7 +245,6 @@ const dots = computed(() => {
     name: i.name,
   }));
 
-  // 매물 중심점 기준으로 현재 탭의 핀들만 들여오는 대칭점(Dummy) 계산
   const centerLat = mapCenter.value?.lat;
   const centerLng = mapCenter.value?.lng;
   if (centerLat == null || centerLng == null) return rawDots;
@@ -261,7 +252,6 @@ const dots = computed(() => {
   let maxLatDiff = 0;
   let maxLngDiff = 0;
 
-  // 현재 필터링된 인프라들 기준으로만 Bounds 범위 계산
   filteredInfras.forEach((i) => {
     const latDiff = Math.abs(i.lat - centerLat);
     const lngDiff = Math.abs(i.lng - centerLng);
@@ -302,17 +292,18 @@ const onBoundsChange = () => {};
 
 <style scoped>
 .pinfra {
-  height: 100vh;
+  /* 100vh 대신 100%를 사용하여 상위 .route-content 내부 영역 높이에 정확히 맞춤 */
+  height: 100%;
   display: flex;
   flex-direction: column;
   background: var(--bg);
-  overflow: hidden; /* 전체 페이지 스크롤 방지 */
+  overflow: hidden;
 }
 
 .map-area {
   height: 200px;
   width: 100%;
-  flex-shrink: 0; /* 지도가 줄어들지 않도록 고정 */
+  flex-shrink: 0;
 }
 
 .title {
@@ -328,7 +319,7 @@ const onBoundsChange = () => {};
   background-color: #e9ecef;
   border-radius: 10px;
   padding: 3px;
-  flex-shrink: 0; /* 탭도 고정 */
+  flex-shrink: 0;
 }
 
 .tab-btn {
@@ -350,14 +341,9 @@ const onBoundsChange = () => {};
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
 }
 
-/* 💡 리스트 영역만 스크롤 설정 */
-.list-scroll-area {
-  flex: 1; /* 남은 하단 높이를 모두 차지 */
-  overflow-y: auto; /* 내부 요소가 넘치면 스크롤 생성 */
-  padding: 0 16px 16px;
-
-  /* 모바일 부드러운 스크롤 */
-  -webkit-overflow-scrolling: touch;
+/* 스크롤바 세부 동작 스타일은 base.css에서 통합 관리 */
+.scroll-area {
+  padding: 0 0 16px 16px;
 }
 
 .card {
