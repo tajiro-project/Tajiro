@@ -135,12 +135,17 @@ async function loadReports() {
   deleteError.value = '';
 
   try {
-    const response = await client.get('/comparison-reports');
+    const response = await client.get('/users/me/comparison-reports');
     const payload = response.data;
     const nextReports = Array.isArray(payload)
       ? payload
       : (payload?.items ?? []);
-    reports.value = nextReports;
+    reports.value = nextReports.map((report) => ({
+      ...report,
+      comparedPropertyIds: [...(report.comparedPropertyIds ?? [])]
+        .map(Number)
+        .sort((a, b) => a - b),
+    }));
   } catch (error) {
     errorMessage.value = getApiErrorMessage(
       error,
@@ -200,7 +205,7 @@ async function removeReport(r) {
   deleteError.value = '';
 
   try {
-    await client.delete(`/comparison-reports/${r.reportId}`);
+    await client.delete(`/users/me/comparison-reports/${r.reportId}`);
     reports.value = reports.value.filter((x) => x.reportId !== r.reportId);
   } catch (error) {
     deleteError.value = getApiErrorMessage(

@@ -28,24 +28,24 @@ public class ComparisonReportController {
 
     private final ComparisonReportService comparisonReportService;
 
-    @PostMapping("/comparison-reports")
+    @PostMapping("/users/me/comparison-reports")
     public ResponseEntity<ComparisonReportResponse> create(
             @RequestBody ComparisonReportCreateRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(comparisonReportService.create(MOCK_USER_ID, request));
     }
 
-    @GetMapping("/comparison-reports")
+    @GetMapping("/users/me/comparison-reports")
     public ResponseEntity<List<ComparisonReportResponse>> getAll() {
         return ResponseEntity.ok(comparisonReportService.getAll(MOCK_USER_ID));
     }
 
-    @GetMapping("/comparison-reports/{reportId}")
+    @GetMapping("/users/me/comparison-reports/{reportId}")
     public ResponseEntity<ComparisonReportResponse> get(@PathVariable Long reportId) {
         return ResponseEntity.ok(comparisonReportService.get(MOCK_USER_ID, reportId));
     }
 
-    @DeleteMapping("/comparison-reports/{reportId}")
+    @DeleteMapping("/users/me/comparison-reports/{reportId}")
     public ResponseEntity<Void> delete(@PathVariable Long reportId) {
         comparisonReportService.delete(MOCK_USER_ID, reportId);
         return ResponseEntity.noContent().build();

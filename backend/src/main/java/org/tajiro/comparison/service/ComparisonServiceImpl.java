@@ -6,10 +6,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import org.tajiro.common.api.ErrorCode;
 import org.tajiro.comparison.dto.ComparePropertyDTO;
 import org.tajiro.comparison.dto.ComparisonMetricDTO;
 import org.tajiro.comparison.dto.ComparisonMetricsResponseDTO;
 import org.tajiro.comparison.mapper.ComparisonMapper;
+import org.tajiro.exception.BusinessException;
 
 import java.util.HashSet;
 import java.util.List;
@@ -64,16 +66,15 @@ public class ComparisonServiceImpl implements ComparisonService {
         if (propertyIds == null
                 || propertyIds.size() < MIN_COMPARISON_PROPERTIES
                 || propertyIds.size() > MAX_COMPARE_PROPERTIES
+                || propertyIds.stream().anyMatch(id -> id == null)
                 || new HashSet<>(propertyIds).size() != propertyIds.size()) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "비교할 매물 ID는 서로 다른 값으로 2개 이상 3개 이하만 요청할 수 있습니다.");
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
         }
         //Mapper를 통해 DB에서 매물 ID에 해당하는 ComparisonMetricDTO를 조회한다.
         List<ComparisonMetricDTO> items = comparisonMapper.findMetrics(userId, propertyIds);
 
         if (items.size() != propertyIds.size()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "존재하지 않는 매물이 포함되어 있습니다.");
+            throw new BusinessException(ErrorCode.PROPERTY_NOT_FOUND);
         }
 
         return ComparisonMetricsResponseDTO.builder()
