@@ -508,7 +508,14 @@ function applyPreference(value) {
 
 function toRequestPayload() {
   return {
-    workplace: pref.workplace ? { ...pref.workplace } : null,
+    workplace: pref.workplace
+      ? {
+          name: pref.workplace.name,
+          address: pref.workplace.address,
+          lat: pref.workplace.lat,
+          lng: pref.workplace.lng,
+        }
+      : null,
     hasCar: pref.hasCar,
     maxCommuteDistanceMeters: pref.maxCommuteDistanceMeters,
     housingTypes: [...pref.housingTypes],
