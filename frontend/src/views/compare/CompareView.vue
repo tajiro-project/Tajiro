@@ -83,7 +83,7 @@
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                 <path
                   d="M2 14V7M6 14V3M10 14V9M14 14V5"
-                  stroke="#545045"
+                  stroke="#85714D"
                   stroke-width="1.6"
                   stroke-linecap="round"
                 />
@@ -140,13 +140,13 @@
               <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
                 <path
                   d="M7.5 1.5l5 2.2v3.6c0 3.2-2.1 5-5 6.2-2.9-1.2-5-3-5-6.2V3.7l5-2.2z"
-                  stroke="#545045"
+                  stroke="#85714D"
                   stroke-width="1.3"
                   stroke-linejoin="round"
                 />
                 <path
                   d="M5.4 7.4l1.5 1.5 2.8-3"
-                  stroke="#545045"
+                  stroke="#85714D"
                   stroke-width="1.3"
                   stroke-linecap="round"
                   stroke-linejoin="round"
@@ -226,7 +226,6 @@
       </template>
     </div>
 
-    <AppTabBar active="compare" />
     <Teleport to="body">
       <div v-if="showAiRefreshModal" class="modal-overlay">
         <div
@@ -289,7 +288,6 @@
 <script setup>
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import AppTabBar from '@/components/AppTabBar.vue';
 import {
   Chart,
   Filler,
@@ -953,6 +951,7 @@ function goBack() {
   gap: 7px;
   font-size: 14.5px;
   font-weight: 800;
+  color: #85714D;
   margin-bottom: 10px;
 }
 .ai-p {
