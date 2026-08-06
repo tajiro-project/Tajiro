@@ -6,7 +6,16 @@
             <form class="profile-form" @submit.prevent="handleSubmit">
                 <div class="field">
                     <label class="field-label" for="targetRegion">지역 선택*</label>
-                    <input id="targetRegion" v-model="targetRegion" class="field-input" type="text" placeholder="예) 서울특별시, 부산광역시" required />
+                    <input
+                        id="targetRegion"
+                        class="field-input"
+                        type="text"
+                        readonly
+                        :value="targetRegion"
+                        placeholder="예) 서울특별시 강남구"
+                        @click="isLocationPickerOpen = true"
+                        @keydown.enter.prevent="isLocationPickerOpen = true"
+                    />
                 </div>
                 <div class="field">
                     <label class="field-label" for="birthDate">생년월일*</label>
@@ -30,6 +39,12 @@
                 <button class="btn-cta" type="submit" :disabled="!canSubmit || loading">확인</button>
             </form>
         </div>
+
+        <KakaoLocation
+            :open="isLocationPickerOpen"
+            @close="isLocationPickerOpen = false"
+            @select="selectRegion"
+        />
     </div>
 </template>
 
@@ -38,6 +53,7 @@ import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import client, { getApiErrorMessage, withMock } from '@/api/client';
 import { mockProfile } from '@/api/mockData';
+import KakaoLocation from '@/components/KakaoLocation.vue';
 import PageHeader from '@/components/PageHeader.vue';
 
 const route = useRoute();
@@ -49,10 +65,18 @@ const birthDate = ref('');
 const monthlyIncome = ref('');
 const assetAmount = ref('');
 const jobStatus = ref('');
+const targetSggCode = ref('');
+const isLocationPickerOpen = ref(false);
 const loading = ref(false);
 const errorMessage = ref('');
 
 const canSubmit = computed(() => targetRegion.value.trim() !== '' && birthDate.value !== '');
+
+function selectRegion(location) {
+    targetRegion.value = location.name || location.address;
+    targetSggCode.value = location.sggCode ?? '';
+    isLocationPickerOpen.value = false;
+}
 
 onMounted(() => {
     if (isEdit.value) loadProfile();
@@ -66,6 +90,7 @@ async function loadProfile() {
     monthlyIncome.value = payload?.monthlyIncome ?? '';
     assetAmount.value = payload?.assetAmount ?? '';
     jobStatus.value = payload?.jobStatus ?? '';
+    targetSggCode.value = payload?.target_sgg_code ?? '';
 }
 
 async function handleSubmit() {
@@ -81,6 +106,7 @@ async function handleSubmit() {
             monthlyIncome: monthlyIncome.value === '' ? null : Number(monthlyIncome.value),
             assetAmount: assetAmount.value === '' ? null : Number(assetAmount.value),
             jobStatus: jobStatus.value,
+            target_sgg_code: targetSggCode.value,
         });
     } catch (error) {
         if (error.response) {
