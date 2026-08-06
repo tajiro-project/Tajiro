@@ -25,6 +25,7 @@ public class PolicyVO{
     private String requiredDocuments;
     private String description;
     private String sumDescription;
+    private Integer sbizCd;
 
 }
 
