@@ -49,7 +49,7 @@ const birthDate = ref('');
 const monthlyIncome = ref('');
 const assetAmount = ref('');
 const jobStatus = ref('');
-// 지역명 -> 법정동코드 변환 UI(지역 검색, #27 관련)가 아직 없어서 현재는 항상 빈 값으로 보냄.
+// 지역명 -> 법정동코드 변환 UI(지역 검색)가 아직 없어서 현재는 항상 빈 값으로 보냄.
 // 정책 매칭이 이 값을 쓰므로, 지역 검색 화면이 생기면 여기서 실제 코드를 채워 보내야 함.
 const targetSggCode = ref('');
 const loading = ref(false);
