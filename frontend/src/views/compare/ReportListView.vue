@@ -107,8 +107,6 @@
         새 비교 시작하기
       </button>
     </div>
-
-    <AppTabBar active="compare" />
   </div>
 </template>
 
@@ -116,7 +114,6 @@
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import PageHeader from '@/components/PageHeader.vue';
-import AppTabBar from '@/components/AppTabBar.vue';
 import client, { getApiErrorMessage } from '@/api/client';
 
 const router = useRouter();
