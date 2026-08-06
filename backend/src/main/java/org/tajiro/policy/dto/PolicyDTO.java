@@ -30,6 +30,7 @@ public class PolicyDTO {
     private String requiredDocuments;
     private String description;
     private String sumDescription;
+    private Integer sbizCd;
 
 
 
@@ -50,6 +51,7 @@ public class PolicyDTO {
                 .requiredDocuments(vo.getRequiredDocuments())
                 .description(vo.getDescription())
                 .sumDescription(vo.getSumDescription())
+                .sbizCd(vo.getSbizCd())
                 .build();
     }
 }
