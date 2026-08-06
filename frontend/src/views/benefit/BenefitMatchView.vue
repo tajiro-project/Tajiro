@@ -51,46 +51,9 @@
         <li v-for="p in paginatedPolicies" :key="p.id">
           <button class="item-card" @click="$router.push(`/policies/${p.id}`)">
             <p class="item-title">{{ p.title }}</p>
-            <p class="item-amount">{{ shortAmount(p.benefitAmount) }}</p>
+            <p class="item-amount">{{ shortAmount(p.sumDescription) }}</p>
           </button>
         </li>
-        <nav
-          v-if="activeItems.length > 0"
-          class="pagination"
-          aria-label="목록 페이지 이동"
-        >
-          <button
-            class="page-arrow"
-            type="button"
-            :disabled="currentPage === 1"
-            aria-label="이전 페이지"
-            @click="movePage(currentPage - 1)"
-          >
-            ‹
-          </button>
-
-          <button
-            v-for="page in visiblePages"
-            :key="page"
-            type="button"
-            class="page-number"
-            :class="{ active: currentPage === page }"
-            :aria-current="currentPage === page ? 'page' : undefined"
-            @click="movePage(page)"
-          >
-            {{ page }}
-          </button>
-
-          <button
-            class="page-arrow"
-            type="button"
-            :disabled="currentPage === totalPages"
-            aria-label="다음 페이지"
-            @click="movePage(currentPage + 1)"
-          >
-            ›
-          </button>
-        </nav>
       </ul>
 
       <!-- KB 금융 상품 리스트 -->
@@ -106,7 +69,14 @@
               한도 {{ f.maxLimitAmount.toLocaleString() }}만원 · 연
               {{ f.minRate.toFixed(1) }}%
             </p> -->
-            <p class="item-sub">무보증 월세 자금 · 만 19~34세</p>
+            <div class="item-meta">
+              <!-- <p class="item-sub">무보증 월세 자금 · 만 19~34세</p> -->
+
+              <span class="rate-range">
+                연 {{ Number(f.minRate).toFixed(1) }}% ~
+                {{ Number(f.maxRate).toFixed(1) }}%
+              </span>
+            </div>
           </button>
         </li>
       </ul>
@@ -148,8 +118,6 @@
         </button>
       </nav>
     </div>
-
-    <AppTabBar active="home" />
 
     <!-- 12-1 내 정보 입력 필요 모달 -->
     <Teleport to="body">
@@ -194,8 +162,7 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue';
 import PageHeader from '@/components/PageHeader.vue';
-import AppTabBar from '@/components/AppTabBar.vue';
-import { financeApi } from '@/api/services';
+import { financeApi, policyApi } from '@/api/services';
 
 const props = defineProps({
   initialTab: { type: String, default: 'policy' },
@@ -214,7 +181,7 @@ onMounted(async () => {
   // 프로필(지역·생년월일) 미입력 시 12-1 모달 노출
   // if (!profile || !profile.targetRegion || !profile.birthDate)
   //   needProfile.value = true;
-  // policies.value = (await policyApi.matches()) ?? [];
+  policies.value = (await policyApi.matches()) ?? [];
   products.value = (await financeApi.matches()) ?? [];
 });
 
@@ -355,12 +322,31 @@ function shortAmount(v) {
   font-weight: 800;
 }
 .item-amount {
-  font-size: 13px;
-  font-weight: 500;
+  font-size: 11.5px;
+  font-weight: 400;
+  color: var(--kb-silver);
 }
 .item-sub {
   font-size: 11.5px;
   color: var(--kb-silver);
+}
+.item-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  margin-top: 3px;
+}
+.rate-range {
+  flex-shrink: 0;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  color: #6b5300;
+  background: var(--yellow-tint);
+  border-radius: 999px;
 }
 /* 12-1 모달 */
 .modal-overlay {
