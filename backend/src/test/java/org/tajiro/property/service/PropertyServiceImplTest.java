@@ -13,6 +13,7 @@ import org.tajiro.config.RootConfig;
 import org.tajiro.config.TestConfig;
 import org.tajiro.exception.BusinessException;
 import org.tajiro.property.domain.PropertyVO;
+import org.tajiro.property.dto.PropertyListDTO;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -52,6 +53,52 @@ class PropertyServiceImplTest {
     public void findMatchingPropertiesWithoutPreference() {
         BusinessException e = assertThrows(BusinessException.class,
                 () -> propertyService.findMatchingProperties(999L));
+
+        assertEquals(ErrorCode.PREFERENCE_NOT_FOUND, e.getResponseCode());
+    }
+
+    @Test
+    @DisplayName("지역 검색 경로 - 반경 1.5km, 점수 없음")
+    void getListByRegion() {
+        List<PropertyListDTO> list = propertyService.getList(
+                1L, new BigDecimal("36.3318"), new BigDecimal("127.4680"));
+
+        log.info("반경 1.5km : " + list.size() + "건");
+
+        assertFalse(list.isEmpty());
+        assertTrue(list.stream().allMatch(p -> p.getDistanceMeters() <= 1500));
+
+        assertTrue(list.stream().allMatch(p -> p.getRecommendScore() == null));
+
+        assertTrue(list.stream().allMatch(p -> p.getDesiredInfraCount() == 0));
+        assertTrue(list.stream().allMatch(p -> p.getDesiredAmenityCount() == 0));
+    }
+
+    @Test
+    @DisplayName("가치관 경로 - 응답 변환 확인")
+    void getListByPreference() {
+        List<PropertyListDTO> list = propertyService.getList(2L, null, null);
+
+        log.info("user 2 : " + list.size() + "건");
+        assertFalse(list.isEmpty());
+
+        PropertyListDTO first = list.get(0);
+        log.info(first);
+
+        assertNotNull(first.getDistanceMeters());
+        assertNotNull(first.getDesiredInfraCount());
+        assertNotNull(first.getDesiredAmenityCount());
+
+        assertNotNull(first.getLatitude());
+        assertNotNull(first.getLongitude());
+        assertNotNull(first.getBuildingName());
+    }
+
+    @Test
+    @DisplayName("좌표도 가치관도 없으면 PREFERENCE_NOT_FOUND")
+    void getListWithoutCoordinatesAndPreference() {
+        BusinessException e = assertThrows(BusinessException.class,
+                () -> propertyService.getList(999L, null, null));
 
         assertEquals(ErrorCode.PREFERENCE_NOT_FOUND, e.getResponseCode());
     }
