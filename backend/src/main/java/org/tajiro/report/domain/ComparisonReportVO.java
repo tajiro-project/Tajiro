@@ -17,8 +17,10 @@ public class ComparisonReportVO {
     private Long aiRecommendedPropertyId;
     private String title;
     private String comparedPropertyIdsJson;
+    private String preferencePrioritiesJson;
     private String aiPropertySummaryText;
     private String aiSummary;
+    private Boolean saved;
     private String aiAtp;
     private LocalDateTime createdAt;
 }
