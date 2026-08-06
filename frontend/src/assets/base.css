@@ -135,11 +135,45 @@ img {
   position: relative;
   width: 100%;
   max-width: 375px;
-  min-height: 100dvh;
+  /* min-height: 100dvh; */
+  height: 100%;
   margin: 0 auto;
   background: var(--bg);
   box-shadow: 0 0 24px rgba(0, 0, 0, 0.12);
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  overflow: hidden;
+}
+
+.app-frame {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.route-content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+/* 스크롤 없애는 코드 */
+.route-content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.route-content::-webkit-scrollbar {
+  display: none;
 }
