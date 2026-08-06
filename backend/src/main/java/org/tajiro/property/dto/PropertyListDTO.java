@@ -35,7 +35,7 @@ public class PropertyListDTO {
     private Integer desiredInfraCount;
     private Integer desiredAmenityCount;
 
-    public static PropertyListDTO from(PropertyVO property) {
+    public static PropertyListDTO of(PropertyVO property) {
         return PropertyListDTO.builder()
                 .id(property.getId())
                 .buildingId(property.getBuildingId())

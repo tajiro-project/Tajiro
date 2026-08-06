@@ -10,17 +10,69 @@ import org.tajiro.preference.domain.HousingPreferenceVO;
 import org.tajiro.preference.dto.PropertySearchRequest;
 import org.tajiro.preference.mapper.PreferenceMapper;
 import org.tajiro.property.domain.PropertyVO;
+import org.tajiro.property.domain.PropertyValueAnalysisResultVO;
+import org.tajiro.property.dto.PropertyListDTO;
 import org.tajiro.property.mapper.PropertyMapper;
 
+import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class PropertyServiceImpl implements PropertyService{
+    private static final int REGION_RADIUS_METERS = 1500;
+
     private final PropertyMapper propertyMapper;
     private final PreferenceMapper preferenceMapper;
+    private final PropertyScoreService propertyScoreService;
+
+    @Override
+    public List<PropertyListDTO> getList(Long userId, BigDecimal centerLat, BigDecimal centerLng) {
+        List<PropertyVO> properties;
+
+        if(centerLat != null && centerLng != null) {
+            properties = findByRegion(userId, centerLat, centerLng);
+        }
+        else {
+            properties = findMatchingProperties(userId);
+            fillMissingScores(userId, properties);
+        }
+
+        return properties.stream()
+                .map(PropertyListDTO::of)
+                .collect(Collectors.toList());
+    }
+
+    private List<PropertyVO> findByRegion(Long userId, BigDecimal centerLat, BigDecimal centerLng) {
+        return propertyMapper.getList(PropertySearchRequest.builder()
+                .userId(userId)
+                .refLat(centerLat)
+                .refLng(centerLng)
+                .radiusMeters(REGION_RADIUS_METERS)
+                .build());
+    }
+
+    private void fillMissingScores(Long userId, List<PropertyVO> properties) {
+        List<PropertyVO> missing = properties.stream()
+                .filter(p->p.getPropertyValueAnalysisResultVO() == null)
+                .collect(Collectors.toList());
+
+        if(missing.isEmpty()) {
+            return;
+        }
+
+        Map<Long, PropertyValueAnalysisResultVO> scores = propertyScoreService.saveScores(userId, missing);
+
+        for(PropertyVO property : missing) {
+            PropertyValueAnalysisResultVO score = scores.get(property.getId());
+            if(score != null) {
+                property.setPropertyValueAnalysisResultVO(score);
+            }
+        }
+    }
 
     @Override
     @Transactional(readOnly = true)
