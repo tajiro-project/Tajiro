@@ -85,6 +85,18 @@ class PropertyServiceImplTest {
         PropertyListDTO first = list.get(0);
         log.info(first);
 
+        list.forEach(p -> log.info(String.format(
+                "%d %s %s %d/%d %s㎡ %dm 인프라=%d 편의=%d 점수=%s",
+                p.getId(), p.getPropertyType(), p.getTradeType(),
+                p.getDeposit(), p.getMonthlyRent(), p.getAreaM2(),
+                p.getDistanceMeters(),
+                p.getDesiredInfraCount(), p.getDesiredAmenityCount(),
+                p.getRecommendScore())));
+
+        assertTrue(list.stream().allMatch(p -> p.getRecommendScore() != null));
+        assertTrue(list.stream().allMatch(p ->
+                p.getRecommendScore() >= 0 && p.getRecommendScore() <= 100));
+
         assertNotNull(first.getDistanceMeters());
         assertNotNull(first.getDesiredInfraCount());
         assertNotNull(first.getDesiredAmenityCount());
