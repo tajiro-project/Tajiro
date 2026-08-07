@@ -11,6 +11,7 @@ import { loadKakaoSdk } from '@/utils/kakaoSdk';
 import {
   INFRA_CATEGORIES,
   AMENITY_CATEGORIES,
+  SAFETY_CATEGORIES,
 } from '@/constants/preferenceOptions';
 import { MapPin } from 'lucide-vue-next';
 
@@ -20,6 +21,7 @@ const props = defineProps({
   center: { type: Object, default: () => ({ lat: 37.5563, lng: 126.9723 }) },
   activeDotKey: { type: String, default: null },
   level: { type: Number, default: 5 },
+  fixedCenter: { type: Boolean, default: false }, // 매물 위치 중심 고정 옵션
 });
 
 const emit = defineEmits([
@@ -35,46 +37,24 @@ let map = null;
 let overlays = [];
 let dotElements = new Map();
 
-// 카테고리별 Lucide 아이콘 및 색상 매핑
-const ALL_CATEGORIES = [...INFRA_CATEGORIES, ...AMENITY_CATEGORIES];
+// 모든 카테고리(인프라, 편의시설, 안전) 아이콘/색상 매핑
+const ALL_CATEGORIES = [
+  ...INFRA_CATEGORIES,
+  ...AMENITY_CATEGORIES,
+  ...SAFETY_CATEGORIES,
+];
 const categoryIconMap = {};
 const categoryColorMap = {};
 
 ALL_CATEGORIES.forEach((cat) => {
-  categoryIconMap[cat.key] = cat.icon;
-  if (cat.color) {
+  if (cat.key) {
+    categoryIconMap[cat.key] = cat.icon;
     categoryColorMap[cat.key] = cat.color;
+    // 대소문자 매칭 처리
+    categoryIconMap[cat.key.toLowerCase()] = cat.icon;
+    categoryColorMap[cat.key.toLowerCase()] = cat.color;
   }
 });
-
-// 💡 카테고리별 고유 색상 정의 (하나로 통일되지 않도록 구별되는 고유 파스텔/비비드 톤 적용)
-const DEFAULT_CATEGORY_COLORS = {
-  // 교통 / 공공기관
-  subway: '#3B82F6', // 지하철 - 파랑
-  bus: '#06B6D4', // 버스 - 스카이블루
-  police: '#1E40AF', // 경찰서 - 남색
-  fire: '#EF4444', // 소방서 - 강렬한 빨강
-  post: '#F43F5E', // 우체국 - 로즈/핑크
-  bank: '#2563EB', // 은행 - 로열 블루
-
-  // 교육 / 학군
-  school: '#8B5CF6', // 학교 - 보라
-  academy: '#A855F7', // 학원 - 라이트 바이올렛
-
-  // 의료 / 건강
-  hospital: '#E11D48', // 병원 - 다크 레드
-  pharmacy: '#EC4899', // 약국 - 핫핑크
-
-  // 편의 / 쇼핑
-  mart: '#F59E0B', // 마트 - 골드/옐로우
-  convenience: '#10B981', // 편의점 - 에메랄드 초록
-  cafe: '#D97706', // 카페 - 브라운/앰버
-  restaurant: '#FB923C', // 음식점 - 연주황
-
-  // 자연 / 휴식
-  park: '#059669', // 공원/산책로 - 딥 그린
-  culture: '#6366F1', // 문화시설 - 인디고
-};
 
 function pinSvg(selected, count) {
   const label =
@@ -108,19 +88,25 @@ function createDotElement(dot) {
   const dotSpan = document.createElement('span');
   dotSpan.className = 'infra-dot';
 
-  // 💡 카테고리별 고유 색상(DEFAULT_CATEGORY_COLORS)을 우선 적용하여 아이콘별로 색이 다르게 설정
+  // 카테고리 키 매칭 (dot.category 또는 dot.categoryKey 대응)
+  const catKey = dot.category || dot.categoryKey || '';
+
+  // 1순위: dot 직접 지정 색상 -> 2순위: 상수의 카테고리 색상 -> 3순위: 기본 색상
   const backgroundColor =
-    DEFAULT_CATEGORY_COLORS[dot.category] ||
     dot.color ||
-    categoryColorMap[dot.category] ||
-    '#6B7280'; // 정의되지 않은 경우 기본 회색
+    categoryColorMap[catKey] ||
+    categoryColorMap[catKey.toLowerCase()] ||
+    '#1E3A8A';
 
   dotSpan.style.background = backgroundColor;
 
-  const IconComponent = categoryIconMap[dot.category] || MapPin;
+  // 상수의 카테고리 아이콘 적용 -> 없으면 기본 MapPin
+  const IconComponent =
+    categoryIconMap[catKey] || categoryIconMap[catKey.toLowerCase()] || MapPin;
 
+  // Vue 'h' 함수로 Lucide 아이콘을 마커 내부에 렌더링 (흰색 선)
   const vnode = h(IconComponent, {
-    size: 14,
+    size: 13,
     color: '#ffffff',
     strokeWidth: 2.5,
   });
@@ -175,6 +161,8 @@ function redraw() {
   if (!map) return;
 
   overlays.forEach((o) => {
+    const dotSpan = o.getContent()?.querySelector?.('.infra-dot');
+    if (dotSpan) render(null, dotSpan);
     o.setMap(null);
   });
   overlays = [];
@@ -195,7 +183,7 @@ function redraw() {
 
   props.dots.forEach((dot) => {
     if (dot.lat == null || dot.lng == null) return;
-    if (dot.category === '_dummy') return;
+    if (dot.category === '_dummy' || dot.categoryKey === '_dummy') return;
 
     const latlng = new window.kakao.maps.LatLng(dot.lat, dot.lng);
     const element = createDotElement(dot);
@@ -219,7 +207,11 @@ function redraw() {
     overlays.push(overlay);
   });
 
-  if (props.markers.length > 0 || props.dots.length > 0) {
+  if (props.fixedCenter) {
+    map.setCenter(
+      new window.kakao.maps.LatLng(props.center.lat, props.center.lng),
+    );
+  } else if (props.markers.length > 0 || props.dots.length > 0) {
     fitToPoints([...props.markers, ...props.dots]);
   }
 }
@@ -248,6 +240,8 @@ const selectedPos = computed(() => {
 
 watch(selectedPos, (pos) => {
   if (!map) return;
+  if (props.fixedCenter) return;
+
   if (pos) {
     fitSelected();
   } else {
@@ -319,12 +313,18 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
-  border: 2px solid #fff;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);
   cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+:deep(.infra-dot:hover) {
+  transform: scale(1.15);
+  z-index: 10;
 }
 
 :deep(.infra-dot svg) {
@@ -333,7 +333,8 @@ onUnmounted(() => {
 
 :deep(.infra-dot--active) {
   box-shadow:
-    0 0 0 3px rgba(136, 136, 136, 0.75),
-    0 1px 4px rgba(0, 0, 0, 0.3);
+    0 0 0 3px rgba(255, 183, 3, 0.8),
+    0 2px 6px rgba(0, 0, 0, 0.3);
+  transform: scale(1.2);
 }
 </style>

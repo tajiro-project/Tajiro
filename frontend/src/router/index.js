@@ -67,13 +67,19 @@ const routes = [
     name: 'property-detail',
     component: () => import('@/views/property/PropertyDetailView.vue'),
     meta: { headerTitle: '매물 상세' },
-  }, // 09
+  },
   {
     path: '/properties/:id/infra',
     name: 'property-infra',
     component: () => import('@/views/property/PropertyInfraView.vue'),
     meta: { headerTitle: '주변 생활 인프라' },
-  }, // 09
+  },
+  {
+    path: '/properties/:id/safety',
+    name: 'property-safety',
+    component: () => import('@/views/property/PropertySafetyView.vue'),
+    meta: { headerTitle: '안전 정보' },
+  },
   {
     path: '/preferences',
     name: 'preferences',
