@@ -1,6 +1,5 @@
 <template>
   <div class="guide">
-    <PageHeader title="안전 거래 가이드" />
 
     <simplebar class="scroll-area">
       <section class="intro-card">
@@ -127,7 +126,6 @@
 
 <script setup>
 import { computed, ref } from 'vue';
-import PageHeader from '@/components/PageHeader.vue';
 import simplebar from 'simplebar-vue';
 
 const tab = ref('contract');

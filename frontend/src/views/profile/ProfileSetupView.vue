@@ -1,10 +1,5 @@
 <template>
   <div class="profile-setup">
-    <PageHeader
-      title="내 정보 입력"
-      :back="isEdit"
-    />
-
     <simplebar class="scroll-area">
       <form
         class="profile-form"
@@ -113,7 +108,6 @@ import { useRoute, useRouter } from 'vue-router';
 import client, { getApiErrorMessage, withMock } from '@/api/client';
 import { mockProfile } from '@/api/mockData';
 import KakaoLocation from '@/components/KakaoLocation.vue';
-import PageHeader from '@/components/PageHeader.vue';
 import simplebar from 'simplebar-vue';
 
 const route = useRoute();

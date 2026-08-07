@@ -3,7 +3,6 @@
     class="policy-detail"
     v-if="policy"
   >
-    <PageHeader title="정책 상세" />
 
     <simplebar class="scroll-area">
       <div class="head">
@@ -107,7 +106,6 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
-import PageHeader from '@/components/PageHeader.vue';
 import simplebar from 'simplebar-vue';
 import { policyApi } from '@/api/services';
 

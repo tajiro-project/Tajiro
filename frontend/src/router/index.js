@@ -10,11 +10,13 @@ const routes = [
     path: '/properties',
     name: 'property-list',
     component: () => import('@/views/property/PropertyListView.vue'),
+    meta: { headerTitle: '매물 검색 결과' },
   },
   {
     path: '/compare-box',
     name: 'compare-box',
     component: () => import('@/views/compare/CompareBoxView.vue'),
+    meta: { headerTitle: '비교함' },
   },
   {
     path: '/home',
@@ -25,16 +27,19 @@ const routes = [
     path: '/compare',
     name: 'compare',
     component: () => import('@/views/compare/CompareView.vue'),
+    meta: { headerTitle: '매물 비교', headerBackTo: '/compare-box' },
   },
   {
     path: '/reports',
     name: 'reports',
     component: () => import('@/views/compare/ReportListView.vue'),
+    meta: { headerTitle: '비교 리포트 보관함' },
   },
   {
     path: '/reports/:reportId',
     name: 'report-detail',
     component: () => import('@/views/compare/CompareView.vue'),
+    meta: { headerTitle: '비교 리포트 상세', headerBackTo: '/reports' },
   },
   {
     path: '/comparison-reports/:reportId',
@@ -48,27 +53,32 @@ const routes = [
     path: '/benefits/policies',
     name: 'policy-match',
     component: () => import('@/views/benefit/BenefitMatchView.vue'),
+    meta: { headerTitle: '정책 · 금융 추천', headerAction: 'edit-profile' },
   }, // 12-1 / 12-2
   {
     path: '/benefits/kb',
     name: 'kb-match',
     component: () => import('@/views/benefit/BenefitMatchView.vue'),
     props: { initialTab: 'kb' },
+    meta: { headerTitle: '정책 · 금융 추천', headerAction: 'edit-profile' },
   }, // 12-2 KB
   {
     path: '/properties/:id',
     name: 'property-detail',
     component: () => import('@/views/property/PropertyDetailView.vue'),
+    meta: { headerTitle: '매물 상세' },
   }, // 09
   {
     path: '/properties/:id/infra',
     name: 'property-infra',
     component: () => import('@/views/property/PropertyInfraView.vue'),
+    meta: { headerTitle: '주변 생활 인프라' },
   }, // 09
   {
     path: '/preferences',
     name: 'preferences',
     component: () => import('@/views/preferences/PreferenceWizardView.vue'),
+    meta: { headerTitle: '가치관 설정' },
     path: '/preferences/:step',
     name: 'preferences',
     component: () => import('@/views/preferences/PreferenceWizardView.vue'),
@@ -77,21 +87,25 @@ const routes = [
     path: '/mypage',
     name: 'mypage',
     component: () => import('@/views/mypage/MyPageView.vue'),
+    meta: { headerTitle: '마이페이지' },
   },
   {
     path: '/favorites',
     name: 'favorites',
     component: () => import('@/views/favorite/FavoriteListView.vue'),
+    meta: { headerTitle: '스크랩한 매물' },
   },
   {
     path: '/profile-setup',
     name: 'profile-setup',
     component: () => import('@/views/profile/ProfileSetupView.vue'),
+    meta: { headerTitle: '내 정보 입력', headerBack: true },
   },
   {
     path: '/register',
     name: 'register',
     component: () => import('@/views/auth/RegisterView.vue'),
+    meta: { headerTitle: '회원가입' },
   },
   {
     path: '/login',
@@ -102,16 +116,19 @@ const routes = [
     path: '/policies/:id',
     name: 'policy-detail',
     component: () => import('@/views/benefit/PolicyDetailView.vue'),
+    meta: { headerTitle: '정책 상세' },
   },
   {
     path: '/financial-products/:id',
     name: 'financial-product-detail',
     component: () => import('@/views/benefit/LoanDetailView.vue'),
+    meta: { headerTitle: '대출상품 상세' },
   },
   {
     path: '/safety-guide',
     name: 'safety-guide',
     component: () => import('@/views/safety/SafetyGuideView.vue'),
+    meta: { headerTitle: '안전 거래 가이드' },
   },
 ];
 
