@@ -694,8 +694,8 @@ watch(selectedBuildingId, async (id) => {
   }
 
   try {
-    const res = await propertyApi.infrastructures(target.propertyId);
-    infraItems.value = res.data?.infrastructures ?? [];
+    const res = await buildingApi.infraPoints(id);
+    infraItems.value = res?.data ?? [];
   } catch {
     infraItems.value = [];
   }
@@ -874,16 +874,25 @@ const markers = computed(() => {
     .filter((m) => !selectedBuildingId.value || m.selected);
 });
 
-const layerCategories = computed(() => [
-  ...filter.desiredInfraCategories,
-  ...filter.desiredAmenityCategories,
-]);
+const ALL_CATEGORY_KEYS = [
+  ...INFRA_CATEGORIES.map((c) => c.key),
+  ...AMENITY_CATEGORIES.map((c) => c.key),
+];
 
+const layerCategories = computed(() =>
+  isRegionSearch.value
+    ? ALL_CATEGORY_KEYS
+    : [...filter.desiredInfraCategories, ...filter.desiredAmenityCategories],
+);
 const mapLayers = ref([...layerCategories.value]);
 
-watch(layerCategories, (v) => {
-  mapLayers.value = [...v];
-});
+watch(
+  layerCategories,
+  (v) => {
+    mapLayers.value = isRegionSearch.value ? [] : [...v];
+  },
+  { immediate: true },
+);
 
 const dots = computed(() =>
   infraItems.value
