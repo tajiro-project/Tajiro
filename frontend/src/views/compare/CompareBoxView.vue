@@ -431,7 +431,7 @@ function formatFloorInfo(floorInfo) {
   align-items: center;
   gap: 12px;
   padding: 14px;
-  background: #fdfaf1;
+  background: #ffffff;
   border: 1px solid var(--border);
   border-radius: 14px;
   min-width: 0;
