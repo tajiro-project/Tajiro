@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.tajiro.favorite.mapper.FavoriteMapper">
+
+    <select id="getFavorites" resultType="FavoriteDTO">
+        SELECT
+            p.id AS propertyId,
+            p.title AS title,
+            p.trade_type AS tradeType,
+            p.deposit AS deposit,
+            p.monthly_rent AS monthlyRent,
+            p.evaluation_score AS evaluationScore,
+            (SELECT pi.image_url
+             FROM property_image pi
+             WHERE pi.property_id = p.id
+             ORDER BY pi.sort_order
+             LIMIT 1) AS imageUrl,
+            p.property_type AS propertyType,
+            p.area_m2 AS areaM2,
+            p.floor_info AS floorInfo,
+            p.address AS address
+        FROM favorite_property f
+        JOIN property p ON p.id = f.property_id
+        WHERE f.user_id = #{userId}
+        ORDER BY f.created_at DESC
+    </select>
+
+    <select id="existsFavorite" resultType="boolean">
+        SELECT EXISTS(
+            SELECT 1 FROM favorite_property
+            WHERE user_id = #{userId} AND property_id = #{propertyId}
+        )
+    </select>
+
+    <insert id="insertFavorite" parameterType="FavoriteVO" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO favorite_property (user_id, property_id, created_at)
+        VALUES (#{userId}, #{propertyId}, #{createdAt})
+    </insert>
+
+    <delete id="deleteFavorite">
+        DELETE FROM favorite_property
+        WHERE user_id = #{userId} AND property_id = #{propertyId}
+    </delete>
+
+</mapper>
