@@ -28,7 +28,8 @@ import org.springframework.web.servlet.config.annotation.EnableWebMvc;
         "org.tajiro.seller.controller",
         "org.tajiro.location.controller",
         "org.tajiro.exception",
-        "org.tajiro.favorite.controller"
+        "org.tajiro.favorite.controller",
+        "org.tajiro.dashboard.controller"
 })
 @Import({WebConfig.class, SwaggerConfig.class})
 public class ServletConfig {
