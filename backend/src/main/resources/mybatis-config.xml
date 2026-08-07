@@ -23,5 +23,6 @@
         <typeAlias alias="FavoriteVO" type="org.tajiro.favorite.domain.FavoriteVO"/>
         <typeAlias alias="FavoriteDTO" type="org.tajiro.favorite.dto.FavoriteDTO"/>
         <typeAlias alias="PriorityItem" type="org.tajiro.dashboard.dto.DashboardDTO$PriorityItem"/>
+        <typeAlias alias="TermsVO" type="org.tajiro.terms.domain.TermsVO"/>
     </typeAliases>
 </configuration>

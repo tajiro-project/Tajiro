@@ -30,6 +30,7 @@
         SELECT id
         FROM terms
         WHERE required = 1
+          AND effective_at &lt;= NOW()
     </select>
 
     <!-- 4. 약관 동의 이력 저장 (agreed_at, terms_version은 저장 시점 기준) -->
