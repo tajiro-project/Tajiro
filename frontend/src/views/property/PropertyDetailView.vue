@@ -3,7 +3,6 @@
     class="pdetail"
     v-if="p"
   >
-
     <!-- div -> simplebar로 교체 -->
     <simplebar
       class="scroll-area"
@@ -262,14 +261,6 @@
           @click="$router.push(`/properties/${p.id}/safety`)"
         >
           <span>안전 정보 보기</span>
-          <span class="arrow">→</span>
-        </button>
-
-        <button
-          class="simple-banner brown"
-          @click="$router.push('/safety-guide')"
-        >
-          <span>안전 거래 가이드 보기</span>
           <span class="arrow">→</span>
         </button>
       </div>
@@ -1061,11 +1052,6 @@ async function addToCompare() {
   background: #2f9e69;
   color: #fff;
 }
-.simple-banner.brown {
-  background: #8a7a55;
-  color: #fff;
-}
-
 .realtor-card {
   margin-top: 12px;
   border: 1px solid #eee;

@@ -60,7 +60,7 @@
         <button
           class="menu-row"
           type="button"
-          @click="router.push('/profile-setup?mode=edit')"
+          @click="router.push('/profile-setup')"
         >
           <span>내 정보 관리 (소득 · 자산 · 직장)</span>
           <svg
@@ -172,7 +172,8 @@ async function loadDashboard() {
       () => client.get('/users/me/dashboard'),
       mockDashboard,
     );
-    dashboard.value = { ...dashboard.value, ...data };
+    const payload = data?.data ?? data;
+    dashboard.value = { ...dashboard.value, ...payload };
   } catch {
     dashboard.value = { ...mockDashboard };
   }

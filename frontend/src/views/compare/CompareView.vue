@@ -34,7 +34,7 @@
               >{{ letters[i] }}</span
             >
             <p class="t-name">{{ item.title }}</p>
-            <p class="t-price">{{ item.deposit }}/{{ item.monthlyRent }}</p>
+            <p class="t-price">{{ formatTradePrice(item) }}</p>
             <span
               v-if="hasAiRecommendation && recommendedId === item.propertyId"
               class="t-badge"
@@ -809,6 +809,36 @@ function createComparisonItem(metric, fallbackItem = {}) {
     areaM2: metric.areaM2 ?? fallbackItem.areaM2,
     floorInfo: metric.floorInfo ?? fallbackItem.floorInfo,
   };
+}
+
+function formatTradePrice(item) {
+  const tradeType = item.tradeType;
+  const deposit = moneyLabel(item.deposit);
+  const monthlyRent = moneyLabel(item.monthlyRent);
+
+  if (tradeType === '월세') return `월세 ${deposit}/${monthlyRent}`;
+  if (tradeType === '전세') return `전세 ${deposit}`;
+  if (tradeType === '매매') return `매매 ${deposit}`;
+
+  if (item.monthlyRent) {
+    return `${tradeType ?? ''} ${deposit}/${monthlyRent}`.trim();
+  }
+  return `${tradeType ?? ''} ${deposit}`.trim();
+}
+
+function moneyLabel(value) {
+  if (value === null || value === undefined || value === '') return '-';
+
+  const manwon = Number(value);
+  if (!Number.isFinite(manwon)) return '-';
+
+  if (manwon >= 10000) {
+    const eok = Math.floor(manwon / 10000);
+    const rest = manwon % 10000;
+    return rest === 0 ? `${eok}억` : `${eok}억 ${rest}`;
+  }
+
+  return String(manwon);
 }
 
 function normalize(values, invert = false) {

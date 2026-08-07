@@ -325,7 +325,8 @@ async function loadTargetRegion() {
       () => client.get('/users/me/dashboard'),
       mockDashboard,
     );
-    targetRegion.value = data?.targetRegion ?? '';
+    const payload = data?.data ?? data;
+    targetRegion.value = payload?.targetRegion ?? '';
   } catch {
     targetRegion.value = '';
   }
@@ -336,7 +337,14 @@ function goRegionSearch() {
 }
 
 function onLocationSelected(location) {
-  router.push({ path: '/properties', query: { region: location.name } });
+  router.push({
+    path: '/properties',
+    query: {
+      region: location.name,
+      centerLat: location.lat,
+      centerLng: location.lng,
+    },
+  });
 }
 </script>
 
