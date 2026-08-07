@@ -12,28 +12,18 @@
           @dot-hover="onDotHover"
         />
 
-        <div
-          v-if="activeDot"
-          class="dot-info"
-        >
+        <div v-if="activeDot" class="dot-info">
           <span
             class="dot-info-swatch"
             :style="{ background: activeDotColor }"
           />
           <span class="dot-info-text">{{ activeDotText }}</span>
-          <button
-            v-if="pinnedDot"
-            class="dot-info-close"
-            @click="closePanel"
-          >
+          <button v-if="pinnedDot" class="dot-info-close" @click="closePanel">
             ×
           </button>
         </div>
 
-        <div
-          v-if="selectedBuildingId"
-          class="map-overlay"
-        >
+        <div v-if="selectedBuildingId" class="map-overlay">
           <InfraTogglePanel
             v-model="mapLayers"
             :categories="layerCategories"
@@ -50,10 +40,7 @@
         </button>
       </div>
 
-      <div
-        class="filter-chips"
-        @wheel="onWheelX"
-      >
+      <div v-if="!isRegionSearch" class="filter-chips" @wheel="onWheelX">
         <button
           class="fchip"
           :class="{ on: commuteChipOn }"
@@ -81,17 +68,9 @@
         <p class="result-count">
           조건에 맞는 매물 <b>{{ totalCount }}건</b>
         </p>
-        <button
-          class="sort-btn"
-          @click="openSheet('sort')"
-        >
+        <button class="sort-btn" @click="openSheet('sort')">
           {{ sortLabel }}
-          <svg
-            width="10"
-            height="10"
-            viewBox="0 0 10 10"
-            fill="none"
-          >
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
             <path
               d="M2 3.5L5 6.5L8 3.5"
               stroke="#545045"
@@ -104,7 +83,7 @@
       </div>
 
       <div
-        v-if="filter.sort === 'recommend'"
+        v-if="!isRegionSearch && filter.sort === 'recommend'"
         class="priority-row"
         @click="openSheet('priority')"
         @wheel="onWheelX"
@@ -138,40 +117,22 @@
           />
         </svg>
 
-        <span
-          v-for="p in priorityChips"
-          :key="p.criterion"
-          class="pchip"
-        >
+        <span v-for="p in priorityChips" :key="p.criterion" class="pchip">
           <b class="pnum">{{ p.priorityOrder }}</b>
           {{ criterionLabel(p.criterion) }}
         </span>
       </div>
     </div>
-    <sidebar
-      ref="scrollArea"
-      class="scroll-area"
-    >
-      <ul
-        v-if="listItems.length"
-        class="cards"
-      >
-        <li
-          v-for="p in listItems"
-          :key="p.propertyId"
-        >
+    <sidebar ref="scrollArea" class="scroll-area">
+      <ul v-if="listItems.length" class="cards">
+        <li v-for="p in listItems" :key="p.propertyId">
           <div
             class="card"
             :class="{ selected: p.selected }"
             @click="onCardClick(p)"
           >
             <span class="thumb">
-              <svg
-                width="30"
-                height="30"
-                viewBox="0 0 30 30"
-                fill="none"
-              >
+              <svg width="30" height="30" viewBox="0 0 30 30" fill="none">
                 <path
                   d="M4 13.5L15 5l11 8.5"
                   stroke="#8a8477"
@@ -210,12 +171,7 @@
               aria-label="상세 보기"
               @click.stop="goDetail(p)"
             >
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 14 14"
-                fill="none"
-              >
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                 <path
                   d="M5 3l4 4-4 4"
                   :stroke="p.selected ? '#fff' : '#8a8d8f'"
@@ -226,32 +182,15 @@
               </svg>
             </button>
           </div>
-          <div
-            v-if="p.dividerAfter"
-            class="list-divider"
-          >
+          <div v-if="p.dividerAfter" class="list-divider">
             <span>그 외 매물</span>
           </div>
         </li>
       </ul>
 
-      <div
-        v-else
-        class="empty"
-      >
-        <svg
-          width="40"
-          height="40"
-          viewBox="0 0 40 40"
-          fill="none"
-        >
-          <circle
-            cx="18"
-            cy="18"
-            r="11"
-            stroke="#c9c5bd"
-            stroke-width="2.2"
-          />
+      <div v-else class="empty">
+        <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+          <circle cx="18" cy="18" r="11" stroke="#c9c5bd" stroke-width="2.2" />
           <path
             d="M26 26l7 7"
             stroke="#c9c5bd"
@@ -301,10 +240,7 @@
       </div>
     </div>
 
-    <div
-      v-if="draft.tradeTypes.length"
-      class="range-card"
-    >
+    <div v-if="draft.tradeTypes.length" class="range-card">
       <div
         v-if="
           draft.tradeTypes.includes('월세') || draft.tradeTypes.includes('전세')
@@ -324,10 +260,7 @@
         />
       </div>
 
-      <div
-        v-if="draft.tradeTypes.includes('월세')"
-        class="range-group"
-      >
+      <div v-if="draft.tradeTypes.includes('월세')" class="range-group">
         <p class="range-title">
           월세
           <span class="range-value">{{ rentValueLabel }}</span>
@@ -341,10 +274,7 @@
         />
       </div>
 
-      <div
-        v-if="draft.tradeTypes.includes('매매')"
-        class="range-group"
-      >
+      <div v-if="draft.tradeTypes.includes('매매')" class="range-group">
         <p class="range-title">
           매매가
           <span class="range-value">{{ salePriceLabel }}</span>
@@ -389,16 +319,8 @@
     </div>
 
     <div class="sheet-actions">
-      <button
-        class="btn-ghost"
-        @click="resetHousing"
-      >
-        초기화
-      </button>
-      <button
-        class="btn-primary"
-        @click="applyHousing"
-      >
+      <button class="btn-ghost" @click="resetHousing">초기화</button>
+      <button class="btn-primary" @click="applyHousing">
         이 조건으로 적용
       </button>
     </div>
@@ -441,20 +363,9 @@
     <div class="field">
       <p class="field-name">자차 보유 여부</p>
       <div class="check-row">
-        <label
-          class="check-item"
-          @click="draft.hasCar = true"
-        >
-          <span
-            class="checkbox"
-            :class="{ on: draft.hasCar }"
-          >
-            <svg
-              width="12"
-              height="12"
-              viewBox="0 0 12 12"
-              fill="none"
-            >
+        <label class="check-item" @click="draft.hasCar = true">
+          <span class="checkbox" :class="{ on: draft.hasCar }">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
               <path
                 d="M2 6.5L4.7 9L10 3.5"
                 stroke="#545045"
@@ -466,20 +377,9 @@
           </span>
           자차 보유 O
         </label>
-        <label
-          class="check-item"
-          @click="draft.hasCar = false"
-        >
-          <span
-            class="checkbox"
-            :class="{ on: !draft.hasCar }"
-          >
-            <svg
-              width="12"
-              height="12"
-              viewBox="0 0 12 12"
-              fill="none"
-            >
+        <label class="check-item" @click="draft.hasCar = false">
+          <span class="checkbox" :class="{ on: !draft.hasCar }">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
               <path
                 d="M2 6.5L4.7 9L10 3.5"
                 stroke="#545045"
@@ -495,16 +395,8 @@
     </div>
 
     <div class="sheet-actions">
-      <button
-        class="btn-ghost"
-        @click="resetCommute"
-      >
-        초기화
-      </button>
-      <button
-        class="btn-primary"
-        @click="applyCommute"
-      >
+      <button class="btn-ghost" @click="resetCommute">초기화</button>
+      <button class="btn-primary" @click="applyCommute">
         이 조건으로 적용
       </button>
     </div>
@@ -549,18 +441,8 @@
     </div>
 
     <div class="sheet-actions">
-      <button
-        class="btn-ghost"
-        @click="resetInfra"
-      >
-        초기화
-      </button>
-      <button
-        class="btn-primary"
-        @click="applyInfra"
-      >
-        이 조건으로 적용
-      </button>
+      <button class="btn-ghost" @click="resetInfra">초기화</button>
+      <button class="btn-primary" @click="applyInfra">이 조건으로 적용</button>
     </div>
   </BottomSheet>
 
@@ -571,10 +453,7 @@
     @update:model-value="closeSheet"
   >
     <ul class="sort-list">
-      <li
-        v-for="o in SORT_OPTIONS"
-        :key="o.key"
-      >
+      <li v-for="o in sortOptions" :key="o.key">
         <button
           class="sort-item"
           :class="{ on: filter.sort === o.key }"
@@ -616,29 +495,18 @@
         :class="{ on: priorityRank(opt.criterion) != null }"
         @click="togglePriority(opt.criterion)"
       >
-        <span
-          class="p-icon"
-          v-html="opt.icon"
-        />
+        <span class="p-icon" v-html="opt.icon" />
         <span class="p-texts">
           <span class="p-title">{{ opt.title }}</span>
           <span class="p-sub">{{ opt.sub }}</span>
         </span>
-        <span
-          v-if="priorityRank(opt.criterion)"
-          class="p-badge"
-        >
+        <span v-if="priorityRank(opt.criterion)" class="p-badge">
           {{ priorityRank(opt.criterion) }}
         </span>
       </button>
     </div>
     <div class="sheet-actions">
-      <button
-        class="btn-ghost"
-        @click="draft.priorities = []"
-      >
-        초기화
-      </button>
+      <button class="btn-ghost" @click="draft.priorities = []">초기화</button>
       <button
         class="btn-primary"
         :disabled="draft.priorities.length === 0"
@@ -666,9 +534,13 @@ import SingleSlider from '@/components/SingleSlider.vue';
 import KakaoLocation from '@/components/KakaoLocation.vue';
 import InfraTogglePanel from '@/components/InfraTogglePanel.vue';
 
-import { computed, ref, reactive, watch } from 'vue';
-import { useRouter } from 'vue-router';
+import { computed, ref, reactive, watch, onMounted } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 import { infraColor } from '@/constants/infraIcons';
+
+import { propertyApi } from '@/api/services';
+import { getApiErrorMessage } from '@/api/client';
+
 import {
   TRADE_OPTIONS as TRADE_TYPES,
   HOUSING_OPTIONS as PROPERTY_TYPES,
@@ -679,301 +551,6 @@ import {
   MAX_PRIORITY_SELECTIONS,
   PREFERENCE_SLIDER_CONFIG,
 } from '@/constants/preferenceOptions';
-
-// mock data
-const RAW_PROPERTIES = [
-  // B01 용운마젤란21 — 3건
-  {
-    propertyId: 1,
-    buildingId: 1,
-    buildingName: '용운마젤란21',
-    title: '용운마젤란21 1302호',
-    propertyType: '아파트',
-    tradeType: '월세',
-    deposit: 3700,
-    monthlyRent: 69,
-    maintenanceFee: 13,
-    areaM2: 84.9,
-    floorInfo: '13 / 15층',
-    address: '대전광역시 동구 대학로 102-7',
-    latitude: 36.3272,
-    longitude: 127.4541,
-    thumbnailUrl: 'https://example.com/properties/P01-1.jpg',
-    desiredInfraCount: 3,
-    desiredAmenityCount: 2,
-    recommendScore: 84,
-    workplaceDistanceMeters: 1070,
-  },
-
-  {
-    propertyId: 2,
-    buildingId: 1,
-    buildingName: '용운마젤란21',
-    title: '용운마젤란21 1103호',
-    propertyType: '아파트',
-    tradeType: '매매',
-    deposit: 25300,
-    monthlyRent: 0,
-    maintenanceFee: 12,
-    areaM2: 84.9,
-    floorInfo: '11 / 15층',
-    address: '대전광역시 동구 대학로 102-7',
-    latitude: 36.3272,
-    longitude: 127.4541,
-    thumbnailUrl: 'https://example.com/properties/P02-1.jpg',
-    desiredInfraCount: 3,
-    desiredAmenityCount: 2,
-    recommendScore: null,
-    workplaceDistanceMeters: 1070,
-  },
-
-  {
-    propertyId: 3,
-    buildingId: 1,
-    buildingName: '용운마젤란21',
-    title: '용운마젤란21 1401호',
-    propertyType: '아파트',
-    tradeType: '월세',
-    deposit: 700,
-    monthlyRent: 105,
-    maintenanceFee: 12,
-    areaM2: 111.2,
-    floorInfo: '14 / 15층',
-    address: '대전광역시 동구 대학로 102-7',
-    latitude: 36.3272,
-    longitude: 127.4541,
-    thumbnailUrl: null,
-    desiredInfraCount: 3,
-    desiredAmenityCount: 2,
-    recommendScore: 72,
-    workplaceDistanceMeters: 1070,
-  },
-
-  // B02 한화꿈에그린 — 2건
-  {
-    propertyId: 4,
-    buildingId: 2,
-    buildingName: '한화꿈에그린',
-    title: '한화꿈에그린 1504호',
-    propertyType: '아파트',
-    tradeType: '전세',
-    deposit: 15200,
-    monthlyRent: 0,
-    maintenanceFee: 10,
-    areaM2: 84.49,
-    floorInfo: '15 / 15층',
-    address: '대전광역시 동구 대학로50번길 53',
-    latitude: 36.3305,
-    longitude: 127.4589,
-    thumbnailUrl: 'https://example.com/properties/P04-1.jpg',
-    desiredInfraCount: 2,
-    desiredAmenityCount: 3,
-    recommendScore: 91,
-    workplaceDistanceMeters: 570,
-  },
-
-  {
-    propertyId: 5,
-    buildingId: 2,
-    buildingName: '한화꿈에그린',
-    title: '한화꿈에그린 1004호',
-    propertyType: '아파트',
-    tradeType: '월세',
-    deposit: 1300,
-    monthlyRent: 115,
-    maintenanceFee: 15,
-    areaM2: 112.96,
-    floorInfo: '10 / 15층',
-    address: '대전광역시 동구 대학로50번길 53',
-    latitude: 36.3305,
-    longitude: 127.4589,
-    thumbnailUrl: 'https://example.com/properties/P05-1.jpg',
-    desiredInfraCount: 2,
-    desiredAmenityCount: 3,
-    recommendScore: 66,
-    workplaceDistanceMeters: 570,
-  },
-
-  // B03 용방마을아파트 — 1건
-  {
-    propertyId: 6,
-    buildingId: 3,
-    buildingName: '용방마을아파트',
-    title: '용방마을주공3단지 1202호',
-    propertyType: '아파트',
-    tradeType: '전세',
-    deposit: 9500,
-    monthlyRent: 0,
-    maintenanceFee: 10,
-    areaM2: 59.94,
-    floorInfo: '12 / 15층',
-    address: '대전광역시 동구 용운동 460',
-    latitude: 36.3251,
-    longitude: 127.4608,
-    thumbnailUrl: 'https://example.com/properties/P06-1.jpg',
-    desiredInfraCount: 1,
-    desiredAmenityCount: 1,
-    recommendScore: 87,
-    workplaceDistanceMeters: 1170,
-  },
-
-  // B04 에코포레 — 4건
-  {
-    propertyId: 7,
-    buildingId: 4,
-    buildingName: '에코포레',
-    title: 'e편한세상대전에코포레 2101호',
-    propertyType: '아파트',
-    tradeType: '전세',
-    deposit: 35400,
-    monthlyRent: 0,
-    maintenanceFee: 13,
-    areaM2: 84.97,
-    floorInfo: '21 / 34층',
-    address: '대전광역시 동구 용운로 203',
-    latitude: 36.333,
-    longitude: 127.453,
-    thumbnailUrl: 'https://example.com/properties/P07-1.jpg',
-    desiredInfraCount: 2,
-    desiredAmenityCount: 0,
-    recommendScore: 79,
-    workplaceDistanceMeters: 680,
-  },
-
-  {
-    propertyId: 8,
-    buildingId: 4,
-    buildingName: '에코포레',
-    title: 'e편한세상대전에코포레 601호',
-    propertyType: '아파트',
-    tradeType: '매매',
-    deposit: 44000,
-    monthlyRent: 0,
-    maintenanceFee: 12,
-    areaM2: 84.97,
-    floorInfo: '6 / 34층',
-    address: '대전광역시 동구 용운로 203',
-    latitude: 36.333,
-    longitude: 127.453,
-    thumbnailUrl: 'https://example.com/properties/P08-1.jpg',
-    desiredInfraCount: 2,
-    desiredAmenityCount: 0,
-    recommendScore: 58,
-    workplaceDistanceMeters: 680,
-  },
-
-  {
-    propertyId: 9,
-    buildingId: 4,
-    buildingName: '에코포레',
-    title: 'e편한세상대전에코포레 3201호',
-    propertyType: '아파트',
-    tradeType: '월세',
-    deposit: 9000,
-    monthlyRent: 77,
-    maintenanceFee: 15,
-    areaM2: 75.34,
-    floorInfo: '32 / 34층',
-    address: '대전광역시 동구 용운로 203',
-    latitude: 36.333,
-    longitude: 127.453,
-    thumbnailUrl: 'https://example.com/properties/P09-1.jpg',
-    desiredInfraCount: 2,
-    desiredAmenityCount: 0,
-    recommendScore: 83,
-    workplaceDistanceMeters: 680,
-  },
-
-  {
-    propertyId: 10,
-    buildingId: 4,
-    buildingName: '에코포레',
-    title: 'e편한세상대전에코포레 903호',
-    propertyType: '아파트',
-    tradeType: '월세',
-    deposit: 5000,
-    monthlyRent: 92,
-    maintenanceFee: 12,
-    areaM2: 59.88,
-    floorInfo: '9 / 34층',
-    address: '대전광역시 동구 용운로 203',
-    latitude: 36.333,
-    longitude: 127.453,
-    thumbnailUrl: 'https://example.com/properties/P10-1.jpg',
-    desiredInfraCount: 2,
-    desiredAmenityCount: 0,
-    recommendScore: 75,
-    workplaceDistanceMeters: 680,
-  },
-
-  // B05 — 건물명 없음 (오피스텔)
-  {
-    propertyId: 11,
-    buildingId: 5,
-    buildingName: '',
-    title: '대학로62-67 202호',
-    propertyType: '오피스텔',
-    tradeType: '월세',
-    deposit: 1300,
-    monthlyRent: 36,
-    maintenanceFee: 7,
-    areaM2: 26.4,
-    floorInfo: '2 / 7층',
-    address: '대전광역시 동구 대학로 62-67',
-    latitude: 36.324,
-    longitude: 127.452,
-    thumbnailUrl: 'https://example.com/properties/P11-1.jpg',
-    desiredInfraCount: 0,
-    desiredAmenityCount: 2,
-    recommendScore: 69,
-    workplaceDistanceMeters: 1470,
-  },
-
-  // B06 — 건물명 없음 (원룸). 지하·옥탑 표기 확인용
-  {
-    propertyId: 12,
-    buildingId: 6,
-    buildingName: '',
-    title: '277-22 102호',
-    propertyType: '원룸',
-    tradeType: '월세',
-    deposit: 1300,
-    monthlyRent: 20,
-    maintenanceFee: 5,
-    areaM2: 18.0,
-    floorInfo: '지하1 / 3층',
-    address: '대전광역시 동구 용운동 277-22',
-    latitude: 36.332,
-    longitude: 127.464,
-    thumbnailUrl: null,
-    desiredInfraCount: 1,
-    desiredAmenityCount: 1,
-    recommendScore: null,
-    workplaceDistanceMeters: 540,
-  },
-
-  {
-    propertyId: 13,
-    buildingId: 6,
-    buildingName: '',
-    title: '277-22 옥탑',
-    propertyType: '원룸',
-    tradeType: '월세',
-    deposit: 300,
-    monthlyRent: 34,
-    maintenanceFee: 4,
-    areaM2: 20.0,
-    floorInfo: '옥탑 / 3층',
-    address: '대전광역시 동구 용운동 277-22',
-    latitude: 36.332,
-    longitude: 127.464,
-    thumbnailUrl: 'https://example.com/properties/P13-1.jpg',
-    desiredInfraCount: 1,
-    desiredAmenityCount: 1,
-    recommendScore: 62,
-    workplaceDistanceMeters: 540,
-  },
-];
 
 const RAW_INFRA = [
   // B01
@@ -1216,6 +793,7 @@ const RAW_INFRA = [
 ];
 
 const router = useRouter();
+const route = useRoute();
 const center = { lat: 36.3366, lng: 127.459 };
 
 const scrollArea = ref(null);
@@ -1226,14 +804,34 @@ const pinnedDot = ref(null);
 const hoveredDot = ref(null);
 
 const activeDot = computed(() => hoveredDot.value ?? pinnedDot.value);
-const items = ref(RAW_PROPERTIES);
+const items = ref([]);
+const isLoading = ref(false);
+const loadError = ref('');
+
+async function fetchProperties() {
+  isLoading.value = true;
+  loadError.value = '';
+  try {
+    const { centerLat, centerLng } = route.query;
+    items.value = await propertyApi.getList({ centerLat, centerLng });
+  } catch (e) {
+    if (e.response?.status === 404) {
+      router.replace('/preferences/1');
+      return;
+    }
+    loadError.value = getApiErrorMessage(e);
+  } finally {
+    isLoading.value = false;
+  }
+}
+
+onMounted(fetchProperties);
 
 const { DEPOSIT_JEONSE, SALE_PRICE, MONTHLY_RENT, AREA } =
   PREFERENCE_SLIDER_CONFIG;
 
 const DEFAULT_DISTANCE = PREFERENCE_SLIDER_CONFIG.COMMUTE_DISTANCE.defaultValue;
 const PYEONG = 3.3058;
-// const AREA_MAX_M2 = 200;
 
 const filter = reactive({
   tradeTypes: [...TRADE_TYPES],
@@ -1252,7 +850,7 @@ const filter = reactive({
   maxWorkplaceDistanceMeters: DEFAULT_DISTANCE,
   workplace: null,
   hasCar: false,
-  sort: 'recommend',
+  sort: route.query.centerLat != null ? 'distance' : 'recommend',
 });
 
 const SORT_OPTIONS = [
@@ -1271,7 +869,7 @@ function monthlyCost(p) {
 
 const SORT_SPECS = {
   recommend: { value: (p) => p.recommendScore, dir: 'desc' },
-  distance: { value: (p) => p.workplaceDistanceMeters, dir: 'asc' },
+  distance: { value: (p) => p.distanceMeters, dir: 'asc' },
   price: { value: monthlyCost, dir: 'asc' },
   infra: { value: (p) => p.desiredInfraCount, dir: 'desc' },
   amenity: { value: (p) => p.desiredAmenityCount, dir: 'desc' },
@@ -1283,6 +881,18 @@ const priorityChips = ref([
   { criterion: 'COST', priorityOrder: 2 },
   { criterion: 'AMENITY', priorityOrder: 3 },
 ]);
+
+const isRegionSearch = computed(
+  () => route.query.centerLat != null && route.query.centerLng != null,
+);
+
+const REGION_HIDDEN_SORTS = ['recommend', 'infra', 'amenity'];
+
+const sortOptions = computed(() =>
+  isRegionSearch.value
+    ? SORT_OPTIONS.filter((o) => !REGION_HIDDEN_SORTS.includes(o.key))
+    : SORT_OPTIONS,
+);
 
 const criterionLabel = (c) =>
   PRIORITY_OPTIONS.find((o) => o.criterion === c)?.title ?? c;
@@ -1785,16 +1395,17 @@ function goDetail(p) {
   router.push(`/properties/${p.propertyId}`);
 }
 
+function scrollToTop() {
+  const el = scrollArea.value?.scrollElement ?? scrollArea.value?.$el;
+  el?.scrollTo?.({ top: 0 });
+}
+
 watch(selectedBuildingId, (id) => {
   closePanel();
-  if (id && selectionSource.value === 'pin') {
-    scrollArea.value?.scrollTo({ top: 0 });
-  }
+  if (id && selectionSource.value === 'pin') scrollToTop();
 });
 
-watch(filter, () => {
-  scrollArea.value?.scrollTo({ top: 0 });
-});
+watch(filter, scrollToTop);
 </script>
 
 <style scoped>
