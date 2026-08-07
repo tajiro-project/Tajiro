@@ -18,10 +18,11 @@ import { MapPin } from 'lucide-vue-next';
 const props = defineProps({
   markers: { type: Array, default: () => [] },
   dots: { type: Array, default: () => [] },
+  polygons: { type: Array, default: () => [] }, // GeoJSON 경계 데이터 수신
   center: { type: Object, default: () => ({ lat: 37.5563, lng: 126.9723 }) },
   activeDotKey: { type: String, default: null },
   level: { type: Number, default: 5 },
-  fixedCenter: { type: Boolean, default: false }, // 매물 위치 중심 고정 옵션
+  fixedCenter: { type: Boolean, default: false },
 });
 
 const emit = defineEmits([
@@ -35,9 +36,10 @@ const mapElement = ref(null);
 
 let map = null;
 let overlays = [];
+let polygonOverlays = [];
 let dotElements = new Map();
 
-// 모든 카테고리(인프라, 편의시설, 안전) 아이콘/색상 매핑
+// 카테고리 매핑
 const ALL_CATEGORIES = [
   ...INFRA_CATEGORIES,
   ...AMENITY_CATEGORIES,
@@ -50,7 +52,6 @@ ALL_CATEGORIES.forEach((cat) => {
   if (cat.key) {
     categoryIconMap[cat.key] = cat.icon;
     categoryColorMap[cat.key] = cat.color;
-    // 대소문자 매칭 처리
     categoryIconMap[cat.key.toLowerCase()] = cat.icon;
     categoryColorMap[cat.key.toLowerCase()] = cat.color;
   }
@@ -88,10 +89,7 @@ function createDotElement(dot) {
   const dotSpan = document.createElement('span');
   dotSpan.className = 'infra-dot';
 
-  // 카테고리 키 매칭 (dot.category 또는 dot.categoryKey 대응)
   const catKey = dot.category || dot.categoryKey || '';
-
-  // 1순위: dot 직접 지정 색상 -> 2순위: 상수의 카테고리 색상 -> 3순위: 기본 색상
   const backgroundColor =
     dot.color ||
     categoryColorMap[catKey] ||
@@ -100,11 +98,9 @@ function createDotElement(dot) {
 
   dotSpan.style.background = backgroundColor;
 
-  // 상수의 카테고리 아이콘 적용 -> 없으면 기본 MapPin
   const IconComponent =
     categoryIconMap[catKey] || categoryIconMap[catKey.toLowerCase()] || MapPin;
 
-  // Vue 'h' 함수로 Lucide 아이콘을 마커 내부에 렌더링 (흰색 선)
   const vnode = h(IconComponent, {
     size: 13,
     color: '#ffffff',
@@ -131,13 +127,34 @@ function dotKey(dot) {
   return `${dot.lat},${dot.lng}`;
 }
 
+// 좌표 배열을 Kakao LatLng 배열로 변환하는 유틸리티
+function convertPathToKakao(path) {
+  if (!Array.isArray(path)) return [];
+
+  return path
+    .map((coord) => {
+      // GeoJSON 표준 [lng, lat] 배열 형태
+      if (Array.isArray(coord) && coord.length >= 2) {
+        return new window.kakao.maps.LatLng(Number(coord[1]), Number(coord[0]));
+      }
+      // { lat, lng } 객체 형태
+      else if (coord && coord.lat != null && coord.lng != null) {
+        return new window.kakao.maps.LatLng(
+          Number(coord.lat),
+          Number(coord.lng),
+        );
+      }
+      return null;
+    })
+    .filter(Boolean);
+}
+
 function fitToPoints(rawPoints) {
-  const points = rawPoints.filter((p) => p.lat != null && p.lng != null);
+  const points = rawPoints.filter((p) => p && p.lat != null && p.lng != null);
   if (!map || points.length === 0) return;
 
   if (points.length === 1) {
-    const p = points[0];
-    map.setCenter(new window.kakao.maps.LatLng(p.lat, p.lng));
+    map.setCenter(new window.kakao.maps.LatLng(points[0].lat, points[0].lng));
     return;
   }
 
@@ -149,17 +166,10 @@ function fitToPoints(rawPoints) {
   map.setBounds(bounds, 0, 0, 0, 0);
 }
 
-function fitAllMarkers() {
-  fitToPoints(props.markers);
-}
-
-function fitSelected() {
-  fitToPoints([...props.markers, ...props.dots]);
-}
-
 function redraw() {
   if (!map) return;
 
+  // 1. 기존 오버레이 삭제
   overlays.forEach((o) => {
     const dotSpan = o.getContent()?.querySelector?.('.infra-dot');
     if (dotSpan) render(null, dotSpan);
@@ -168,6 +178,11 @@ function redraw() {
   overlays = [];
   dotElements = new Map();
 
+  // 2. 기존 폴리곤 삭제
+  polygonOverlays.forEach((p) => p.setMap(null));
+  polygonOverlays = [];
+
+  // 3. 매물 핀 그리기
   props.markers.forEach((marker) => {
     if (marker.lat == null || marker.lng == null) return;
     const latlng = new window.kakao.maps.LatLng(marker.lat, marker.lng);
@@ -181,6 +196,7 @@ function redraw() {
     overlays.push(overlay);
   });
 
+  // 4. 인프라 도트 그리기
   props.dots.forEach((dot) => {
     if (dot.lat == null || dot.lng == null) return;
     if (dot.category === '_dummy' || dot.categoryKey === '_dummy') return;
@@ -207,6 +223,46 @@ function redraw() {
     overlays.push(overlay);
   });
 
+  // 5. 실제 행정구역 경계선 폴리곤 그리기
+  props.polygons.forEach((poly) => {
+    if (!poly.path || !Array.isArray(poly.path)) return;
+
+    const styleOptions = {
+      strokeWeight: poly.strokeWeight || 2.5,
+      strokeColor: poly.strokeColor || poly.color || '#2563EB', // 이미지와 같은 파란색 외곽선
+      strokeOpacity: poly.strokeOpacity || 0.9,
+      fillColor: poly.fillColor || poly.color || '#3B82F6', // 이미지와 같은 파란색 채우기
+      fillOpacity: poly.fillOpacity || 0.2, // 연한 투명도
+      zIndex: 1,
+    };
+
+    // GeoJSON MultiPolygon 대응 (path가 3차원 배열인 경우)
+    if (Array.isArray(poly.path[0]) && Array.isArray(poly.path[0][0])) {
+      poly.path.forEach((subPath) => {
+        const kakaoPath = convertPathToKakao(subPath);
+        if (kakaoPath.length < 3) return;
+
+        const polygonOverlay = new window.kakao.maps.Polygon({
+          path: kakaoPath,
+          ...styleOptions,
+        });
+        polygonOverlay.setMap(map);
+        polygonOverlays.push(polygonOverlay);
+      });
+    } else {
+      // 일반 Polygon 대응 (path가 2차원 배열/객체 배열인 경우)
+      const kakaoPath = convertPathToKakao(poly.path);
+      if (kakaoPath.length < 3) return;
+
+      const polygonOverlay = new window.kakao.maps.Polygon({
+        path: kakaoPath,
+        ...styleOptions,
+      });
+      polygonOverlay.setMap(map);
+      polygonOverlays.push(polygonOverlay);
+    }
+  });
+
   if (props.fixedCenter) {
     map.setCenter(
       new window.kakao.maps.LatLng(props.center.lat, props.center.lng),
@@ -231,36 +287,9 @@ function handleIdle() {
   });
 }
 
-watch(() => [props.markers, props.dots], redraw, { deep: true });
-
-const selectedPos = computed(() => {
-  const m = props.markers.find((x) => x.selected);
-  return m ? `${m.lat},${m.lng}` : null;
+watch(() => [props.markers, props.dots, props.polygons], redraw, {
+  deep: true,
 });
-
-watch(selectedPos, (pos) => {
-  if (!map) return;
-  if (props.fixedCenter) return;
-
-  if (pos) {
-    fitSelected();
-  } else {
-    fitAllMarkers();
-  }
-});
-
-watch(
-  () => props.activeDotKey,
-  (key, previousKey) => {
-    if (previousKey) {
-      dotElements.get(previousKey)?.classList.remove('infra-dot--active');
-    }
-
-    if (key) {
-      dotElements.get(key)?.classList.add('infra-dot--active');
-    }
-  },
-);
 
 onMounted(async () => {
   try {
@@ -283,6 +312,8 @@ onUnmounted(() => {
     o.setMap(null);
   });
   overlays = [];
+  polygonOverlays.forEach((p) => p.setMap(null));
+  polygonOverlays = [];
   dotElements.clear();
   if (map) {
     window.kakao.maps.event.removeListener(map, 'idle', handleIdle);
