@@ -97,10 +97,8 @@
             <div class="item-texts">
               <p class="item-title">{{ item.title }}</p>
               <p class="item-sub">
-                {{ item.propertyType || '매물'
-                }}<template v-if="item.buildingName">
-                  · {{ item.buildingName }}</template
-                >
+                {{ item.propertyType || '매물' }}<template v-if="item.buildingName?.trim()">
+                  · {{ item.buildingName.trim() }}</template>
               </p>
               <p class="item-price">{{ formatTrade(item) }}</p>
               <p class="item-meta">
