@@ -38,7 +38,10 @@ public enum ErrorCode {
     PREFERENCE_NOT_FOUND(404, "PREF_404", "설정된 주거 선호 조건이 없습니다."),
 
     // --- 찜한 매물 ---
-    FAVORITE_DUPLICATE(409, "FAV_409", "이미 찜한 매물입니다.");
+    FAVORITE_DUPLICATE(409, "FAV_409", "이미 찜한 매물입니다."),
+
+    // --- 약관 ---
+    TERMS_NOT_FOUND(404, "TERMS_404", "존재하지 않는 약관입니다.");
 
     private final int status;
     private final String code;
