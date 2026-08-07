@@ -1,6 +1,14 @@
 import client, { withMock } from './client';
 import * as mock from './mockData';
 
+// ---------- user ----------
+export const userApi = {
+  getProfile: async () => {
+    const response = await client.get('/users/me/profile');
+    return response.data?.data ?? response.data;
+  },
+};
+
 // ---------- preference ----------
 export const preferenceApi = {
   get: async () => {
