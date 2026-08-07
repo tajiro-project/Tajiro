@@ -2,11 +2,7 @@
   <simplebar class="splash">
     <div class="top-group">
       <div class="logo-badge">
-        <img
-          :src="logoImg"
-          alt="타지로"
-          class="logo-img"
-        />
+        <img :src="logoImg" alt="타지로" class="logo-img" />
       </div>
       <div class="headline-group">
         <p class="headline">낯선 도시, 익숙한 시작</p>
@@ -15,26 +11,14 @@
     </div>
 
     <ul class="checklist">
-      <li
-        v-for="item in checklistItems"
-        :key="item"
-        class="checklist-item"
-      >
-        <Check
-          :size="13"
-          color="#545045"
-          :stroke-width="2.5"
-        />
+      <li v-for="item in checklistItems" :key="item" class="checklist-item">
+        <Check :size="13" color="#545045" :stroke-width="2.5" />
         <span>{{ item }}</span>
       </li>
     </ul>
 
     <div class="bottom-group">
-      <button
-        class="start-btn"
-        type="button"
-        @click="router.push('/login')"
-      >
+      <button class="start-btn" type="button" @click="router.push('/login')">
         시작하기
       </button>
       <button
@@ -53,7 +37,6 @@ import { useRouter } from 'vue-router';
 import { Check } from 'lucide-vue-next';
 import logoImg from '@/assets/img/logo.png';
 import simplebar from 'simplebar-vue';
-ßß;
 
 const checklistItems = [
   '매물 추천부터 AI 매물 비교까지',
