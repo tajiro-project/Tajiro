@@ -107,15 +107,13 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { useRouter } from 'vue-router';
 import client, { getApiErrorMessage, withMock } from '@/api/client';
 import { mockProfile } from '@/api/mockData';
 import KakaoLocation from '@/components/KakaoLocation.vue';
 import simplebar from 'simplebar-vue';
 
-const route = useRoute();
 const router = useRouter();
-const isEdit = computed(() => route.query.mode === 'edit');
 
 const targetRegion = ref('');
 const birthDate = ref('');
@@ -137,9 +135,7 @@ function selectRegion(location) {
   isLocationPickerOpen.value = false;
 }
 
-onMounted(() => {
-  if (isEdit.value) loadProfile();
-});
+onMounted(loadProfile);
 
 async function loadProfile() {
   const data = await withMock(
@@ -180,7 +176,7 @@ async function handleSubmit() {
     // 백엔드 자체가 없을 때만 mock으로 간주하고 진행
   }
 
-  router.push(isEdit.value ? '/mypage' : '/preferences/1');
+  router.back();
 }
 </script>
 
