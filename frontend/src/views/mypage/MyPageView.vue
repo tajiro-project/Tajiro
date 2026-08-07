@@ -60,7 +60,7 @@
         <button
           class="menu-row"
           type="button"
-          @click="router.push('/profile-setup?mode=edit')"
+          @click="router.push('/profile-setup')"
         >
           <span>내 정보 관리 (소득 · 자산 · 직장)</span>
           <svg
