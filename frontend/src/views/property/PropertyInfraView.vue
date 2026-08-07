@@ -37,8 +37,8 @@
       </button>
     </div>
 
-    <!-- 3. 하단 카드(리스트) 영역만 높이를 채우고 내부 스크롤 처리 -->
-    <div class="scroll-area">
+    <!-- 3. 하단 카드 리스트 스크롤 영역 (Simplebar) -->
+    <simplebar class="scroll-area">
       <section class="card">
         <template v-if="activeRows.length > 0">
           <div
@@ -78,13 +78,14 @@
           해당 정보가 없습니다.
         </div>
       </section>
-    </div>
+    </simplebar>
   </div>
 </template>
 
 <script setup>
 import { computed, onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
+import simplebar from 'simplebar-vue';
 import PageHeader from '@/components/PageHeader.vue';
 import KakaoMap from '@/components/KakaoMap.vue';
 import { propertyApi } from '@/api/services';
@@ -292,12 +293,15 @@ const onBoundsChange = () => {};
 
 <style scoped>
 .pinfra {
-  /* 100vh 대신 100%를 사용하여 상위 .route-content 내부 영역 높이에 정확히 맞춤 */
   height: 100%;
   display: flex;
   flex-direction: column;
   background: var(--bg);
   overflow: hidden;
+}
+
+.scroll-area {
+  padding: 0 16px 16px;
 }
 
 .map-area {
@@ -341,11 +345,6 @@ const onBoundsChange = () => {};
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
 }
 
-/* 스크롤바 세부 동작 스타일은 base.css에서 통합 관리 */
-.scroll-area {
-  padding: 0 0 16px 16px;
-}
-
 .card {
   background: var(--white);
   border: 1px solid var(--border);
@@ -387,10 +386,6 @@ const onBoundsChange = () => {};
   background: var(--yellow-tint);
   flex-shrink: 0;
   color: #a8842c;
-}
-
-.lucide-icon {
-  display: block;
 }
 
 .r-main {
