@@ -1,5 +1,4 @@
 <template>
-  <PageHeader title="매물 검색 결과" />
   <div class="property-list">
     <div class="fixed-top">
       <div class="map-area">
@@ -659,7 +658,6 @@
 </template>
 
 <script setup>
-import PageHeader from '@/components/PageHeader.vue';
 import KakaoMap from '@/components/KakaoMap.vue';
 import Sidebar from 'simplebar-vue';
 import BottomSheet from '@/components/BottomSheet.vue';
