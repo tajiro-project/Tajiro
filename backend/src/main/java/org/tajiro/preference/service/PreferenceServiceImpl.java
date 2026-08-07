@@ -9,6 +9,7 @@ import org.tajiro.preference.domain.HousingPreferenceVO;
 import org.tajiro.preference.domain.PreferencePriorityVO;
 import org.tajiro.preference.dto.PreferenceDTO;
 import org.tajiro.preference.mapper.PreferenceMapper;
+import org.tajiro.property.mapper.PropertyScoreMapper;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -37,6 +38,7 @@ public class PreferenceServiceImpl implements PreferenceService {
             "COMMUTE", "COST", "INFRA", "AMENITY", "AREA");
 
     private final PreferenceMapper preferenceMapper;
+    private final PropertyScoreMapper propertyScoreMapper;
 
     @Override
     @Transactional(readOnly = true)
@@ -65,6 +67,7 @@ public class PreferenceServiceImpl implements PreferenceService {
                         .build())
                 .collect(Collectors.toList());
         preferenceMapper.insertPriorities(priorities);
+        propertyScoreMapper.deleteByUserId(userId);
 
         return get(userId);
     }
