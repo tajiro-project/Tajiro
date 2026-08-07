@@ -11,6 +11,7 @@ import org.tajiro.comparison.dto.ComparisonAnalysisResponseDTO;
 import org.tajiro.comparison.dto.ComparisonMetricDTO;
 import org.tajiro.exception.BusinessException;
 
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -105,6 +106,7 @@ class OpenAiComparisonClientTest {
                         .monthlyRent(20)
                         .maintenanceFee(5)
                         .commuteMinutes(30)
+                        .updateDate(LocalDateTime.of(2026, 7, 24, 12, 30))
                         .build(),
                 ComparisonMetricDTO.builder()
                         .propertyId(119L)
