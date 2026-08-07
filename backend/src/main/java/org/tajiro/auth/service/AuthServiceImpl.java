@@ -33,6 +33,10 @@ public class AuthServiceImpl implements AuthService {
             throw new BusinessException(ErrorCode.LOGIN_FAILED);
         }
 
+        if (!"ACTIVE".equals(user.getStatus())) {
+            throw new BusinessException(ErrorCode.LOGIN_FAILED);
+        }
+
         String accessToken = jwtProvider.createAccessToken(user.getId(), user.getEmail());
         return LoginResponse.of(accessToken, user);
     }
@@ -40,8 +44,13 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public RegisterResponse register(RegisterRequest request) {
-        if (authMapper.findByEmail(request.getEmail()) != null) {
-            throw new BusinessException(ErrorCode.EMAIL_DUPLICATE);
+        UserVO existing = authMapper.findByEmail(request.getEmail());
+        if (existing != null) {
+            if (!"ACTIVE".equals(existing.getStatus())) {
+                authMapper.releaseWithdrawnEmail(existing.getId());
+            } else {
+                throw new BusinessException(ErrorCode.EMAIL_DUPLICATE);
+            }
         }
 
         validateRequiredTermsAgreed(request);
@@ -64,6 +73,12 @@ public class AuthServiceImpl implements AuthService {
                 .userId(user.getId())
                 .accessToken(accessToken)
                 .build();
+    }
+
+    @Override
+    @Transactional
+    public void withdraw(Long userId) {
+        authMapper.softDeleteUser(userId);
     }
 
     private void validateRequiredTermsAgreed(RegisterRequest request) {

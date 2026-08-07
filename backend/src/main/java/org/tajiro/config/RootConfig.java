@@ -40,7 +40,8 @@ import javax.sql.DataSource;
         "org.tajiro.finance.mapper",
         "org.tajiro.seller.mapper",
         "org.tajiro.favorite.mapper",
-        "org.tajiro.dashboard.mapper"
+        "org.tajiro.dashboard.mapper",
+        "org.tajiro.terms.mapper"
 })
 @ComponentScan(basePackages = {
         "org.tajiro.auth.service",
@@ -57,7 +58,8 @@ import javax.sql.DataSource;
         "org.tajiro.seller.event",
         "org.tajiro.location.service",
         "org.tajiro.favorite.service",
-        "org.tajiro.dashboard.service"
+        "org.tajiro.dashboard.service",
+        "org.tajiro.terms.service"
 })
 public class RootConfig {
 
