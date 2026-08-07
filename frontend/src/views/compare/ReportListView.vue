@@ -204,14 +204,37 @@ function propName(report, pid) {
 function propPrice(report, pid) {
   const p = getProperty(report, pid);
   if (!p) return '';
-  if (
-    p.monthlyRent === null ||
-    p.monthlyRent === undefined ||
-    p.monthlyRent === ''
-  ) {
-    return `${p.tradeType ?? '전세'} ${p.deposit}`;
+  return formatTradePrice(p);
+}
+
+function formatTradePrice(property) {
+  const tradeType = property.tradeType;
+  const deposit = moneyLabel(property.deposit);
+  const monthlyRent = moneyLabel(property.monthlyRent);
+
+  if (tradeType === '월세') return `월세 ${deposit}/${monthlyRent}`;
+  if (tradeType === '전세') return `전세 ${deposit}`;
+  if (tradeType === '매매') return `매매 ${deposit}`;
+
+  if (property.monthlyRent) {
+    return `${tradeType ?? ''} ${deposit}/${monthlyRent}`.trim();
   }
-  return `${p.deposit}/${p.monthlyRent}`;
+  return `${tradeType ?? ''} ${deposit}`.trim();
+}
+
+function moneyLabel(value) {
+  if (value === null || value === undefined || value === '') return '-';
+
+  const manwon = Number(value);
+  if (!Number.isFinite(manwon)) return '-';
+
+  if (manwon >= 10000) {
+    const eok = Math.floor(manwon / 10000);
+    const rest = manwon % 10000;
+    return rest === 0 ? `${eok}억` : `${eok}억 ${rest}`;
+  }
+
+  return String(manwon);
 }
 // 리포트 저장 날짜 이후 매물 정보가 업데이트됐는지 확인
 function hasUpdatedProperty(report) {
