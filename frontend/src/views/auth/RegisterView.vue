@@ -37,6 +37,12 @@
             placeholder="example@email.com"
             required
           />
+          <p
+            v-if="email && !emailValid"
+            class="field-hint"
+          >
+            올바른 이메일 형식을 입력해주세요
+          </p>
         </div>
         <div class="field">
           <label
@@ -232,6 +238,7 @@ import client, { getApiErrorMessage, withMock } from '@/api/client';
 import { mockTerms } from '@/api/mockData';
 import simplebar from 'simplebar-vue';
 
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PASSWORD_PATTERN = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
 
 const MOCK_TERMS_LIST = [
@@ -267,6 +274,10 @@ const requiredAgreed = computed(() => {
     .every((term) => agreedIds.value.includes(term.id));
 });
 
+const emailValid = computed(
+  () => email.value === '' || EMAIL_PATTERN.test(email.value),
+);
+
 const passwordValid = computed(
   () => password.value === '' || PASSWORD_PATTERN.test(password.value),
 );
@@ -275,7 +286,7 @@ const canSubmit = computed(() => {
   return (
     termsList.value.length > 0 &&
     name.value.trim() !== '' &&
-    email.value.trim() !== '' &&
+    EMAIL_PATTERN.test(email.value) &&
     PASSWORD_PATTERN.test(password.value) &&
     password.value === passwordConfirm.value &&
     requiredAgreed.value
