@@ -66,7 +66,10 @@
 
       <div class="result-row">
         <p class="result-count">
-          조건에 맞는 매물 <b>{{ totalCount }}건</b>
+          <template v-if="isLoading">매물을 불러오는 중</template>
+          <template v-else>
+            조건에 맞는 매물 <b>{{ totalCount }}건</b>
+          </template>
         </p>
         <button class="sort-btn" @click="openSheet('sort')">
           {{ sortLabel }}
@@ -124,7 +127,15 @@
       </div>
     </div>
     <sidebar ref="scrollArea" class="scroll-area">
-      <ul v-if="listItems.length" class="cards">
+      <div v-if="isLoading" class="loading">
+        <span class="spinner" />
+        <p class="loading-text">매물을 불러오는 중이에요</p>
+      </div>
+      <div v-else-if="loadError" class="empty">
+        <p class="empty-title">불러오지 못했어요</p>
+        <p class="empty-sub">{{ loadError }}</p>
+      </div>
+      <ul v-else-if="listItems.length" class="cards">
         <li v-for="p in listItems" :key="p.propertyId">
           <div
             class="card"
@@ -155,7 +166,7 @@
               <p class="card-sub">
                 {{ p.propertyType
                 }}<template v-if="p.buildingName?.trim()">
-                  · {{ p.buildingName }}</template
+                  · {{ p.buildingName.trim() }}</template
                 >
               </p>
               <p class="card-price">{{ priceLabel(p) }}</p>
@@ -576,6 +587,7 @@ const nullIfMax = (v, max) => (v >= max ? null : v);
 async function fetchProperties() {
   isLoading.value = true;
   loadError.value = '';
+  items.value = [];
   try {
     const { centerLat, centerLng } = route.query;
     items.value = await propertyApi.getList({ centerLat, centerLng });
@@ -663,12 +675,15 @@ async function commitFilter() {
     })),
   };
 
+  isLoading.value = true;
   try {
     const res = await client.put('/users/me/preferences', body);
     preference.value = res.data.data;
     await fetchProperties();
   } catch (e) {
     loadError.value = getApiErrorMessage(e);
+  } finally {
+    isLoading.value = false;
   }
 }
 
@@ -1897,5 +1912,40 @@ watch(filter, scrollToTop);
   font-size: 12.5px;
   font-weight: 800;
   flex-shrink: 0;
+}
+
+/* loading */
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 50px 20px;
+}
+
+.spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid #eceae5;
+  border-top-color: var(--kb-yellow);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-text {
+  font-size: 12.5px;
+  color: var(--kb-silver);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation-duration: 2s;
+  }
 }
 </style>
