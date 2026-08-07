@@ -1,6 +1,5 @@
 <template>
   <div class="pinfra">
-
     <!-- 1. 지도는 상단 고정 -->
     <div class="map-area">
       <KakaoMap
@@ -17,8 +16,10 @@
     </div>
 
     <!-- 2. 제목 및 탭 고정 -->
-    <h1 class="title">{{ propertyName }} 기준 도보 거리예요</h1>
-
+    <div class="title-area">
+      <h1 class="main-title">{{ propertyName }} 기준 도보 거리예요</h1>
+      <p class="sub-title">반경 500m 공공데이터 기준 · 2026.07 갱신</p>
+    </div>
     <div class="tab-wrap">
       <button
         class="tab-btn"
@@ -307,14 +308,20 @@ const onBoundsChange = () => {};
   width: 100%;
   flex-shrink: 0;
 }
-
-.title {
-  padding: 14px 16px 10px;
-  font-size: 15px;
-  font-weight: 900;
-  flex-shrink: 0;
+.title-area {
+  margin-bottom: 2px;
+  padding: 16px;
 }
-
+.main-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 4px;
+}
+.sub-title {
+  font-size: 12px;
+  color: #787878;
+}
 .tab-wrap {
   display: flex;
   margin: 0 16px 8px;
@@ -347,7 +354,7 @@ const onBoundsChange = () => {};
   background: var(--white);
   border: 1px solid var(--border);
   border-radius: 16px;
-  padding: 4px 16px;
+  /* padding: 4px 16px; */
 }
 
 .empty-msg {
@@ -361,17 +368,15 @@ const onBoundsChange = () => {};
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 13px 0;
-  transition: background-color 0.2s;
-}
-
-.row.bordered {
-  border-top: 1px solid var(--bg);
+  padding: 13px 12px;
+  border-radius: 12px;
+  transition: all 0.15s ease;
+  box-sizing: border-box;
 }
 
 .row.active {
-  background-color: rgba(240, 168, 0, 0.08);
-  border-radius: 8px;
+  background-color: #fffdf5;
+  box-shadow: inset 0 0 0 2px #ffb703;
 }
 
 .r-icon {
