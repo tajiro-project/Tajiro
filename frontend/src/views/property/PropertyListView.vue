@@ -539,7 +539,7 @@ import { useRouter, useRoute } from 'vue-router';
 import { infraColor } from '@/constants/infraIcons';
 
 import { propertyApi } from '@/api/services';
-import { getApiErrorMessage } from '@/api/client';
+import client, { getApiErrorMessage } from '@/api/client';
 
 import {
   TRADE_OPTIONS as TRADE_TYPES,
@@ -551,246 +551,6 @@ import {
   MAX_PRIORITY_SELECTIONS,
   PREFERENCE_SLIDER_CONFIG,
 } from '@/constants/preferenceOptions';
-
-const RAW_INFRA = [
-  // B01
-  {
-    buildingId: 1,
-    category: 'SUBWAY',
-    name: '판암역',
-    latitude: 36.3285,
-    longitude: 127.4541,
-  },
-  {
-    buildingId: 1,
-    category: 'HOSPITAL',
-    name: '대전한국병원',
-    latitude: 36.3281,
-    longitude: 127.4553,
-  },
-  {
-    buildingId: 1,
-    category: 'CAFE',
-    name: '스타벅스 대전대점',
-    latitude: 36.3263,
-    longitude: 127.4553,
-  },
-  {
-    buildingId: 1,
-    category: 'SCHOOL',
-    name: '가양초등학교',
-    latitude: 36.3259,
-    longitude: 127.4541,
-  },
-  {
-    buildingId: 1,
-    category: 'PARK',
-    name: '용운근린공원',
-    latitude: 36.3263,
-    longitude: 127.4529,
-  },
-
-  // B01 — 토글 확인용으로 카테고리를 채움
-  {
-    buildingId: 1,
-    category: 'CONVENIENCE',
-    name: 'CU 용운점',
-    latitude: 36.3268,
-    longitude: 127.4535,
-  },
-  {
-    buildingId: 1,
-    category: 'MART',
-    name: '이마트에브리데이 용운점',
-    latitude: 36.3277,
-    longitude: 127.4527,
-  },
-  {
-    buildingId: 1,
-    category: 'PHARMACY',
-    name: '용운약국',
-    latitude: 36.3279,
-    longitude: 127.4548,
-  },
-  {
-    buildingId: 1,
-    category: 'FOOD',
-    name: '대학로국밥',
-    latitude: 36.3266,
-    longitude: 127.4547,
-  },
-  {
-    buildingId: 1,
-    category: 'BANK',
-    name: '국민은행 대전대점',
-    latitude: 36.3283,
-    longitude: 127.4536,
-  },
-  {
-    buildingId: 1,
-    category: 'SPORTS',
-    name: '용운헬스클럽',
-    latitude: 36.3258,
-    longitude: 127.4533,
-  },
-
-  // B02
-  {
-    buildingId: 2,
-    category: 'BUS_TERMINAL',
-    name: '대전복합터미널',
-    latitude: 36.3318,
-    longitude: 127.4589,
-  },
-  {
-    buildingId: 2,
-    category: 'PHARMACY',
-    name: '온누리약국',
-    latitude: 36.3314,
-    longitude: 127.4601,
-  },
-  {
-    buildingId: 2,
-    category: 'MART',
-    name: '홈플러스 가오점',
-    latitude: 36.3296,
-    longitude: 127.4601,
-  },
-  {
-    buildingId: 2,
-    category: 'ACADEMY',
-    name: '이룸수학학원',
-    latitude: 36.3292,
-    longitude: 127.4589,
-  },
-  {
-    buildingId: 2,
-    category: 'CULTURE',
-    name: '동구문화체육센터',
-    latitude: 36.3296,
-    longitude: 127.4577,
-  },
-
-  // B03
-  {
-    buildingId: 3,
-    category: 'TRAIN',
-    name: '대전역',
-    latitude: 36.3264,
-    longitude: 127.4608,
-  },
-  {
-    buildingId: 3,
-    category: 'CONVENIENCE',
-    name: 'GS25 용운점',
-    latitude: 36.326,
-    longitude: 127.462,
-  },
-  {
-    buildingId: 3,
-    category: 'KINDERGARTEN',
-    name: '햇살유치원',
-    latitude: 36.3242,
-    longitude: 127.462,
-  },
-  {
-    buildingId: 3,
-    category: 'SPORTS',
-    name: '동구실내체육관',
-    latitude: 36.3238,
-    longitude: 127.4608,
-  },
-
-  // B04
-  {
-    buildingId: 4,
-    category: 'PARKING',
-    name: '용운공영주차장',
-    latitude: 36.3343,
-    longitude: 127.453,
-  },
-  {
-    buildingId: 4,
-    category: 'FOOD',
-    name: '용운칼국수',
-    latitude: 36.3339,
-    longitude: 127.4542,
-  },
-  {
-    buildingId: 4,
-    category: 'LIBRARY',
-    name: '한밭도서관',
-    latitude: 36.3321,
-    longitude: 127.4542,
-  },
-  {
-    buildingId: 4,
-    category: 'SWIMMING',
-    name: '용운국제수영장',
-    latitude: 36.3317,
-    longitude: 127.453,
-  },
-
-  // B05
-  {
-    buildingId: 5,
-    category: 'GAS',
-    name: 'GS칼텍스 용운주유소',
-    latitude: 36.3253,
-    longitude: 127.452,
-  },
-  {
-    buildingId: 5,
-    category: 'BANK',
-    name: '하나은행 대전대점',
-    latitude: 36.3249,
-    longitude: 127.4532,
-  },
-  {
-    buildingId: 5,
-    category: 'GOV_OFFICE',
-    name: '용운동 행정복지센터',
-    latitude: 36.3231,
-    longitude: 127.4532,
-  },
-  {
-    buildingId: 5,
-    category: 'POST_OFFICE',
-    name: '대전용운우체국',
-    latitude: 36.3227,
-    longitude: 127.452,
-  },
-
-  // B06
-  {
-    buildingId: 6,
-    category: 'PUBLIC',
-    name: '대전동구청',
-    latitude: 36.3333,
-    longitude: 127.464,
-  },
-  {
-    buildingId: 6,
-    category: 'POLICE',
-    name: '대전동부경찰서',
-    latitude: 36.3329,
-    longitude: 127.4652,
-  },
-  {
-    buildingId: 6,
-    category: 'FIRE',
-    name: '동부소방서',
-    latitude: 36.3311,
-    longitude: 127.4652,
-  },
-  {
-    buildingId: 6,
-    category: 'FIRE',
-    name: '동부119안전센터',
-    latitude: 36.335,
-    longitude: 127.468,
-  },
-];
 
 const router = useRouter();
 const route = useRoute();
@@ -805,8 +565,13 @@ const hoveredDot = ref(null);
 
 const activeDot = computed(() => hoveredDot.value ?? pinnedDot.value);
 const items = ref([]);
+const infraItems = ref([]);
+const preference = ref(null);
 const isLoading = ref(false);
 const loadError = ref('');
+
+const nullIfMin = (v, min) => (v <= min ? null : v);
+const nullIfMax = (v, max) => (v >= max ? null : v);
 
 async function fetchProperties() {
   isLoading.value = true;
@@ -825,7 +590,105 @@ async function fetchProperties() {
   }
 }
 
-onMounted(fetchProperties);
+onMounted(async () => {
+  if (!isRegionSearch.value) await loadPreference();
+  await fetchProperties();
+});
+
+async function loadPreference() {
+  try {
+    const res = await client.get('/users/me/preferences');
+    preference.value = res.data.data;
+    applyPreferenceToFilter(preference.value);
+  } catch (e) {
+    console.warn('[preference] 실패', e.response?.status, e.response?.data);
+  }
+}
+
+function applyPreferenceToFilter(p) {
+  filter.tradeTypes = [...p.tradeTypes];
+  filter.propertyTypes = [...p.housingTypes];
+  filter.minDepositJeonse = nullIfMin(p.depositJeonseRange[0], 0);
+  filter.maxDepositJeonse = nullIfMax(
+    p.depositJeonseRange[1],
+    DEPOSIT_JEONSE.max,
+  );
+  filter.minMonthlyRent = nullIfMin(p.monthlyRentRange[0], 0);
+  filter.maxMonthlyRent = nullIfMax(p.monthlyRentRange[1], MONTHLY_RENT.max);
+  filter.minSalePrice = nullIfMin(p.salePriceRange[0], SALE_PRICE.min);
+  filter.maxSalePrice = nullIfMax(p.salePriceRange[1], SALE_PRICE.max);
+  filter.minAreaM2 = nullIfMin(Number(p.areaRange[0]), 0);
+  filter.maxAreaM2 = nullIfMax(Number(p.areaRange[1]), AREA.max);
+  filter.floorPreference = [...p.floorPreference];
+  filter.desiredInfraCategories = [...p.desiredInfraCategories];
+  filter.desiredAmenityCategories = [...p.desiredAmenityCategories];
+  filter.maxWorkplaceDistanceMeters = p.maxCommuteDistanceMeters;
+  filter.workplace = p.workplace;
+  filter.hasCar = p.hasCar;
+
+  priorityChips.value = [...p.priorities].sort(
+    (a, b) => a.priorityOrder - b.priorityOrder,
+  );
+}
+
+async function commitFilter() {
+  if (!preference.value) return;
+
+  const body = {
+    ...preference.value,
+    workplace: filter.workplace ?? preference.value.workplace,
+    hasCar: filter.hasCar,
+    maxCommuteDistanceMeters: filter.maxWorkplaceDistanceMeters,
+    housingTypes: [...filter.propertyTypes],
+    tradeTypes: [...filter.tradeTypes],
+    depositJeonseRange: [
+      filter.minDepositJeonse ?? 0,
+      filter.maxDepositJeonse ?? DEPOSIT_JEONSE.max,
+    ],
+    monthlyRentRange: [
+      filter.minMonthlyRent ?? 0,
+      filter.maxMonthlyRent ?? MONTHLY_RENT.max,
+    ],
+    salePriceRange: [
+      filter.minSalePrice ?? SALE_PRICE.min,
+      filter.maxSalePrice ?? SALE_PRICE.max,
+    ],
+    areaRange: [filter.minAreaM2 ?? 0, filter.maxAreaM2 ?? AREA.max],
+    floorPreference: [...filter.floorPreference],
+    desiredInfraCategories: [...filter.desiredInfraCategories],
+    desiredAmenityCategories: [...filter.desiredAmenityCategories],
+    priorities: priorityChips.value.map((p) => ({
+      criterion: p.criterion,
+      priorityOrder: p.priorityOrder,
+    })),
+  };
+
+  try {
+    const res = await client.put('/users/me/preferences', body);
+    preference.value = res.data.data;
+    await fetchProperties();
+  } catch (e) {
+    loadError.value = getApiErrorMessage(e);
+  }
+}
+
+watch(selectedBuildingId, async (id) => {
+  if (!id) {
+    infraItems.value = [];
+    return;
+  }
+  const target = items.value.find((p) => p.buildingId === id);
+  if (!target) {
+    infraItems.value = [];
+    return;
+  }
+  try {
+    const res = await propertyApi.infrastructures(target.propertyId);
+    infraItems.value = res.data?.infrastructures ?? [];
+  } catch {
+    infraItems.value = [];
+  }
+});
 
 const { DEPOSIT_JEONSE, SALE_PRICE, MONTHLY_RENT, AREA } =
   PREFERENCE_SLIDER_CONFIG;
@@ -1011,23 +874,16 @@ watch(layerCategories, (v) => {
   mapLayers.value = [...v];
 });
 
-const dots = computed(() => {
-  if (!selectedBuildingId.value) return [];
-
-  // 인프라/편의시설 관련
-  const infra = RAW_INFRA.filter(
-    (i) => i.buildingId === selectedBuildingId.value,
-  )
-    .filter((i) => mapLayers.value.includes(i.category))
+const dots = computed(() =>
+  infraItems.value
+    .filter((i) => mapLayers.value.includes(i.infraCategory))
     .map((i) => ({
       lat: Number(i.latitude),
       lng: Number(i.longitude),
-      category: i.category,
-      name: i.name,
-    }));
-
-  return [...infra];
-});
+      category: i.infraCategory,
+      name: i.infraName,
+    })),
+);
 
 const commuteChipOn = computed(
   () =>
@@ -1196,9 +1052,6 @@ function toggleIn(list, value) {
   else list.splice(i, 1);
 }
 
-const nullIfMin = (v, min) => (v <= min ? null : v);
-const nullIfMax = (v, max) => (v >= max ? null : v);
-
 function toggleDraftTrade(t) {
   const i = draft.tradeTypes.indexOf(t);
   if (i !== -1) {
@@ -1209,11 +1062,12 @@ function toggleDraftTrade(t) {
   }
 }
 
-function applyCommute() {
+async function applyCommute() {
   filter.maxWorkplaceDistanceMeters = draft.distance;
   filter.workplace = draft.workplace;
   filter.hasCar = draft.hasCar;
   closeSheet();
+  await commitFilter();
 }
 
 function resetCommute() {
@@ -1231,7 +1085,7 @@ function selectWorkplace(location) {
   isLocationPickerOpen.value = false;
 }
 
-function applyHousing() {
+async function applyHousing() {
   filter.tradeTypes = [...selectedTrades.value];
 
   if (draft.tradeTypes.includes('월세') || draft.tradeTypes.includes('전세')) {
@@ -1265,6 +1119,7 @@ function applyHousing() {
   filter.minAreaM2 = draft.areaRange[0] > 0 ? draft.areaRange[0] : null;
   filter.maxAreaM2 = draft.areaRange[1] < AREA.max ? draft.areaRange[1] : null;
   closeSheet();
+  await commitFilter();
 }
 
 function resetHousing() {
@@ -1277,10 +1132,11 @@ function resetHousing() {
   draft.areaRange = [0, AREA.max];
 }
 
-function applyInfra() {
+async function applyInfra() {
   filter.desiredInfraCategories = [...draft.infra];
   filter.desiredAmenityCategories = [...draft.amenity];
   closeSheet();
+  await commitFilter();
 }
 
 function applySort(key) {
@@ -1288,12 +1144,13 @@ function applySort(key) {
   closeSheet();
 }
 
-function applyPriority() {
+async function applyPriority() {
   priorityChips.value = draft.priorities.map((c, i) => ({
     criterion: c,
     priorityOrder: i + 1,
   }));
   closeSheet();
+  await commitFilter();
 }
 
 function resetInfra() {
