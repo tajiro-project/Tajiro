@@ -35,6 +35,12 @@
         )
     </select>
 
+    <select id="existsProperty" resultType="boolean">
+        SELECT EXISTS(
+            SELECT 1 FROM property WHERE id = #{propertyId}
+        )
+    </select>
+
     <insert id="insertFavorite" parameterType="FavoriteVO" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO favorite_property (user_id, property_id, created_at)
         VALUES (#{userId}, #{propertyId}, #{createdAt})
