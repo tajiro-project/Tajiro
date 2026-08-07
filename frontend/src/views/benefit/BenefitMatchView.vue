@@ -1,16 +1,5 @@
 <template>
   <div class="benefit">
-    <PageHeader title="정책 · 금융 추천">
-      <template #right>
-        <button
-          class="edit-badge"
-          @click="$router.push('/profile-setup')"
-        >
-          내 정보 수정
-        </button>
-      </template>
-    </PageHeader>
-
     <simplebar
       class="scroll-area"
       :class="{ dimmed: needProfile }"
@@ -213,7 +202,6 @@
 
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue';
-import PageHeader from '@/components/PageHeader.vue';
 import simplebar from 'simplebar-vue';
 import { financeApi, policyApi } from '@/api/services';
 

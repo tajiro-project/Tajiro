@@ -1,6 +1,5 @@
 <template>
   <div class="reports">
-    <PageHeader title="비교 리포트 보관함" />
 
     <simplebar class="scroll-area">
       <div class="top-row">
@@ -159,7 +158,6 @@
 <script setup>
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import PageHeader from '@/components/PageHeader.vue';
 import simplebar from 'simplebar-vue';
 import client, { getApiErrorMessage } from '@/api/client';
 

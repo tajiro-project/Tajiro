@@ -1,6 +1,5 @@
 <template>
   <div class="mypage">
-    <PageHeader title="마이페이지" />
 
     <simplebar class="scroll-area">
       <section class="profile-card">
@@ -133,7 +132,6 @@ import { useRouter } from 'vue-router';
 import simplebar from 'simplebar-vue';
 import client, { getApiErrorMessage, withMock } from '@/api/client';
 import { mockDashboard } from '@/api/mockData';
-import PageHeader from '@/components/PageHeader.vue';
 
 const CRITERION_LABELS = {
   COMMUTE: '직주근접',

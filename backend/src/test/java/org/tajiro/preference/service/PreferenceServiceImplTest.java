@@ -8,6 +8,8 @@ import org.tajiro.preference.domain.HousingPreferenceVO;
 import org.tajiro.preference.domain.PreferencePriorityVO;
 import org.tajiro.preference.dto.PreferenceDTO;
 import org.tajiro.preference.mapper.PreferenceMapper;
+import org.tajiro.property.domain.PropertyValueAnalysisResultVO;
+import org.tajiro.property.mapper.PropertyScoreMapper;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -21,12 +23,14 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class PreferenceServiceImplTest {
 
     private InMemoryPreferenceMapper mapper;
+    private InMemoryPropertyScoreMapper propertyScoreMapper;
     private PreferenceServiceImpl service;
 
     @BeforeEach
     void setUp() {
         mapper = new InMemoryPreferenceMapper();
-        service = new PreferenceServiceImpl(mapper);
+        propertyScoreMapper = new InMemoryPropertyScoreMapper();
+        service = new PreferenceServiceImpl(mapper, propertyScoreMapper);
     }
 
     @Test
@@ -38,6 +42,7 @@ class PreferenceServiceImplTest {
         assertEquals("서울특별시 중구 세종대로 110", saved.getWorkplace().getAddress());
         assertEquals("COMMUTE", saved.getPriorities().get(0).getCriterion());
         assertEquals(2, mapper.priorities.size());
+        assertEquals(1L, propertyScoreMapper.deletedUserId);
     }
 
     @Test
@@ -124,6 +129,20 @@ class PreferenceServiceImplTest {
         public int insertPriorities(List<PreferencePriorityVO> priorities) {
             this.priorities = new ArrayList<>(priorities);
             return priorities.size();
+        }
+    }
+
+    private static class InMemoryPropertyScoreMapper implements PropertyScoreMapper {
+        private Long deletedUserId;
+
+        @Override
+        public void upsertAll(List<PropertyValueAnalysisResultVO> scores) {
+        }
+
+        @Override
+        public int deleteByUserId(Long userId) {
+            deletedUserId = userId;
+            return 1;
         }
     }
 }

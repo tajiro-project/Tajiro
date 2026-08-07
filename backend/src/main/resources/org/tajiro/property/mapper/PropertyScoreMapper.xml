@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.tajiro.property.mapper.PropertyScoreMapper">
+
+    <insert id="upsertAll">
+        INSERT INTO property_value_analysis_result (
+            user_id,
+            property_id,
+            workplace_distance_meters,
+            recommend_score,
+            computed_at
+        ) VALUES
+        <foreach collection="scores" item="score" separator=",">
+            (
+                #{score.userId},
+                #{score.propertyId},
+                #{score.workplaceDistanceMeters},
+                #{score.recommendScore},
+                #{score.computedAt}
+            )
+        </foreach>
+        ON DUPLICATE KEY UPDATE
+            workplace_distance_meters = VALUES(workplace_distance_meters),
+            recommend_score = VALUES(recommend_score),
+            computed_at = VALUES(computed_at)
+    </insert>
+
+    <delete id="deleteByUserId">
+        DELETE FROM property_value_analysis_result
+        WHERE user_id = #{userId}
+    </delete>
+
+</mapper>

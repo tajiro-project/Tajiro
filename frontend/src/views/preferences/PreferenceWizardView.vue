@@ -1,6 +1,5 @@
 <template>
   <div class="pref-wizard">
-    <PageHeader title="가치관 설정" />
 
     <!-- STEP 표시 + 진행 바 -->
     <div class="step-head">
@@ -376,7 +375,6 @@ import { preferenceApi } from '@/api/services';
 import DualSlider from '@/components/DualSlider.vue';
 import KakaoLocation from '@/components/KakaoLocation.vue';
 import simplebar from 'simplebar-vue';
-import PageHeader from '@/components/PageHeader.vue';
 import SingleSlider from '@/components/SingleSlider.vue';
 import {
   AMENITY_CATEGORIES,
