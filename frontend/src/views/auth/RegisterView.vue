@@ -343,7 +343,7 @@ async function handleRegister() {
 
     const payload = data.data ?? data;
     localStorage.setItem('accessToken', payload.accessToken);
-    router.push('/profile-setup');
+    router.push('/home');
   } catch (error) {
     errorMessage.value = getApiErrorMessage(
       error,
