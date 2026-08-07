@@ -16,7 +16,14 @@
             @click="goDetail(item)"
           >
             <span class="thumb">
+              <img
+                v-if="item.imageUrl"
+                :src="item.imageUrl"
+                :alt="item.title"
+                class="thumb-img"
+              />
               <svg
+                v-else
                 width="30"
                 height="30"
                 viewBox="0 0 30 30"
@@ -97,13 +104,23 @@ onMounted(loadFavorites);
 
 async function loadFavorites() {
   const data = await favoriteApi.list();
-  items.value = Array.isArray(data) ? data : [];
+  const payload = data?.data ?? data;
+  items.value = Array.isArray(payload) ? payload : [];
+}
+
+function moneyLabel(manwon) {
+  if (manwon >= 10000) {
+    const eok = Math.floor(manwon / 10000);
+    const rest = manwon % 10000;
+    return rest === 0 ? `${eok}억` : `${eok}억 ${rest}`;
+  }
+  return String(manwon);
 }
 
 function priceLabel(item) {
   return item.tradeType === '월세'
-    ? `월세 ${item.deposit}/${item.monthlyRent}`
-    : `${item.tradeType} ${item.deposit}`;
+    ? `월세 ${moneyLabel(item.deposit)}/${moneyLabel(item.monthlyRent)}`
+    : `${item.tradeType} ${moneyLabel(item.deposit)}`;
 }
 
 function pyeong(areaM2) {
@@ -189,6 +206,13 @@ async function removeFavorite(item) {
   flex-shrink: 0;
   background: var(--yellow-tint);
   border-radius: 10px;
+  overflow: hidden;
+}
+
+.thumb-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .card-texts {
