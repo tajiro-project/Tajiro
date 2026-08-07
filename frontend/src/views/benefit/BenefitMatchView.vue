@@ -341,7 +341,8 @@ function matchesTargetCodes(policy, codes) {
 
   const policyCodes = String(value)
     .split(',')
-    .map(normalizeTargetCode);
+    .map(normalizeTargetCode)
+    .filter(Boolean);
   return codes.some((code) => policyCodes.includes(code));
 }
 
