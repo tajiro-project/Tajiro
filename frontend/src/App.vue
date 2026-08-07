@@ -2,8 +2,17 @@
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
 import AppTabBar from '@/components/AppTabBar.vue';
+import PageHeader from '@/components/PageHeader.vue';
 
 const route = useRoute();
+
+const headerTitle = computed(() => route.meta.headerTitle ?? '');
+const showHeader = computed(() => Boolean(headerTitle.value));
+const headerBack = computed(() => {
+  const value = route.meta.headerBack;
+  return typeof value === 'function' ? value(route) : value ?? true;
+});
+const headerBackTo = computed(() => route.meta.headerBackTo ?? null);
 
 const activeTab = computed(() => {
   if (route.path === '/favorites') return 'scrap';
@@ -31,6 +40,19 @@ const showTabBar = computed(() => {
 
 <template>
   <div class="app-frame">
+    <PageHeader
+      v-if="showHeader"
+      :title="headerTitle"
+      :back="headerBack"
+      :back-to="headerBackTo"
+    >
+      <template v-if="route.meta.headerAction === 'edit-profile'" #right>
+        <router-link class="header-action" to="/profile-setup">
+          내 정보 수정
+        </router-link>
+      </template>
+    </PageHeader>
+
     <main class="route-content">
       <router-view />
     </main>
@@ -42,3 +64,15 @@ const showTabBar = computed(() => {
     />
   </div>
 </template>
+
+<style scoped>
+.header-action {
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: var(--kb-yellow-header);
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+}
+</style>

@@ -3,7 +3,6 @@
     v-if="product"
     class="loan-detail"
   >
-    <PageHeader title="대출상품 상세" />
 
     <simplebar class="scroll-area">
       <!-- 상품 요약 (다크 카드) -->
@@ -175,7 +174,6 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
-import PageHeader from '@/components/PageHeader.vue';
 import simplebar from 'simplebar-vue';
 import { financeApi } from '@/api/services';
 
