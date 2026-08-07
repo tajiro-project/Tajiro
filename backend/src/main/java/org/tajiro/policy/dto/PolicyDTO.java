@@ -30,7 +30,7 @@ public class PolicyDTO {
     private String requiredDocuments;
     private String description;
     private String sumDescription;
-    private Integer sbizCd;
+    private String sbizCd;
 
 
 
