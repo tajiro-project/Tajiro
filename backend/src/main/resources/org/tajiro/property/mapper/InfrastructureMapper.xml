@@ -42,4 +42,18 @@
           AND si.sort_order = 1
     </select>
 
+    <select id="selectInfraPointsByBuildingId" resultType="InfrastructureInfoDTO">
+        SELECT
+            i.infra_category AS infraCategory,
+            d.infra_name AS infraName,
+            d.distance_m AS distanceM,
+            CEIL(d.distance_m / 67) AS walkMinutes,
+            d.latitude AS latitude,
+            d.longitude AS longitude
+        FROM infrastructure i
+        INNER JOIN infrastructure_detail d
+        ON i.id = d.infra_id
+        WHERE i.building_id = #{buildingId} AND d.sort_order &lt;= 3
+        ORDER BY i.infra_category, d.sort_order
+    </select>
 </mapper>

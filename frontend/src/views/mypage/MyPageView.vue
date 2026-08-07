@@ -136,7 +136,7 @@ import { mockDashboard } from '@/api/mockData';
 const CRITERION_LABELS = {
   COMMUTE: '직주근접',
   COST: '가성비',
-  AMENITY: '편의 · 치안',
+  AMENITY: '편의',
   INFRA: '인프라',
   AREA: '매물면적',
 };
@@ -159,6 +159,8 @@ const sortedPriorities = computed(() => {
 });
 
 const regionSummary = computed(() => {
+  if (!dashboard.value.targetRegion) return '내 정보를 입력해주세요';
+
   const age = calcAge(dashboard.value.birthDate);
   const ageText = age === null ? '' : ` · 만 ${age}세`;
   return `${dashboard.value.targetRegion} 이주 준비 중${ageText}`;

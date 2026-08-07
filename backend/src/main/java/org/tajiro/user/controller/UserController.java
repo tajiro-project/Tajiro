@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.tajiro.auth.service.AuthService;
 import org.tajiro.common.api.ApiResponse;
 import org.tajiro.common.api.ErrorCode;
 import org.tajiro.exception.BusinessException;
@@ -26,6 +27,7 @@ import java.time.LocalDateTime;
 public class UserController {
 
     private final UserProfileService userProfileService;
+    private final AuthService authService;
 
     @GetMapping("/profile")
     public ResponseEntity<ApiResponse<UserProfileDTO>> getProfile(@ApiIgnore @AuthenticationPrincipal Long userId) {
@@ -46,5 +48,15 @@ public class UserController {
 
         LocalDateTime updatedAt = userProfileService.saveProfile(userId, request);
         return ResponseEntity.ok(ApiResponse.success(ProfileUpdateResponse.builder().updatedAt(updatedAt).build()));
+    }
+
+    @DeleteMapping
+    public ResponseEntity<Void> withdraw(@ApiIgnore @AuthenticationPrincipal Long userId) {
+        if (userId == null) {
+            throw new BusinessException(ErrorCode.AUTH_REQUIRED);
+        }
+
+        authService.withdraw(userId);
+        return ResponseEntity.noContent().build();
     }
 }

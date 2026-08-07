@@ -37,6 +37,12 @@
             placeholder="example@email.com"
             required
           />
+          <p
+            v-if="email && !emailValid"
+            class="field-hint"
+          >
+            올바른 이메일 형식을 입력해주세요
+          </p>
         </div>
         <div class="field">
           <label
@@ -73,6 +79,12 @@
             placeholder="비밀번호를 다시 입력해주세요"
             required
           />
+          <p
+            v-if="passwordConfirm && !passwordConfirmValid"
+            class="field-hint"
+          >
+            비밀번호가 일치하지 않습니다
+          </p>
         </div>
 
         <div class="terms-box">
@@ -139,7 +151,9 @@
                 type="button"
                 @click="openTermsSheet(term.id)"
               >
-                <span>{{ term.label }}</span>
+                <span>{{
+                  (term.required ? '[필수] ' : '[선택] ') + term.title
+                }}</span>
                 <svg
                   width="14"
                   height="14"
@@ -188,7 +202,7 @@
         <div class="sheet-handle"></div>
         <div class="sheet-header">
           <p class="sheet-title">
-            {{ activeTerm.label.replace(/^\[(필수|선택)\] /, '') }}
+            {{ activeTerm.title }}
           </p>
           <button
             class="sheet-close"
@@ -224,19 +238,22 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import client, { getApiErrorMessage, withMock } from '@/api/client';
 import { mockTerms } from '@/api/mockData';
 import simplebar from 'simplebar-vue';
 
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PASSWORD_PATTERN = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
 
-const termsList = [
-  { id: 1, label: '[필수] 서비스 이용약관 동의', required: true },
-  { id: 2, label: '[필수] 개인정보 수집 · 이용 동의', required: true },
-  { id: 3, label: '[선택] 마케팅 정보 수신 동의', required: false },
+const MOCK_TERMS_LIST = [
+  { id: 1, title: '서비스 이용약관 동의', required: true, version: '1.0' },
+  { id: 2, title: '개인정보 수집 · 이용 동의', required: true, version: '1.0' },
+  { id: 3, title: '마케팅 정보 수신 동의', required: false, version: '1.0' },
 ];
+
+const termsList = ref([]);
 
 const router = useRouter();
 const name = ref('');
@@ -245,37 +262,57 @@ const password = ref('');
 const passwordConfirm = ref('');
 const loading = ref(false);
 const errorMessage = ref('');
-const agreedIds = ref([1, 2]);
+const agreedIds = ref([]);
 const activeTermId = ref(null);
 const activeTermContent = ref('');
 
 const activeTerm = computed(
-  () => termsList.find((term) => term.id === activeTermId.value) ?? null,
+  () => termsList.value.find((term) => term.id === activeTermId.value) ?? null,
 );
 
 const isAllAgreed = computed(() =>
-  termsList.every((term) => agreedIds.value.includes(term.id)),
+  termsList.value.every((term) => agreedIds.value.includes(term.id)),
 );
 
 const requiredAgreed = computed(() => {
-  return termsList
+  return termsList.value
     .filter((term) => term.required)
     .every((term) => agreedIds.value.includes(term.id));
 });
+
+const emailValid = computed(
+  () => email.value === '' || EMAIL_PATTERN.test(email.value),
+);
 
 const passwordValid = computed(
   () => password.value === '' || PASSWORD_PATTERN.test(password.value),
 );
 
+const passwordConfirmValid = computed(
+  () => passwordConfirm.value === '' || passwordConfirm.value === password.value,
+);
+
 const canSubmit = computed(() => {
   return (
+    termsList.value.length > 0 &&
     name.value.trim() !== '' &&
-    email.value.trim() !== '' &&
+    EMAIL_PATTERN.test(email.value) &&
     PASSWORD_PATTERN.test(password.value) &&
     password.value === passwordConfirm.value &&
     requiredAgreed.value
   );
 });
+
+onMounted(loadTerms);
+
+async function loadTerms() {
+  const data = await withMock(
+    () => client.get('/terms'),
+    () => MOCK_TERMS_LIST,
+  );
+  const payload = data?.data ?? data;
+  termsList.value = payload ?? [];
+}
 
 function isAgreed(termId) {
   return agreedIds.value.includes(termId);
@@ -290,7 +327,9 @@ function toggleTerm(termId) {
 }
 
 function toggleAll() {
-  agreedIds.value = isAllAgreed.value ? [] : termsList.map((term) => term.id);
+  agreedIds.value = isAllAgreed.value
+    ? []
+    : termsList.value.map((term) => term.id);
 }
 
 async function openTermsSheet(termId) {
@@ -330,7 +369,7 @@ async function handleRegister() {
         name: name.value,
         email: email.value,
         password: password.value,
-        agreements: termsList.map((term) => ({
+        agreements: termsList.value.map((term) => ({
           termsId: term.id,
           agreed: isAgreed(term.id),
         })),

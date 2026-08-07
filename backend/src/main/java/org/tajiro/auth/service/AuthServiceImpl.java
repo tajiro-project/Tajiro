@@ -15,10 +15,14 @@ import org.tajiro.exception.BusinessException;
 import org.tajiro.security.jwt.JwtProvider;
 
 import java.util.List;
+import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
+
+    private static final Pattern EMAIL_PATTERN = Pattern.compile("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$");
+    private static final Pattern PASSWORD_PATTERN = Pattern.compile("^(?=.*[A-Za-z])(?=.*\\d).{8,}$");
 
     private final AuthMapper authMapper;
     private final PasswordEncoder passwordEncoder;
@@ -33,6 +37,10 @@ public class AuthServiceImpl implements AuthService {
             throw new BusinessException(ErrorCode.LOGIN_FAILED);
         }
 
+        if (!"ACTIVE".equals(user.getStatus())) {
+            throw new BusinessException(ErrorCode.LOGIN_FAILED);
+        }
+
         String accessToken = jwtProvider.createAccessToken(user.getId(), user.getEmail());
         return LoginResponse.of(accessToken, user);
     }
@@ -40,8 +48,15 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public RegisterResponse register(RegisterRequest request) {
-        if (authMapper.findByEmail(request.getEmail()) != null) {
-            throw new BusinessException(ErrorCode.EMAIL_DUPLICATE);
+        validateRegisterRequest(request);
+
+        UserVO existing = authMapper.findByEmail(request.getEmail());
+        if (existing != null) {
+            if (!"ACTIVE".equals(existing.getStatus())) {
+                authMapper.releaseWithdrawnEmail(existing.getId());
+            } else {
+                throw new BusinessException(ErrorCode.EMAIL_DUPLICATE);
+            }
         }
 
         validateRequiredTermsAgreed(request);
@@ -64,6 +79,20 @@ public class AuthServiceImpl implements AuthService {
                 .userId(user.getId())
                 .accessToken(accessToken)
                 .build();
+    }
+
+    @Override
+    @Transactional
+    public void withdraw(Long userId) {
+        authMapper.softDeleteUser(userId);
+    }
+
+    private void validateRegisterRequest(RegisterRequest request) {
+        if (request.getName() == null || request.getName().isBlank()
+                || request.getEmail() == null || !EMAIL_PATTERN.matcher(request.getEmail()).matches()
+                || request.getPassword() == null || !PASSWORD_PATTERN.matcher(request.getPassword()).matches()) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
+        }
     }
 
     private void validateRequiredTermsAgreed(RegisterRequest request) {

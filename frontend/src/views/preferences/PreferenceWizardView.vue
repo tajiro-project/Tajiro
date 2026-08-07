@@ -1,6 +1,5 @@
 <template>
   <div class="pref-wizard">
-
     <!-- STEP 표시 + 진행 바 -->
     <div class="step-head">
       <p class="step-line">
@@ -21,349 +20,293 @@
     </div>
 
     <!-- STEP 1 — 이주·통근 정보 -->
-    <p
-      v-if="isLoading"
-      class="status-message"
-      role="status"
-    >
+    <p v-if="isLoading" class="status-message" role="status">
       저장된 설정을 불러오는 중입니다.
     </p>
-    <p
-      v-else-if="errorMessage"
-      class="status-message error"
-      role="alert"
-    >
+    <p v-else-if="errorMessage" class="status-message error" role="alert">
       {{ errorMessage }}
     </p>
 
-    <div
+    <!-- TODO: 바깥 .content와 안쪽 simplebar .content 중첩으로 본문 높이가 0이 될 수 있음. 담당자 확인 필요. -->
+    <!-- <div
       v-if="step === 1"
       class="content"
-    >
-      <simplebar
-        v-if="step === 1"
-        class="content"
-      >
-        <div class="field">
-          <label class="section-title"
-            >선호위치(직장 / 학교 등)<span class="req">*</span></label
-          >
-          <input
-            class="field-input"
-            type="text"
-            readonly
-            :value="pref.workplace?.name ?? ''"
-            placeholder="예) 창원시 성산구 상남동"
-            @click="goLocationSelect"
-            @keydown.enter.prevent="goLocationSelect"
-          />
-        </div>
-        <div class="field">
-          <label class="section-title">
-            희망 통학·통근 거리
-            <span class="range-value">{{ commuteDistanceLabel }}</span>
-          </label>
-          <SingleSlider
-            v-model="pref.maxCommuteDistanceMeters"
-            :min="PREFERENCE_SLIDER_CONFIG.COMMUTE_DISTANCE.min"
-            :max="PREFERENCE_SLIDER_CONFIG.COMMUTE_DISTANCE.max"
-            :step="PREFERENCE_SLIDER_CONFIG.COMMUTE_DISTANCE.step"
-            :marks="PREFERENCE_SLIDER_CONFIG.COMMUTE_DISTANCE.marks"
-            aria-label="희망 통학·통근 거리"
-          />
-        </div>
-        <div class="field">
-          <label class="section-title">자차 보유 여부</label>
-          <div class="check-row">
-            <label
-              class="check-item"
-              @click="pref.hasCar = true"
-            >
-              <span
-                class="checkbox"
-                :class="{ on: pref.hasCar }"
-              >
-                <svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 12 12"
-                  fill="none"
-                >
-                  <path
-                    d="M2 6.5L4.7 9L10 3.5"
-                    stroke="#545045"
-                    stroke-width="1.8"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  />
-                </svg>
-              </span>
-              자차 보유 O
-            </label>
-            <label
-              class="check-item"
-              @click="pref.hasCar = false"
-            >
-              <span
-                class="checkbox"
-                :class="{ on: !pref.hasCar }"
-              >
-                <svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 12 12"
-                  fill="none"
-                >
-                  <path
-                    d="M2 6.5L4.7 9L10 3.5"
-                    stroke="#545045"
-                    stroke-width="1.8"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  />
-                </svg>
-              </span>
-              자차 보유 X
-            </label>
-          </div>
-        </div>
-      </simplebar>
-
-      <!-- STEP 2 — 희망 주거 조건 -->
-      <simplebar
-        v-else-if="step === 2"
-        class="content"
-      >
-        <div class="group">
-          <p class="section-title">매물 유형</p>
-          <div class="chips">
-            <button
-              v-for="t in HOUSING_OPTIONS"
-              :key="t"
-              class="chip"
-              :class="{ on: pref.housingTypes.includes(t) }"
-              @click="toggle(pref.housingTypes, t)"
-            >
-              {{ t }}
-            </button>
-          </div>
-        </div>
-        <div class="group">
-          <p class="section-title">희망 주거 형태</p>
-          <div class="chips">
-            <button
-              v-for="t in TRADE_OPTIONS"
-              :key="t"
-              class="chip"
-              :class="{ on: pref.tradeTypes.includes(t) }"
-              @click="toggle(pref.tradeTypes, t)"
-            >
-              {{ t }}
-            </button>
-          </div>
-        </div>
-
-        <div
-          v-if="pref.tradeTypes.length"
-          class="range-card"
+    > -->
+    <simplebar v-if="step === 1" class="content">
+      <div class="field">
+        <label class="section-title"
+          >선호위치(직장 / 학교 등)<span class="req">*</span></label
         >
-          <div
-            v-if="
-              pref.tradeTypes.includes('월세') ||
-              pref.tradeTypes.includes('전세')
-            "
-            class="range-group"
-          >
-            <p class="range-title">
-              보증금/전세금
-              <span class="range-value">{{ depositJeonseLabel }}</span>
-            </p>
-            <DualSlider
-              v-model="pref.depositJeonseRange"
-              :min="PREFERENCE_SLIDER_CONFIG.DEPOSIT_JEONSE.min"
-              :max="PREFERENCE_SLIDER_CONFIG.DEPOSIT_JEONSE.max"
-              :step="PREFERENCE_SLIDER_CONFIG.DEPOSIT_JEONSE.step"
-              :marks="PREFERENCE_SLIDER_CONFIG.DEPOSIT_JEONSE.marks"
-            />
-          </div>
-
-          <div
-            v-if="pref.tradeTypes.includes('월세')"
-            class="range-group"
-          >
-            <p class="range-title">
-              월세 <span class="range-value">{{ monthlyRentLabel }}</span>
-            </p>
-            <DualSlider
-              v-model="pref.monthlyRentRange"
-              :min="PREFERENCE_SLIDER_CONFIG.MONTHLY_RENT.min"
-              :max="PREFERENCE_SLIDER_CONFIG.MONTHLY_RENT.max"
-              :step="PREFERENCE_SLIDER_CONFIG.MONTHLY_RENT.step"
-              :marks="PREFERENCE_SLIDER_CONFIG.MONTHLY_RENT.marks"
-            />
-          </div>
-
-          <div
-            v-if="pref.tradeTypes.includes('매매')"
-            class="range-group"
-          >
-            <p class="range-title">
-              매매가 <span class="range-value">{{ salePriceLabel }}</span>
-            </p>
-            <DualSlider
-              v-model="pref.salePriceRange"
-              :min="PREFERENCE_SLIDER_CONFIG.SALE_PRICE.min"
-              :max="PREFERENCE_SLIDER_CONFIG.SALE_PRICE.max"
-              :step="PREFERENCE_SLIDER_CONFIG.SALE_PRICE.step"
-              :marks="PREFERENCE_SLIDER_CONFIG.SALE_PRICE.marks"
-            />
-          </div>
-        </div>
-
-        <div class="area-group">
-          <p class="range-title">
-            매물 면적
-            <span class="range-value">{{ areaLabel }}</span>
-          </p>
-          <DualSlider
-            v-model="pref.areaRange"
-            :min="AREA_MIN_M2"
-            :max="AREA_MAX_M2"
-            :step="AREA_STEP_M2"
-            :marks="AREA_MARKS"
-          />
-        </div>
-
-        <div class="group">
-          <p class="section-title">매물 층수</p>
-          <div class="chips">
-            <button
-              v-for="f in FLOOR_OPTIONS"
-              :key="f"
-              class="chip"
-              :class="{ on: pref.floorPreference.includes(f) }"
-              @click="toggle(pref.floorPreference, f)"
-            >
-              {{ f }}
-            </button>
-          </div>
-        </div>
-      </simplebar>
-
-      <!-- STEP 3 — 인프라·편의시설 -->
-      <simplebar
-        v-else-if="step === 3"
-        class="content"
-      >
-        <div class="group">
-          <p class="section-title">희망 인프라</p>
-          <p class="caption">반경 2km 이내만 표시</p>
-          <div class="chips wrap">
-            <button
-              v-for="category in INFRA_CATEGORIES"
-              :key="category.key"
-              class="chip"
-              :class="{
-                on: pref.desiredInfraCategories.includes(category.key),
-              }"
-              @click="toggle(pref.desiredInfraCategories, category.key)"
-            >
-              {{ category.label }}
-            </button>
-          </div>
-        </div>
-        <div class="group">
-          <p class="section-title">희망 편의시설</p>
-          <p class="caption">반경 2km 이내만 표시</p>
-          <div class="chips wrap">
-            <button
-              v-for="category in AMENITY_CATEGORIES"
-              :key="category.key"
-              class="chip"
-              :class="{
-                on: pref.desiredAmenityCategories.includes(category.key),
-              }"
-              @click="toggle(pref.desiredAmenityCategories, category.key)"
-            >
-              {{ category.label }}
-            </button>
-          </div>
-        </div>
-      </simplebar>
-
-      <!-- STEP 4 — 가치관 우선순위 (1~3개 선택) -->
-      <simplebar
-        v-else
-        class="content"
-      >
-        <div class="priority-head">
-          <p class="section-title big">주거 가치관 우선순위</p>
-          <p class="caption">중요한 순서대로 최대 3개까지 선택하세요.</p>
-        </div>
-        <div class="priority-list">
-          <button
-            v-for="opt in PRIORITY_OPTIONS"
-            :key="opt.criterion"
-            class="priority-card"
-            :class="{ on: priorityOrder(opt.criterion) }"
-            @click="onTogglePriority(opt.criterion)"
-          >
-            <span
-              class="p-icon"
-              v-html="opt.icon"
-            />
-            <span class="p-texts">
-              <span class="p-title">{{ opt.title }}</span>
-              <span class="p-sub">{{ opt.sub }}</span>
+        <input
+          class="field-input"
+          type="text"
+          readonly
+          :value="pref.workplace?.name ?? ''"
+          placeholder="예) 창원시 성산구 상남동"
+          @click="goLocationSelect"
+          @keydown.enter.prevent="goLocationSelect"
+        />
+      </div>
+      <div class="field">
+        <label class="section-title">
+          희망 통학·통근 거리
+          <span class="range-value">{{ commuteDistanceLabel }}</span>
+        </label>
+        <SingleSlider
+          v-model="pref.maxCommuteDistanceMeters"
+          :min="PREFERENCE_SLIDER_CONFIG.COMMUTE_DISTANCE.min"
+          :max="PREFERENCE_SLIDER_CONFIG.COMMUTE_DISTANCE.max"
+          :step="PREFERENCE_SLIDER_CONFIG.COMMUTE_DISTANCE.step"
+          :marks="PREFERENCE_SLIDER_CONFIG.COMMUTE_DISTANCE.marks"
+          aria-label="희망 통학·통근 거리"
+        />
+      </div>
+      <div class="field">
+        <label class="section-title">자차 보유 여부</label>
+        <div class="check-row">
+          <label class="check-item" @click="pref.hasCar = true">
+            <span class="checkbox" :class="{ on: pref.hasCar }">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <path
+                  d="M2 6.5L4.7 9L10 3.5"
+                  stroke="#545045"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
             </span>
-            <span
-              v-if="priorityOrder(opt.criterion)"
-              class="p-badge"
-              >{{ priorityOrder(opt.criterion) }}</span
-            >
+            자차 보유 O
+          </label>
+          <label class="check-item" @click="pref.hasCar = false">
+            <span class="checkbox" :class="{ on: !pref.hasCar }">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <path
+                  d="M2 6.5L4.7 9L10 3.5"
+                  stroke="#545045"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </span>
+            자차 보유 X
+          </label>
+        </div>
+      </div>
+    </simplebar>
+
+    <!-- STEP 2 — 희망 주거 조건 -->
+    <simplebar v-else-if="step === 2" class="content">
+      <div class="group">
+        <p class="section-title">매물 유형</p>
+        <div class="chips">
+          <button
+            v-for="t in HOUSING_OPTIONS"
+            :key="t"
+            class="chip"
+            :class="{ on: pref.housingTypes.includes(t) }"
+            @click="toggle(pref.housingTypes, t)"
+          >
+            {{ t }}
           </button>
         </div>
-      </simplebar>
-
-      <div class="fixed-footer">
-        <!-- 하단 버튼 -->
-        <div class="bottom-bar">
+      </div>
+      <div class="group">
+        <p class="section-title">희망 주거 형태</p>
+        <div class="chips">
           <button
-            v-if="step > 1"
-            class="btn-prev"
-            :disabled="isSaving"
-            @click="go(step - 1)"
+            v-for="t in TRADE_OPTIONS"
+            :key="t"
+            class="chip"
+            :class="{ on: pref.tradeTypes.includes(t) }"
+            @click="toggle(pref.tradeTypes, t)"
           >
-            이전
-          </button>
-          <button
-            class="btn-cta"
-            :disabled="
-              isLoading ||
-              isSaving ||
-              (step === 1 && !pref.workplace) ||
-              (step === PREFERENCE_STEP_COUNT && pref.priorities.length < 1)
-            "
-            @click="onNext"
-          >
-            {{
-              isSaving
-                ? '저장 중...'
-                : step === PREFERENCE_STEP_COUNT
-                  ? '설정 완료'
-                  : '다음'
-            }}
+            {{ t }}
           </button>
         </div>
       </div>
 
-      <KakaoLocation
-        :open="isLocationPickerOpen"
-        :initial-location="pref.workplace"
-        @close="isLocationPickerOpen = false"
-        @select="selectWorkplace"
-      />
+      <div v-if="pref.tradeTypes.length" class="range-card">
+        <div
+          v-if="
+            pref.tradeTypes.includes('월세') || pref.tradeTypes.includes('전세')
+          "
+          class="range-group"
+        >
+          <p class="range-title">
+            보증금/전세금
+            <span class="range-value">{{ depositJeonseLabel }}</span>
+          </p>
+          <DualSlider
+            v-model="pref.depositJeonseRange"
+            :min="PREFERENCE_SLIDER_CONFIG.DEPOSIT_JEONSE.min"
+            :max="PREFERENCE_SLIDER_CONFIG.DEPOSIT_JEONSE.max"
+            :step="PREFERENCE_SLIDER_CONFIG.DEPOSIT_JEONSE.step"
+            :marks="PREFERENCE_SLIDER_CONFIG.DEPOSIT_JEONSE.marks"
+          />
+        </div>
+
+        <div v-if="pref.tradeTypes.includes('월세')" class="range-group">
+          <p class="range-title">
+            월세 <span class="range-value">{{ monthlyRentLabel }}</span>
+          </p>
+          <DualSlider
+            v-model="pref.monthlyRentRange"
+            :min="PREFERENCE_SLIDER_CONFIG.MONTHLY_RENT.min"
+            :max="PREFERENCE_SLIDER_CONFIG.MONTHLY_RENT.max"
+            :step="PREFERENCE_SLIDER_CONFIG.MONTHLY_RENT.step"
+            :marks="PREFERENCE_SLIDER_CONFIG.MONTHLY_RENT.marks"
+          />
+        </div>
+
+        <div v-if="pref.tradeTypes.includes('매매')" class="range-group">
+          <p class="range-title">
+            매매가 <span class="range-value">{{ salePriceLabel }}</span>
+          </p>
+          <DualSlider
+            v-model="pref.salePriceRange"
+            :min="PREFERENCE_SLIDER_CONFIG.SALE_PRICE.min"
+            :max="PREFERENCE_SLIDER_CONFIG.SALE_PRICE.max"
+            :step="PREFERENCE_SLIDER_CONFIG.SALE_PRICE.step"
+            :marks="PREFERENCE_SLIDER_CONFIG.SALE_PRICE.marks"
+          />
+        </div>
+      </div>
+
+      <div class="area-group">
+        <p class="range-title">
+          매물 면적
+          <span class="range-value">{{ areaLabel }}</span>
+        </p>
+        <DualSlider
+          v-model="pref.areaRange"
+          :min="AREA_MIN_M2"
+          :max="AREA_MAX_M2"
+          :step="AREA_STEP_M2"
+          :marks="AREA_MARKS"
+        />
+      </div>
+
+      <div class="group">
+        <p class="section-title">매물 층수</p>
+        <div class="chips">
+          <button
+            v-for="f in FLOOR_OPTIONS"
+            :key="f"
+            class="chip"
+            :class="{ on: pref.floorPreference.includes(f) }"
+            @click="toggle(pref.floorPreference, f)"
+          >
+            {{ f }}
+          </button>
+        </div>
+      </div>
+    </simplebar>
+
+    <!-- STEP 3 — 인프라·편의시설 -->
+    <simplebar v-else-if="step === 3" class="content">
+      <div class="group">
+        <p class="section-title">희망 인프라</p>
+        <p class="caption">반경 2km 이내만 표시</p>
+        <div class="chips wrap">
+          <button
+            v-for="category in INFRA_CATEGORIES"
+            :key="category.key"
+            class="chip"
+            :class="{
+              on: pref.desiredInfraCategories.includes(category.key),
+            }"
+            @click="toggle(pref.desiredInfraCategories, category.key)"
+          >
+            {{ category.label }}
+          </button>
+        </div>
+      </div>
+      <div class="group">
+        <p class="section-title">희망 편의시설</p>
+        <p class="caption">반경 2km 이내만 표시</p>
+        <div class="chips wrap">
+          <button
+            v-for="category in AMENITY_CATEGORIES"
+            :key="category.key"
+            class="chip"
+            :class="{
+              on: pref.desiredAmenityCategories.includes(category.key),
+            }"
+            @click="toggle(pref.desiredAmenityCategories, category.key)"
+          >
+            {{ category.label }}
+          </button>
+        </div>
+      </div>
+    </simplebar>
+
+    <!-- STEP 4 — 가치관 우선순위 (1~3개 선택) -->
+    <simplebar v-else class="content">
+      <div class="priority-head">
+        <p class="section-title big">주거 가치관 우선순위</p>
+        <p class="caption">중요한 순서대로 최대 3개까지 선택하세요.</p>
+      </div>
+      <div class="priority-list">
+        <button
+          v-for="opt in PRIORITY_OPTIONS"
+          :key="opt.criterion"
+          class="priority-card"
+          :class="{ on: priorityOrder(opt.criterion) }"
+          @click="onTogglePriority(opt.criterion)"
+        >
+          <span class="p-icon" v-html="opt.icon" />
+          <span class="p-texts">
+            <span class="p-title">{{ opt.title }}</span>
+            <span class="p-sub">{{ opt.sub }}</span>
+          </span>
+          <span v-if="priorityOrder(opt.criterion)" class="p-badge">{{
+            priorityOrder(opt.criterion)
+          }}</span>
+        </button>
+      </div>
+    </simplebar>
+
+    <div class="fixed-footer">
+      <!-- 하단 버튼 -->
+      <div class="bottom-bar">
+        <button
+          v-if="step > 1"
+          class="btn-prev"
+          :disabled="isSaving"
+          @click="go(step - 1)"
+        >
+          이전
+        </button>
+        <button
+          class="btn-cta"
+          :disabled="
+            isLoading ||
+            isSaving ||
+            (step === 1 && !pref.workplace) ||
+            (step === PREFERENCE_STEP_COUNT && pref.priorities.length < 1)
+          "
+          @click="onNext"
+        >
+          {{
+            isSaving
+              ? '저장 중...'
+              : step === PREFERENCE_STEP_COUNT
+                ? '설정 완료'
+                : '다음'
+          }}
+        </button>
+      </div>
     </div>
+
+    <KakaoLocation
+      :open="isLocationPickerOpen"
+      :initial-location="pref.workplace"
+      @close="isLocationPickerOpen = false"
+      @select="selectWorkplace"
+    />
+    <!-- </div> -->
   </div>
 </template>
 
