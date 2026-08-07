@@ -549,7 +549,7 @@ import { computed, ref, reactive, watch, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { infraColor } from '@/constants/infraIcons';
 
-import { propertyApi } from '@/api/services';
+import { propertyApi, buildingApi } from '@/api/services';
 import client, { getApiErrorMessage } from '@/api/client';
 
 import {
@@ -692,11 +692,7 @@ watch(selectedBuildingId, async (id) => {
     infraItems.value = [];
     return;
   }
-  const target = items.value.find((p) => p.buildingId === id);
-  if (!target) {
-    infraItems.value = [];
-    return;
-  }
+
   try {
     const res = await propertyApi.infrastructures(target.propertyId);
     infraItems.value = res.data?.infrastructures ?? [];

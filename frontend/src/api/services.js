@@ -128,6 +128,12 @@ export const propertyApi = {
   },
 };
 
+// ---------- building ----------
+export const buildingApi = {
+  infraPoints: async (buildingId) =>
+    (await client.get(`/buildings/${buildingId}/infrastructures`)).data,
+};
+
 // ---------- favorite ----------
 export const favoriteApi = {
   list: () =>
