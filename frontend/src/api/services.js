@@ -47,12 +47,18 @@ export const financeApi = {
 // ---------- policy ----------
 export const policyApi = {
   list: (regionCode, keyword) =>
-    withMock(() => client.get('/policies', { params: { regionCode, keyword } }), mock.mockPolicies),
+    withMock(
+      () => client.get('/policies', { params: { regionCode, keyword } }),
+      mock.mockPolicies,
+    ),
   matches: (keyword) =>
-    withMock(() => client.get('/policies/matches', { params: { keyword } }), mock.mockPolicies),
-  detail: (policyId) => withMock(() => client.get(`/policies/${policyId}`), mock.mockPolicyDetail),
-}
-
+    withMock(
+      () => client.get('/policies/matches', { params: { keyword } }),
+      mock.mockPolicies,
+    ),
+  detail: (policyId) =>
+    withMock(() => client.get(`/policies/${policyId}`), mock.mockPolicyDetail),
+};
 
 // ---------- property ----------
 export const propertyApi = {
@@ -111,6 +117,15 @@ export const propertyApi = {
         },
       ],
     ),
+  getList: async ({ centerLat, centerLng } = {}) => {
+    const params = {};
+    if (centerLat != null && centerLng != null) {
+      params.centerLat = centerLat;
+      params.centerLng = centerLng;
+    }
+    const res = await client.get('/properties', { params });
+    return (res.data.data ?? []).map((p) => ({ ...p, propertyId: p.id }));
+  },
 };
 
 // ---------- favorite ----------
@@ -140,18 +155,22 @@ export const comparisonApi = {
   removeFromBox: async (propertyId) =>
     (await client.delete(`/users/me/compare/${propertyId}`)).data,
   metrics: async (propertyIds) => {
-    const sortedIds = [...(propertyIds ?? [])].map(Number).sort((a, b) => a - b);
+    const sortedIds = [...(propertyIds ?? [])]
+      .map(Number)
+      .sort((a, b) => a - b);
     return (
-      await client.get("/comparisons/metrics", {
-        params: { propertyIds: sortedIds.join(",") },
+      await client.get('/comparisons/metrics', {
+        params: { propertyIds: sortedIds.join(',') },
       })
     ).data;
   },
   analyze: async (propertyIds) => {
-    const sortedIds = [...(propertyIds ?? [])].map(Number).sort((a, b) => a - b);
+    const sortedIds = [...(propertyIds ?? [])]
+      .map(Number)
+      .sort((a, b) => a - b);
     return (
       await client.post(
-        "/comparisons/analyze",
+        '/comparisons/analyze',
         { propertyIds: sortedIds },
         { timeout: 35000 },
       )
