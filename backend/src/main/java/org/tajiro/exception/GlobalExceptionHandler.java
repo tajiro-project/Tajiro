@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.tajiro.common.api.ApiResponse;
 import org.tajiro.common.api.ErrorCode;
 
@@ -25,6 +26,14 @@ public class GlobalExceptionHandler {
     // 요청 바디 파싱 실패 (예: 생년월일 형식 오류) — 400으로 응답
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ApiResponse<Void>> handleHttpMessageNotReadableException(HttpMessageNotReadableException e) {
+        return ResponseEntity
+                .status(HttpStatus.valueOf(ErrorCode.INVALID_INPUT_VALUE.getStatus()))
+                .body(ApiResponse.error(ErrorCode.INVALID_INPUT_VALUE));
+    }
+
+    // path variable/쿼리 파라미터 타입 불일치 (예: /api/terms/abc) — 400으로 응답
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMethodArgumentTypeMismatchException(MethodArgumentTypeMismatchException e) {
         return ResponseEntity
                 .status(HttpStatus.valueOf(ErrorCode.INVALID_INPUT_VALUE.getStatus()))
                 .body(ApiResponse.error(ErrorCode.INVALID_INPUT_VALUE));
