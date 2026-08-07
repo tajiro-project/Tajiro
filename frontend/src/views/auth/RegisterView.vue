@@ -73,6 +73,12 @@
             placeholder="비밀번호를 다시 입력해주세요"
             required
           />
+          <p
+            v-if="passwordConfirm && !passwordConfirmValid"
+            class="field-hint"
+          >
+            비밀번호가 일치하지 않습니다
+          </p>
         </div>
 
         <div class="terms-box">
@@ -269,6 +275,10 @@ const requiredAgreed = computed(() => {
 
 const passwordValid = computed(
   () => password.value === '' || PASSWORD_PATTERN.test(password.value),
+);
+
+const passwordConfirmValid = computed(
+  () => passwordConfirm.value === '' || passwordConfirm.value === password.value,
 );
 
 const canSubmit = computed(() => {
