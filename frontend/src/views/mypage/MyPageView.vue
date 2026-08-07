@@ -172,7 +172,8 @@ async function loadDashboard() {
       () => client.get('/users/me/dashboard'),
       mockDashboard,
     );
-    dashboard.value = { ...dashboard.value, ...data };
+    const payload = data?.data ?? data;
+    dashboard.value = { ...dashboard.value, ...payload };
   } catch {
     dashboard.value = { ...mockDashboard };
   }

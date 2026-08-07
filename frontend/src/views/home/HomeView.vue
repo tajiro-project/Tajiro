@@ -325,7 +325,8 @@ async function loadTargetRegion() {
       () => client.get('/users/me/dashboard'),
       mockDashboard,
     );
-    targetRegion.value = data?.targetRegion ?? '';
+    const payload = data?.data ?? data;
+    targetRegion.value = payload?.targetRegion ?? '';
   } catch {
     targetRegion.value = '';
   }
