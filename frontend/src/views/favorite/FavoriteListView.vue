@@ -1,6 +1,5 @@
 <template>
   <div class="favorite-list">
-    <PageHeader title="스크랩한 매물" />
 
     <simplebar class="content">
       <p class="count-label">찜한 매물 {{ items.length }}건</p>
@@ -87,7 +86,6 @@ import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { favoriteApi } from '@/api/services';
 import simplebar from 'simplebar-vue';
-import PageHeader from '@/components/PageHeader.vue';
 
 const PYEONG = 3.3058;
 

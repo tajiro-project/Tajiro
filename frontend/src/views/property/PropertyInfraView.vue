@@ -1,6 +1,5 @@
 <template>
   <div class="pinfra">
-    <PageHeader title="주변 생활 인프라" />
 
     <!-- 1. 지도는 상단 고정 -->
     <div class="map-area">
@@ -86,7 +85,6 @@
 import { computed, onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import simplebar from 'simplebar-vue';
-import PageHeader from '@/components/PageHeader.vue';
 import KakaoMap from '@/components/KakaoMap.vue';
 import { propertyApi } from '@/api/services';
 import {

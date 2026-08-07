@@ -1,10 +1,5 @@
 <template>
   <div class="cmp">
-    <PageHeader
-      :title="isReportMode ? '비교 리포트 상세' : '매물 비교'"
-      :back-to="isReportMode ? '/reports' : '/compare-box'"
-    />
-
     <simplebar class="scroll-area">
       <div
         v-if="loading"
@@ -380,7 +375,6 @@
 <script setup>
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import PageHeader from '@/components/PageHeader.vue';
 import {
   Chart,
   Filler,

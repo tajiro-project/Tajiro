@@ -1,6 +1,5 @@
 <template>
   <div class="cbox">
-    <PageHeader title="비교함" />
 
     <simplebar class="scroll-area">
       <h1 class="title">비교할 매물을 골라주세요 (최대 3개)</h1>
@@ -200,7 +199,6 @@
 <script setup>
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import PageHeader from '@/components/PageHeader.vue';
 import simplebar from 'simplebar-vue';
 import { getApiErrorMessage } from '@/api/client';
 import { comparisonApi } from '@/api/services';
