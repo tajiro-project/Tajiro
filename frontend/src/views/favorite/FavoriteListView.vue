@@ -4,77 +4,39 @@
 
     <simplebar class="content">
       <p class="count-label">찜한 매물 {{ items.length }}건</p>
+            <ul v-if="items.length" class="cards">
+                <li v-for="item in items" :key="item.propertyId">
+                    <div class="card" @click="goDetail(item)">
+                        <span class="thumb">
+                            <svg width="30" height="30" viewBox="0 0 30 30" fill="none">
+                                <path d="M4 13.5L15 5l11 8.5" stroke="#8A8477" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                <path d="M7 12v12h16V12" stroke="#8A8477" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                        </span>
 
-      <ul
-        v-if="items.length"
-        class="cards"
-      >
-        <li
-          v-for="item in items"
-          :key="item.propertyId"
-        >
-          <div
-            class="card"
-            @click="goDetail(item)"
-          >
-            <span class="thumb">
-              <svg
-                width="30"
-                height="30"
-                viewBox="0 0 30 30"
-                fill="none"
-              >
-                <path
-                  d="M4 13.5L15 5l11 8.5"
-                  stroke="#8a8477"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-                <path
-                  d="M7 12v12h16V12"
-                  stroke="#8a8477"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-              </svg>
-            </span>
+                        <div class="card-texts">
+                            <p class="card-price">{{ priceLabel(item) }}</p>
+                            <p class="card-meta">{{ item.propertyType }} · {{ pyeong(item.areaM2) }}평 · {{ floorLabel(item.floorInfo) }}</p>
+                            <p class="card-address">{{ item.address }}</p>
+                        </div>
 
-            <div class="card-texts">
-              <p class="card-price">{{ priceLabel(item) }}</p>
-              <p claßss="card-meta">
-                {{ item.propertyType }} · {{ pyeong(item.areaM2) }}평 ·
-                {{ floorLabel(item.floorInfo) }}
-              </p>
-              <p class="card-address">
-                {{ item.address }} · {{ item.commuteLabel }}
-              </p>
-            </div>
-
-            <button
-              class="heart-btn"
-              type="button"
-              :disabled="removingId === item.propertyId"
-              aria-label="찜 해제"
-              @click.stop="removeFavorite(item)"
-            >
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 20 20"
-                fill="none"
-              >
-                <path
-                  d="M10 17.2s-6.6-4-6.6-8.7c0-2.3 1.8-4 4-4 1.2 0 2.2.6 2.6 1.4.4-.8 1.4-1.4 2.6-1.4 2.2 0 4 1.7 4 4 0 4.7-6.6 8.7-6.6 8.7z"
-                  fill="#ffbc00"
-                />
-              </svg>
-            </button>
-          </div>
-        </li>
-      </ul>
-
+                        <button
+                            class="heart-btn"
+                            type="button"
+                            :disabled="removingId === item.propertyId"
+                            aria-label="찜 해제"
+                            @click.stop="removeFavorite(item)"
+                        >
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                <path
+                                    d="M10 17.2s-6.6-4-6.6-8.7c0-2.3 1.8-4 4-4 1.2 0 2.2.6 2.6 1.4.4-.8 1.4-1.4 2.6-1.4 2.2 0 4 1.7 4 4 0 4.7-6.6 8.7-6.6 8.7z"
+                                    fill="#FFBC00"
+                                />
+                            </svg>
+                        </button>
+                    </div>
+                </li>
+            </ul
       <div
         v-else
         class="empty-state"
