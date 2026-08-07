@@ -1,9 +1,6 @@
 <template>
   <div class="benefit">
-    <simplebar
-      class="scroll-area"
-      :class="{ dimmed: needProfile }"
-    >
+    <simplebar class="scroll-area" :class="{ dimmed: needProfile }">
       <!-- 탭 -->
       <div class="tabs">
         <button
@@ -13,11 +10,7 @@
         >
           청년 정책
         </button>
-        <button
-          class="tab"
-          :class="{ on: tab === 'kb' }"
-          @click="tab = 'kb'"
-        >
+        <button class="tab" :class="{ on: tab === 'kb' }" @click="tab = 'kb'">
           KB 금융 상품
         </button>
       </div>
@@ -56,19 +49,10 @@
       </div>
 
       <!-- 청년 정책 리스트 -->
-      <ul
-        v-if="tab === 'policy'"
-        class="list"
-      >
+      <ul v-if="tab === 'policy'" class="list">
         <!-- <li v-for="p in filteredPolicies" :key="p.id"> -->
-        <li
-          v-for="p in paginatedPolicies"
-          :key="p.id"
-        >
-          <button
-            class="item-card"
-            @click="$router.push(`/policies/${p.id}`)"
-          >
+        <li v-for="p in paginatedPolicies" :key="p.id">
+          <button class="item-card" @click="$router.push(`/policies/${p.id}`)">
             <p class="item-title">{{ p.title }}</p>
             <p class="item-amount">{{ shortAmount(p.sumDescription) }}</p>
           </button>
@@ -76,14 +60,8 @@
       </ul>
 
       <!-- KB 금융 상품 리스트 -->
-      <ul
-        v-else
-        class="list"
-      >
-        <li
-          v-for="f in paginatedProducts"
-          :key="f.id"
-        >
+      <ul v-else class="list">
+        <li v-for="f in paginatedProducts" :key="f.id">
           <!-- <li v-for="f in filteredProducts" :key="f.id"> -->
           <button
             class="item-card"
@@ -169,18 +147,10 @@
 
     <!-- 12-1 내 정보 입력 필요 모달 -->
     <Teleport to="body">
-      <div
-        v-if="needProfile"
-        class="modal-overlay"
-      >
+      <div v-if="needProfile" class="modal-overlay">
         <div class="modal">
           <span class="m-icon">
-            <svg
-              width="22"
-              height="22"
-              viewBox="0 0 22 22"
-              fill="none"
-            >
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
               <rect
                 x="5"
                 y="2.5"
@@ -204,16 +174,8 @@
             필요해요.<br />지금 입력하시겠어요?
           </p>
           <div class="m-actions">
-            <button
-              class="m-later"
-              @click="needProfile = false"
-            >
-              다음에
-            </button>
-            <button
-              class="m-go"
-              @click="$router.push('/profile-setup')"
-            >
+            <button class="m-later" @click="needProfile = false">다음에</button>
+            <button class="m-go" @click="$router.push('/profile-setup')">
               입력하러 가기
             </button>
           </div>
@@ -226,7 +188,7 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import simplebar from 'simplebar-vue';
-import { financeApi, policyApi } from '@/api/services';
+import { financeApi, policyApi, userApi } from '@/api/services';
 
 const props = defineProps({
   initialTab: { type: String, default: 'policy' },
@@ -270,10 +232,10 @@ const selectedTargetSummary = computed(() => {
 onMounted(async () => {
   document.addEventListener('pointerdown', closeFilterOnOutsideClick);
   window.addEventListener('resize', updateFilterDropdownPosition);
-  // const profile = await userApi.getProfile();
+  const profile = await userApi.getProfile();
   // 프로필(지역·생년월일) 미입력 시 12-1 모달 노출
-  // if (!profile || !profile.targetRegion || !profile.birthDate)
-  //   needProfile.value = true;
+  if (!profile || !profile.targetRegion || !profile.birthDate)
+    needProfile.value = true;
   policies.value = (await policyApi.matches()) ?? [];
   products.value = (await financeApi.matches()) ?? [];
 });

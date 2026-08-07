@@ -26,7 +26,7 @@ public enum ErrorCode {
 
     // --- 인증 (Auth) ---
     LOGIN_FAILED(401, "AUTH_401", "이메일 또는 비밀번호가 일치하지 않습니다."),
-    AUTH_REQUIRED(401, "AUTH_401_1", "인증이 만료되었거나 필요합니다."),
+    AUTH_REQUIRED(401, "AUTH_401_1", "로그인이 필요합니다. 다시 로그인해 주세요."),
     INVALID_TOKEN(401, "AUTH_401_2", "유효하지 않은 토큰입니다."),
     EMAIL_DUPLICATE(409, "AUTH_409", "이미 사용 중인 이메일입니다."),
     REQUIRED_TERMS_NOT_AGREED(400, "AUTH_400", "필수 약관에 동의해야 합니다."),
