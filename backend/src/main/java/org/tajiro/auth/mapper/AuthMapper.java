@@ -22,4 +22,10 @@ public interface AuthMapper {
     void insertTermsConsent(@Param("userId") Long userId,
                              @Param("termsId") Long termsId,
                              @Param("agreed") boolean agreed);
+
+    // 5. 회원 탈퇴 (soft-delete)
+    void softDeleteUser(@Param("userId") Long userId);
+
+    // 6. 탈퇴한 계정의 이메일 반납 (재가입 시 호출)
+    void releaseWithdrawnEmail(@Param("userId") Long userId);
 }
