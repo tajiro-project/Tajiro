@@ -26,7 +26,8 @@
     <p v-else-if="errorMessage" class="status-message error" role="alert">
       {{ errorMessage }}
     </p>
-    <!-- 팀장 확인 필요-->
+
+    <!-- TODO: 바깥 .content와 안쪽 simplebar .content 중첩으로 본문 높이가 0이 될 수 있음. 담당자 확인 필요. -->
     <!-- <div
       v-if="step === 1"
       class="content"
