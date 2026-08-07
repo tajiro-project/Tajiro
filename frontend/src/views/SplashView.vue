@@ -53,7 +53,6 @@ import { useRouter } from 'vue-router';
 import { Check } from 'lucide-vue-next';
 import logoImg from '@/assets/img/logo.png';
 import simplebar from 'simplebar-vue';
-ßß;
 
 const checklistItems = [
   '매물 추천부터 AI 매물 비교까지',
