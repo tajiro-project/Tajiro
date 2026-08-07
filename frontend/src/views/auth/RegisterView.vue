@@ -1,6 +1,5 @@
 <template>
   <div class="register">
-    <PageHeader title="회원가입" />
 
     <simplebar class="scroll-area">
       <h1 class="headline">타지로와 함께<br />새 도시 정착을 시작해요</h1>
@@ -229,7 +228,6 @@ import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import client, { getApiErrorMessage, withMock } from '@/api/client';
 import { mockTerms } from '@/api/mockData';
-import PageHeader from '@/components/PageHeader.vue';
 import simplebar from 'simplebar-vue';
 
 const PASSWORD_PATTERN = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;

@@ -3,7 +3,6 @@
     class="pdetail"
     v-if="p"
   >
-    <PageHeader title="매물 상세" />
 
     <!-- div -> simplebar로 교체 -->
     <simplebar
@@ -380,7 +379,6 @@
 import { computed, onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import simplebar from 'simplebar-vue';
-import PageHeader from '@/components/PageHeader.vue';
 import AppTabBar from '@/components/AppTabBar.vue';
 import { propertyApi, favoriteApi, comparisonApi } from '@/api/services';
 import {
