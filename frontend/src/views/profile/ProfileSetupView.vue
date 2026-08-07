@@ -13,11 +13,14 @@
           >
           <input
             id="targetRegion"
-            v-model="targetRegion"
             class="field-input"
             type="text"
-            placeholder="예) 서울특별시, 부산광역시"
+            readonly
+            :value="targetRegion"
+            placeholder="예) 서울특별시 강남구"
             required
+            @click="isLocationPickerOpen = true"
+            @keydown.enter.prevent="isLocationPickerOpen = true"
           />
         </div>
         <div class="field">
