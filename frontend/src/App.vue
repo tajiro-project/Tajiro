@@ -35,6 +35,10 @@ const showTabBar = computed(() => {
       <router-view />
     </main>
 
-    <AppTabBar v-if="showTabBar" :active="activeTab" class="global-tab-bar" />
+    <AppTabBar
+      v-if="showTabBar"
+      :active="activeTab"
+      class="global-tab-bar"
+    />
   </div>
 </template>

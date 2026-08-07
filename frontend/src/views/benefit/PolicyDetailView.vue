@@ -1,8 +1,11 @@
 <template>
-  <div class="policy-detail" v-if="policy">
+  <div
+    class="policy-detail"
+    v-if="policy"
+  >
     <PageHeader title="정책 상세" />
 
-    <div class="scroll-area">
+    <simplebar class="scroll-area">
       <div class="head">
         <h1 class="title">{{ policy.title }}</h1>
         <p class="sub">{{ summary }}</p>
@@ -38,7 +41,12 @@
         <ul class="conds">
           <li class="cond">
             <span class="c-check"
-              ><svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+              ><svg
+                width="11"
+                height="11"
+                viewBox="0 0 12 12"
+                fill="none"
+              >
                 <path
                   d="M2 6.5L4.7 9L10 3.5"
                   stroke="#545045"
@@ -52,7 +60,12 @@
           </li>
           <li class="cond">
             <span class="c-check"
-              ><svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+              ><svg
+                width="11"
+                height="11"
+                viewBox="0 0 12 12"
+                fill="none"
+              >
                 <path
                   d="M2 6.5L4.7 9L10 3.5"
                   stroke="#545045"
@@ -67,7 +80,10 @@
         </ul>
       </section>
 
-      <section v-if="policy.description" class="card">
+      <section
+        v-if="policy.description"
+        class="card"
+      >
         <p class="card-head">정책 설명</p>
         <p class="description">{{ policy.description.trim() }}</p>
       </section>
@@ -76,10 +92,15 @@
       <section class="docs-card">
         <p class="docs-head">필요 서류(정확한 정보는 신청 기관 참고)</p>
         <ul class="docs">
-          <li v-for="d in docs" :key="d">{{ d }}</li>
+          <li
+            v-for="d in docs"
+            :key="d"
+          >
+            {{ d }}
+          </li>
         </ul>
       </section>
-    </div>
+    </simplebar>
   </div>
 </template>
 
@@ -87,6 +108,7 @@
 import { computed, onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import PageHeader from '@/components/PageHeader.vue';
+import simplebar from 'simplebar-vue';
 import { policyApi } from '@/api/services';
 
 const route = useRoute();

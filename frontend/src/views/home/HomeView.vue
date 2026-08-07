@@ -8,9 +8,24 @@
       <p class="headline">어디로 이주하세요?</p>
       <p class="headline-sub">그 지역 주변 매물을 바로 찾아드려요</p>
 
-      <button class="search-bar" type="button" @click="goRegionSearch">
-        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-          <circle cx="8" cy="8" r="5.5" stroke="#8a8d8f" stroke-width="1.6" />
+      <button
+        class="search-bar"
+        type="button"
+        @click="goRegionSearch"
+      >
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 18 18"
+          fill="none"
+        >
+          <circle
+            cx="8"
+            cy="8"
+            r="5.5"
+            stroke="#8a8d8f"
+            stroke-width="1.6"
+          />
           <path
             d="M12.2 12.2L16 16"
             stroke="#8a8d8f"
@@ -22,7 +37,12 @@
           targetRegion || '이주할 지역 · 동네 검색'
         }}</span>
         <span class="search-submit">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 16 16"
+            fill="none"
+          >
             <path
               d="M4 8h8M8 4l4 4-4 4"
               stroke="#545045"
@@ -35,10 +55,15 @@
       </button>
     </header>
 
-    <div class="scroll-area">
+    <simplebar class="scroll-area">
       <section class="safety-card">
         <p class="safety-title">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 16 16"
+            fill="none"
+          >
             <path
               d="M8 1.5l5.5 2v3.8c0 3.5-2.3 6.2-5.5 7.2-3.2-1-5.5-3.7-5.5-7.2V3.5L8 1.5z"
               stroke="#545045"
@@ -59,7 +84,12 @@
         <ul class="safety-list">
           <li class="safety-item">
             <span class="safety-icon">
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 18 18"
+                fill="none"
+              >
                 <rect
                   x="2"
                   y="6"
@@ -84,7 +114,12 @@
           </li>
           <li class="safety-item">
             <span class="safety-icon">
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 18 18"
+                fill="none"
+              >
                 <circle
                   cx="9"
                   cy="9"
@@ -109,7 +144,12 @@
           </li>
           <li class="safety-item">
             <span class="safety-icon">
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 18 18"
+                fill="none"
+              >
                 <circle
                   cx="9"
                   cy="5.5"
@@ -144,7 +184,12 @@
           @click="router.push('/preferences/1')"
         >
           <span class="menu-icon primary">
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 20 20"
+              fill="none"
+            >
               <path
                 d="M10 2c-3 0-5.5 2.4-5.5 5.5 0 4 5.5 10.5 5.5 10.5s5.5-6.5 5.5-10.5C15.5 4.4 13 2 10 2z"
                 stroke="#545045"
@@ -250,9 +295,7 @@
           </button>
         </div>
       </section>
-    </div>
-
-    <AppTabBar active="home" />
+    </simplebar>
 
     <KakaoLocation
       :open="isLocationPickerOpen"
@@ -267,7 +310,7 @@ import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import client, { withMock } from '@/api/client';
 import { mockDashboard } from '@/api/mockData';
-import AppTabBar from '@/components/AppTabBar.vue';
+import simplebar from 'simplebar-vue';
 import KakaoLocation from '@/components/KakaoLocation.vue';
 
 const router = useRouter();
@@ -383,6 +426,13 @@ function onLocationSelected(location) {
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+.scroll-area :deep(.simplebar-content) {
+  display: flex;
+  flex-direction: column;
+  gap: 12px; /* 카드 간 세로 간격 복구 */
+  padding: 0 16px;
 }
 
 .safety-card {

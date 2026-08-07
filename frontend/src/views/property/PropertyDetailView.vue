@@ -5,7 +5,11 @@
   >
     <PageHeader title="매물 상세" />
 
-    <div class="scroll-area">
+    <!-- div -> simplebar로 교체 -->
+    <simplebar
+      class="scroll-area"
+      :auto-hide="true"
+    >
       <!-- 1. 사진 캐러셀 -->
       <div
         class="photo-slider"
@@ -323,12 +327,6 @@
       <section class="card">
         <div class="benefit-head">
           <p class="card-head">이 매물로 받을 수 있는 혜택/상품</p>
-          <button
-            class="see-all"
-            @click="$router.push('/benefits/policies')"
-          >
-            전체보기 →
-          </button>
         </div>
         <div class="benefit-list">
           <div
@@ -343,7 +341,7 @@
           </div>
         </div>
       </section>
-    </div>
+    </simplebar>
 
     <!-- 4. 하단 액션 바 -->
     <div class="bottom-actions-wrap">
@@ -381,6 +379,7 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
+import simplebar from 'simplebar-vue';
 import PageHeader from '@/components/PageHeader.vue';
 import AppTabBar from '@/components/AppTabBar.vue';
 import { propertyApi, favoriteApi, comparisonApi } from '@/api/services';
@@ -686,6 +685,10 @@ async function addToCompare() {
   overflow: hidden;
 }
 
+.scroll-area {
+  padding-bottom: 16px;
+}
+
 /* 3. 하단 액션 바 고정 (줄어들지 않고 하단 위치) */
 .bottom-actions-wrap {
   flex-shrink: 0;
@@ -924,7 +927,7 @@ async function addToCompare() {
 }
 .mini-card {
   flex: 1;
-  background: #f5f4f0;
+  background: #ffffff;
   border-radius: 12px;
   padding: 12px 14px;
 }
@@ -1137,13 +1140,7 @@ async function addToCompare() {
   align-items: center;
   justify-content: space-between;
 }
-.see-all {
-  font-size: 12px;
-  font-weight: 700;
-  color: #8a8d8f;
-  border: none;
-  background: none;
-}
+
 .benefit-list {
   display: flex;
   flex-direction: column;
