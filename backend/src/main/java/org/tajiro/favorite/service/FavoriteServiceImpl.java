@@ -25,6 +25,10 @@ public class FavoriteServiceImpl implements FavoriteService {
 
     @Override
     public FavoriteAddResponse addFavorite(Long userId, Long propertyId) {
+        if (!mapper.existsProperty(propertyId)) {
+            throw new BusinessException(ErrorCode.PROPERTY_NOT_FOUND);
+        }
+
         if (mapper.existsFavorite(userId, propertyId)) {
             throw new BusinessException(ErrorCode.FAVORITE_DUPLICATE);
         }

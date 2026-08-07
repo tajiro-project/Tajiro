@@ -13,6 +13,8 @@ public interface FavoriteMapper {
 
     boolean existsFavorite(@Param("userId") Long userId, @Param("propertyId") Long propertyId);
 
+    boolean existsProperty(@Param("propertyId") Long propertyId);
+
     void insertFavorite(FavoriteVO vo);
 
     void deleteFavorite(@Param("userId") Long userId, @Param("propertyId") Long propertyId);
