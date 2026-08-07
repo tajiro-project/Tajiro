@@ -30,6 +30,7 @@
         SELECT id
         FROM terms
         WHERE required = 1
+          AND effective_at &lt;= NOW()
     </select>
 
     <!-- 4. 약관 동의 이력 저장 (agreed_at, terms_version은 저장 시점 기준) -->
@@ -39,5 +40,20 @@
         FROM terms
         WHERE id = #{termsId}
     </insert>
+
+    <!-- 5. 회원 탈퇴 (soft-delete) -->
+    <update id="softDeleteUser">
+        UPDATE users
+        SET status = 'WITHDRAWN',
+            deleted_at = NOW()
+        WHERE id = #{userId}
+    </update>
+
+    <!-- 6. 탈퇴한 계정의 이메일 반납 (재가입 시, 기존 탈퇴 row의 이메일을 변형해 원래 이메일을 재사용 가능하게 함) -->
+    <update id="releaseWithdrawnEmail">
+        UPDATE users
+        SET email = CONCAT('withdrawn_', UNIX_TIMESTAMP(), '_', email)
+        WHERE id = #{userId}
+    </update>
 
 </mapper>
