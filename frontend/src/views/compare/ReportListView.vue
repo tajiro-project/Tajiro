@@ -42,20 +42,11 @@
       >
         <div class="rc-head">
           <span class="rc-icon">
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 18 18"
-              fill="none"
-            >
-              <path
-                d="M5.5 3v9M5.5 12l-2.2-2.2M5.5 12l2.2-2.2M12.5 15V6M12.5 6l-2.2 2.2M12.5 6l2.2 2.2"
-                stroke="var(--kb-gold)"
-                stroke-width="1.5"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </svg>
+            <ArrowDownUp
+              :size="20"
+              :stroke-width="2"
+              aria-hidden="true"
+            />
           </span>
           <div class="rc-titles">
             <p class="rc-title">{{ r.title }}</p>
@@ -159,6 +150,7 @@
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import simplebar from 'simplebar-vue';
+import { ArrowDownUp } from 'lucide-vue-next';
 import client, { getApiErrorMessage } from '@/api/client';
 
 const router = useRouter();
@@ -344,6 +336,7 @@ function openReport(r) {
   height: 36px;
   border-radius: 10px;
   background: var(--yellow-tint);
+  color: var(--kb-gold);
   flex-shrink: 0;
 }
 .rc-title {
@@ -461,7 +454,7 @@ function openReport(r) {
   gap: 7px;
   margin-top: 14px;
   padding: 12px 14px;
-  background: #f1efea;
+  background: #fff6dc;
   border-radius: 12px;
   font-size: 11.5px;
   line-height: 1.55;
