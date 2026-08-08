@@ -1,5 +1,6 @@
 package org.tajiro.property.dto;
 
+import com.fasterxml.jackson.annotation.JsonRawValue;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.NoArgsConstructor;
@@ -48,6 +49,8 @@ public class PropertySafetyDTO {
         private BigDecimal latitude;
         private BigDecimal longitude;
         private Integer distanceM;
-        private Object polygon; // 폴리곤 JSON 데이터
+
+        @JsonRawValue // DB의 JSON 문자열을 이스케이프 없이 GeoJSON 객체 형식 그대로 출력
+        private String polygon;
     }
 }
