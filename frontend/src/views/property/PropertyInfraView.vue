@@ -8,6 +8,7 @@
         :center="mapCenter"
         :active-dot-key="activeDotKey"
         :draggable="false"
+        mode="infra"
         @marker-click="onMarkerClick"
         @dot-click="onDotClick"
         @dot-hover="onDotHover"

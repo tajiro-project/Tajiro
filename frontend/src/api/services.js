@@ -66,6 +66,8 @@ export const propertyApi = {
     (await client.get(`/properties/${propertyId}`)).data,
   infrastructures: async (id) =>
     (await client.get(`/properties/${id}/infrastructures`)).data,
+  safety: async (id) => (await client.get(`/properties/${id}/safety`)).data,
+
   recommended: () =>
     withMock(() => client.get('/properties/recommended'), mock.mockProperties),
   detail: (id) =>
@@ -73,8 +75,6 @@ export const propertyApi = {
       () => client.get(`/properties/${id}`),
       () => mock.mockPropertyDetail(id),
     ),
-  safety: (id) =>
-    withMock(() => client.get(`/properties/${id}/safety`), mock.mockSafety),
   comparables: (id) =>
     withMock(
       () => client.get(`/properties/${id}/comparables`),
