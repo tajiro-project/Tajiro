@@ -26,7 +26,7 @@ public class PreferenceServiceImpl implements PreferenceService {
 
     private static final Set<String> HOUSING_TYPES = setOf("원룸", "아파트", "주택/빌라", "오피스텔");
     private static final Set<String> TRADE_TYPES = setOf("월세", "전세", "매매");
-    private static final Set<String> FLOOR_TYPES = setOf("반지하", "1층", "2층 이상", "옥탑");
+    private static final Set<String> FLOOR_TYPES = setOf("지하/반지하", "1층", "2층 이상", "옥탑");
     private static final Set<String> INFRA_CATEGORIES = setOf(
             "SUBWAY", "BUS_TERMINAL", "TRAIN", "HOSPITAL", "PHARMACY", "SCHOOL",
             "KINDERGARTEN", "ACADEMY", "LIBRARY", "PARK", "POLICE", "FIRE",
