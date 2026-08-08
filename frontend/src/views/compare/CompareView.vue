@@ -1121,7 +1121,7 @@ function goBack() {
   align-items: center;
   gap: 5px;
   font-size: 12px;
-  color: var(--kb-gray);
+  color: #8a8d8f;
 }
 .chev {
   transition: transform 0.15s;
