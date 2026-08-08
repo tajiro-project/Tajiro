@@ -2,12 +2,13 @@
   <div class="safety-page">
     <div class="map-section">
       <div class="map-container">
+        <!-- fixed-center를 제거하여 모든 좌표가 지도 안에 들어오도록 자동 조절 -->
         <KakaoMap
           :center="propertyCenter"
           :markers="mapMarkers"
           :dots="activeDots"
           :polygons="activePolygons"
-          :fixed-center="true"
+          mode="safety"
         />
       </div>
     </div>
@@ -196,15 +197,8 @@ const activeTabItems = computed(() => {
     });
 
     const count = apiItem?.countWithin500m || 0;
-    const nearestDist = apiItem?.nearestDistanceMeters;
-    const nearestName = apiItem?.nearestSafeName;
-
     const unit = key === 'CCTV' ? '대' : '곳';
-    let displayValue = `반경 내 ${count}${unit}`;
-
-    if (key === 'POLICE' && nearestName && nearestDist && count > 0) {
-      displayValue = `${nearestName} ${nearestDist}m`;
-    }
+    const displayValue = `반경 내 ${count}${unit}`;
 
     return {
       key,
@@ -274,7 +268,6 @@ const activeDots = computed(() => {
   return extractDots(currentCategoryKeys);
 });
 
-// 안전 구역 다각형(Polygon) 파싱 및 옵션 생성
 const activePolygons = computed(() => {
   if (!rawSafetyData.value?.safetyList) return [];
 
@@ -287,7 +280,6 @@ const activePolygons = computed(() => {
     const mappedKey = CATEGORY_KEY_MAP[s.safeCategory] || s.safeCategory;
 
     if (currentCategoryKeys.includes(mappedKey) && s.details) {
-      // 해당 카테고리의 고유 색상 추출 (없으면 기본값 사용)
       const categoryMeta =
         SAFETY_CATEGORIES.find((c) => c.key === mappedKey) || {};
       const categoryColor = categoryMeta.color || '#10B981';
@@ -297,7 +289,6 @@ const activePolygons = computed(() => {
           try {
             let parsed = detail.polygon;
 
-            // 문자열인 경우 객체가 될 때까지 완전 파싱 (이중 이스케이프 처리)
             while (typeof parsed === 'string') {
               parsed = JSON.parse(parsed);
             }
@@ -312,12 +303,12 @@ const activePolygons = computed(() => {
             ) {
               polygons.push({
                 id: detail.safeDetailId,
-                path: parsed.coordinates[0], // [[127.x, 36.x], ...]
+                path: parsed.coordinates[0],
                 strokeColor: categoryColor,
                 strokeWeight: 2.5,
                 strokeOpacity: 0.8,
                 fillColor: categoryColor,
-                fillOpacity: 0.2, // 연한 구역 색상
+                fillOpacity: 0.2,
               });
             }
           } catch (e) {
