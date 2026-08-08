@@ -143,7 +143,20 @@
             @click="onCardClick(p)"
           >
             <span class="thumb">
-              <svg width="30" height="30" viewBox="0 0 30 30" fill="none">
+              <img
+                v-if="p.thumbnailUrl && !p.thumbFailed"
+                :src="p.thumbnailUrl"
+                :alt="p.title"
+                class="thumb-img"
+                @error="p.thumbFailed = true"
+              />
+              <svg
+                v-else
+                width="30"
+                height="30"
+                viewBox="0 0 30 30"
+                fill="none"
+              >
                 <path
                   d="M4 13.5L15 5l11 8.5"
                   stroke="#8a8477"
@@ -1952,5 +1965,12 @@ watch(filter, scrollToTop);
   .spinner {
     animation-duration: 2s;
   }
+}
+
+.thumb-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 10px;
 }
 </style>
