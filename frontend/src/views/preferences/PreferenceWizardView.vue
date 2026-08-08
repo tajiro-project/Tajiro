@@ -341,7 +341,7 @@ const AREA_MARKS = ['0', '50m²', '100m²', '150m²', '200m²'];
 const PYEONG_M2 = 3.3058;
 const PREFERENCE_DRAFT_KEY = 'tajiro-preferences';
 const BASEMENT_UI_VALUE = '지하/반지하';
-const BASEMENT_API_VALUE = '반지하';
+const BASEMENT_API_VALUE = '지하/반지하';
 
 function createDefaultPreference() {
   return {
