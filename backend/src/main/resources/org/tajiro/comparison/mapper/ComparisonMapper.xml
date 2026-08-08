@@ -83,9 +83,9 @@
                    ELSE CEIL(pvar.workplace_distance_meters * 2 / 67.0)
                END AS commute_minutes,
                COALESCE(infra.infra_count, 0) AS infra_count,
+               infra.police_nearest_distance_meters AS police_nearest_distance_meters,
                p.evaluation_score,
                COALESCE(safety.cctv_count, 0) AS cctv_count_within500m,
-               COALESCE(safety.police_count, 0) AS police_count_within500m,
                COALESCE(safety.children_count, 0) AS children_count_within500m,
                COALESCE(safety.bell_count, 0) AS bell_count_within500m,
                COALESCE(safety.safety_light_count, 0) AS safety_light_count_within500m
@@ -95,7 +95,9 @@
               AND pvar.user_id = #{userId}
         LEFT JOIN (
             SELECT building_id,
-                   SUM(count_within2000m) AS infra_count
+                   SUM(count_within2000m) AS infra_count,
+                   MAX(CASE WHEN infra_category = 'POLICE'
+                            THEN nearest_distance_meters END) AS police_nearest_distance_meters
             FROM infrastructure
             GROUP BY building_id
         ) infra ON infra.building_id = p.building_id
@@ -103,8 +105,6 @@
             SELECT building_id,
                    MAX(CASE WHEN safe_category = 'CCTV'
                             THEN count_within500m ELSE 0 END) AS cctv_count,
-                   MAX(CASE WHEN safe_category = 'POLICE_CENTER'
-                            THEN count_within500m ELSE 0 END) AS police_count,
                    MAX(CASE WHEN safe_category = 'CHILD_GUARD_HOUSE'
                             THEN count_within500m ELSE 0 END) AS children_count,
                    MAX(CASE WHEN safe_category = 'SAFETY_BELL'
