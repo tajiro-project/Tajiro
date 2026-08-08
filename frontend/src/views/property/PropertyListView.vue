@@ -623,7 +623,7 @@ onMounted(async () => {
 async function loadPreference() {
   try {
     const res = await client.get('/users/me/preferences');
-    preference.value = res.data.data;
+    preference.value = res.data.data ?? res.data;
     applyPreferenceToFilter(preference.value);
   } catch (e) {
     console.warn('[preference] 실패', e.response?.status, e.response?.data);
@@ -659,9 +659,18 @@ function applyPreferenceToFilter(p) {
 async function commitFilter() {
   if (!preference.value) return;
 
+  const workplace = filter.workplace ?? preference.value.workplace;
+
   const body = {
     ...preference.value,
-    workplace: filter.workplace ?? preference.value.workplace,
+    workplace: workplace
+      ? {
+          name: workplace.name,
+          address: workplace.address,
+          lat: workplace.lat,
+          lng: workplace.lng,
+        }
+      : null,
     hasCar: filter.hasCar,
     maxCommuteDistanceMeters: filter.maxWorkplaceDistanceMeters,
     housingTypes: [...filter.propertyTypes],
