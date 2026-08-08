@@ -6,7 +6,7 @@
 </template>
 
 <script setup>
-import { onMounted, onUnmounted, ref, watch, computed, h, render } from 'vue';
+import { onMounted, onUnmounted, ref, watch, h, render } from 'vue';
 import { loadKakaoSdk } from '@/utils/kakaoSdk';
 import {
   INFRA_CATEGORIES,
@@ -16,12 +16,17 @@ import {
 import { MapPin } from 'lucide-vue-next';
 
 const props = defineProps({
+  mode: {
+    type: String,
+    default: 'list',
+    validator: (val) => ['list', 'infra', 'safety'].includes(val),
+  },
   markers: { type: Array, default: () => [] },
   dots: { type: Array, default: () => [] },
+  polygons: { type: Array, default: () => [] },
   center: { type: Object, default: () => ({ lat: 37.5563, lng: 126.9723 }) },
   activeDotKey: { type: String, default: null },
-  level: { type: Number, default: 5 },
-  fixedCenter: { type: Boolean, default: false }, // 매물 위치 중심 고정 옵션
+  level: { type: Number, default: 3 },
 });
 
 const emit = defineEmits([
@@ -35,9 +40,10 @@ const mapElement = ref(null);
 
 let map = null;
 let overlays = [];
+let polygonOverlays = [];
 let dotElements = new Map();
 
-// 모든 카테고리(인프라, 편의시설, 안전) 아이콘/색상 매핑
+// --- 카테고리 매핑 ---
 const ALL_CATEGORIES = [
   ...INFRA_CATEGORIES,
   ...AMENITY_CATEGORIES,
@@ -50,7 +56,6 @@ ALL_CATEGORIES.forEach((cat) => {
   if (cat.key) {
     categoryIconMap[cat.key] = cat.icon;
     categoryColorMap[cat.key] = cat.color;
-    // 대소문자 매칭 처리
     categoryIconMap[cat.key.toLowerCase()] = cat.icon;
     categoryColorMap[cat.key.toLowerCase()] = cat.color;
   }
@@ -88,10 +93,7 @@ function createDotElement(dot) {
   const dotSpan = document.createElement('span');
   dotSpan.className = 'infra-dot';
 
-  // 카테고리 키 매칭 (dot.category 또는 dot.categoryKey 대응)
   const catKey = dot.category || dot.categoryKey || '';
-
-  // 1순위: dot 직접 지정 색상 -> 2순위: 상수의 카테고리 색상 -> 3순위: 기본 색상
   const backgroundColor =
     dot.color ||
     categoryColorMap[catKey] ||
@@ -100,11 +102,9 @@ function createDotElement(dot) {
 
   dotSpan.style.background = backgroundColor;
 
-  // 상수의 카테고리 아이콘 적용 -> 없으면 기본 MapPin
   const IconComponent =
     categoryIconMap[catKey] || categoryIconMap[catKey.toLowerCase()] || MapPin;
 
-  // Vue 'h' 함수로 Lucide 아이콘을 마커 내부에 렌더링 (흰색 선)
   const vnode = h(IconComponent, {
     size: 13,
     color: '#ffffff',
@@ -118,12 +118,9 @@ function createDotElement(dot) {
     e.stopPropagation();
     emit('dot-click', dot);
   });
-  element.addEventListener('mouseenter', () => {
-    emit('dot-hover', dot);
-  });
-  element.addEventListener('mouseleave', () => {
-    emit('dot-hover', null);
-  });
+  element.addEventListener('mouseenter', () => emit('dot-hover', dot));
+  element.addEventListener('mouseleave', () => emit('dot-hover', null));
+
   return element;
 }
 
@@ -131,30 +128,176 @@ function dotKey(dot) {
   return `${dot.lat},${dot.lng}`;
 }
 
-function fitToPoints(rawPoints) {
-  const points = rawPoints.filter((p) => p.lat != null && p.lng != null);
-  if (!map || points.length === 0) return;
+function convertPathToKakao(path) {
+  if (!Array.isArray(path)) return [];
+  return path
+    .map((coord) => {
+      if (Array.isArray(coord) && coord.length >= 2) {
+        return new window.kakao.maps.LatLng(Number(coord[1]), Number(coord[0]));
+      } else if (coord && coord.lat != null && coord.lng != null) {
+        return new window.kakao.maps.LatLng(
+          Number(coord.lat),
+          Number(coord.lng),
+        );
+      }
+      return null;
+    })
+    .filter(Boolean);
+}
 
-  if (points.length === 1) {
-    const p = points[0];
-    map.setCenter(new window.kakao.maps.LatLng(p.lat, p.lng));
+// 1. [Mode: list] 영역에 맞춘 자동 시점 계산
+function fitAllElements() {
+  if (!map) return;
+  const bounds = new window.kakao.maps.LatLngBounds();
+  let hasValidCoords = false;
+
+  props.markers.forEach((m) => {
+    if (m.lat != null && m.lng != null) {
+      bounds.extend(new window.kakao.maps.LatLng(m.lat, m.lng));
+      hasValidCoords = true;
+    }
+  });
+
+  props.dots.forEach((d) => {
+    if (d.lat != null && d.lng != null) {
+      bounds.extend(new window.kakao.maps.LatLng(d.lat, d.lng));
+      hasValidCoords = true;
+    }
+  });
+
+  props.polygons.forEach((poly) => {
+    if (!poly.path || !Array.isArray(poly.path)) return;
+    const addPathToBounds = (pathArr) => {
+      pathArr.forEach((coord) => {
+        if (Array.isArray(coord) && coord.length >= 2) {
+          bounds.extend(
+            new window.kakao.maps.LatLng(Number(coord[1]), Number(coord[0])),
+          );
+          hasValidCoords = true;
+        } else if (coord && coord.lat != null && coord.lng != null) {
+          bounds.extend(
+            new window.kakao.maps.LatLng(Number(coord.lat), Number(coord.lng)),
+          );
+          hasValidCoords = true;
+        } else if (Array.isArray(coord)) {
+          addPathToBounds(coord);
+        }
+      });
+    };
+    addPathToBounds(poly.path);
+  });
+
+  if (!hasValidCoords) {
+    if (props.center?.lat && props.center?.lng) {
+      map.setCenter(
+        new window.kakao.maps.LatLng(props.center.lat, props.center.lng),
+      );
+      if (props.level) map.setLevel(props.level);
+    }
     return;
   }
 
-  const bounds = new window.kakao.maps.LatLngBounds();
-  points.forEach((p) => {
-    bounds.extend(new window.kakao.maps.LatLng(p.lat, p.lng));
+  map.setBounds(bounds, 40, 40, 40, 40);
+}
+
+// 2. [Mode: infra & safety] 매물 정중앙 고정 + 가독성 극대화 스마트 줌
+function fitCenterWithAllElements() {
+  if (!map || !props.center?.lat || !props.center?.lng) return;
+
+  const centerLat = Number(props.center.lat);
+  const centerLng = Number(props.center.lng);
+  if (isNaN(centerLat) || isNaN(centerLng)) return;
+
+  let maxLatDiff = 0;
+  let maxLngDiff = 0;
+
+  const checkPoint = (lat, lng) => {
+    const nLat = Number(lat);
+    const nLng = Number(lng);
+    if (!isNaN(nLat) && !isNaN(nLng)) {
+      const latDiff = Math.abs(nLat - centerLat);
+      const lngDiff = Math.abs(nLng - centerLng);
+      if (latDiff > maxLatDiff) maxLatDiff = latDiff;
+      if (lngDiff > maxLngDiff) maxLngDiff = lngDiff;
+    }
+  };
+
+  props.dots.forEach((d) => checkPoint(d.lat, d.lng));
+  props.polygons.forEach((poly) => {
+    if (!poly.path || !Array.isArray(poly.path)) return;
+    const processPath = (pathArr) => {
+      pathArr.forEach((coord) => {
+        if (Array.isArray(coord) && coord.length >= 2) {
+          checkPoint(coord[1], coord[0]);
+        } else if (coord && coord.lat != null && coord.lng != null) {
+          checkPoint(coord.lat, coord.lng);
+        } else if (Array.isArray(coord)) {
+          processPath(coord);
+        }
+      });
+    };
+    processPath(poly.path);
   });
 
-  map.setBounds(bounds, 0, 0, 0, 0);
+  if (maxLatDiff === 0 && maxLngDiff === 0) {
+    map.setCenter(new window.kakao.maps.LatLng(centerLat, centerLng));
+    if (props.level) map.setLevel(props.level);
+    return;
+  }
+
+  // 여백을 포함한 대칭 경계 계산
+  const paddingMultiplier = 1.05;
+  const paddedLatDiff = maxLatDiff * paddingMultiplier;
+  const paddedLngDiff = maxLngDiff * paddingMultiplier;
+
+  const sw = new window.kakao.maps.LatLng(
+    centerLat - paddedLatDiff,
+    centerLng - paddedLngDiff,
+  );
+  const ne = new window.kakao.maps.LatLng(
+    centerLat + paddedLatDiff,
+    centerLng + paddedLngDiff,
+  );
+  const bounds = new window.kakao.maps.LatLngBounds(sw, ne);
+
+  // 1차 적용: 카카오 맵 보수적 bounds 계산
+  map.setBounds(bounds, 10, 10, 10, 10);
+  map.setCenter(new window.kakao.maps.LatLng(centerLat, centerLng));
+
+  // 2차 스마트 보정: 1단계 더 확대해도 모든 도트가 화면 안에 잘 들어오는지 테스트
+  const currentLevel = map.getLevel();
+  if (currentLevel > 1) {
+    const testLevel = currentLevel - 1;
+    map.setLevel(testLevel, { animate: false });
+    map.setCenter(new window.kakao.maps.LatLng(centerLat, centerLng));
+
+    const testBounds = map.getBounds();
+    let allDotsFit = true;
+
+    for (const d of props.dots) {
+      if (d.lat != null && d.lng != null) {
+        const pt = new window.kakao.maps.LatLng(d.lat, d.lng);
+        if (!testBounds.contain(pt)) {
+          allDotsFit = false;
+          break;
+        }
+      }
+    }
+
+    // 1단계 확대했을 때 도트가 하나라도 화면 밖으로 잘리면 안전하게 이전 레벨로 원복
+    if (!allDotsFit) {
+      map.setLevel(currentLevel, { animate: false });
+      map.setCenter(new window.kakao.maps.LatLng(centerLat, centerLng));
+    }
+  }
 }
 
-function fitAllMarkers() {
-  fitToPoints(props.markers);
-}
-
-function fitSelected() {
-  fitToPoints([...props.markers, ...props.dots]);
+function applyViewMode() {
+  if (props.mode === 'infra' || props.mode === 'safety') {
+    fitCenterWithAllElements();
+  } else {
+    fitAllElements();
+  }
 }
 
 function redraw() {
@@ -166,8 +309,12 @@ function redraw() {
     o.setMap(null);
   });
   overlays = [];
-  dotElements = new Map();
+  dotElements.clear();
 
+  polygonOverlays.forEach((p) => p.setMap(null));
+  polygonOverlays = [];
+
+  // 매물 핀
   props.markers.forEach((marker) => {
     if (marker.lat == null || marker.lng == null) return;
     const latlng = new window.kakao.maps.LatLng(marker.lat, marker.lng);
@@ -181,6 +328,7 @@ function redraw() {
     overlays.push(overlay);
   });
 
+  // 인프라/안전 도트
   props.dots.forEach((dot) => {
     if (dot.lat == null || dot.lng == null) return;
     if (dot.category === '_dummy' || dot.categoryKey === '_dummy') return;
@@ -202,23 +350,60 @@ function redraw() {
       content: element,
       zIndex: 3,
     });
-
     overlay.setMap(map);
     overlays.push(overlay);
   });
 
-  if (props.fixedCenter) {
-    map.setCenter(
-      new window.kakao.maps.LatLng(props.center.lat, props.center.lng),
-    );
-  } else if (props.markers.length > 0 || props.dots.length > 0) {
-    fitToPoints([...props.markers, ...props.dots]);
+  // 폴리곤
+  props.polygons.forEach((poly) => {
+    if (!poly.path || !Array.isArray(poly.path)) return;
+
+    const styleOptions = {
+      strokeWeight: poly.strokeWeight || 2.5,
+      strokeColor: poly.strokeColor || poly.color || '#2563EB',
+      strokeOpacity: poly.strokeOpacity || 0.9,
+      fillColor: poly.fillColor || poly.color || '#3B82F6',
+      fillOpacity: poly.fillOpacity || 0.2,
+      zIndex: 1,
+    };
+
+    if (Array.isArray(poly.path[0]) && Array.isArray(poly.path[0][0])) {
+      poly.path.forEach((subPath) => {
+        const kakaoPath = convertPathToKakao(subPath);
+        if (kakaoPath.length < 3) return;
+        const polygonOverlay = new window.kakao.maps.Polygon({
+          path: kakaoPath,
+          ...styleOptions,
+        });
+        polygonOverlay.setMap(map);
+        polygonOverlays.push(polygonOverlay);
+      });
+    } else {
+      const kakaoPath = convertPathToKakao(poly.path);
+      if (kakaoPath.length < 3) return;
+      const polygonOverlay = new window.kakao.maps.Polygon({
+        path: kakaoPath,
+        ...styleOptions,
+      });
+      polygonOverlay.setMap(map);
+      polygonOverlays.push(polygonOverlay);
+    }
+  });
+
+  applyViewMode();
+}
+
+function updateActiveDot(newKey, oldKey) {
+  if (oldKey && dotElements.has(oldKey)) {
+    dotElements.get(oldKey).classList.remove('infra-dot--active');
+  }
+  if (newKey && dotElements.has(newKey)) {
+    dotElements.get(newKey).classList.add('infra-dot--active');
   }
 }
 
 function handleIdle() {
   if (!map) return;
-
   const bounds = map.getBounds();
   const sw = bounds.getSouthWest();
   const ne = bounds.getNorthEast();
@@ -231,35 +416,22 @@ function handleIdle() {
   });
 }
 
-watch(() => [props.markers, props.dots], redraw, { deep: true });
-
-const selectedPos = computed(() => {
-  const m = props.markers.find((x) => x.selected);
-  return m ? `${m.lat},${m.lng}` : null;
-});
-
-watch(selectedPos, (pos) => {
-  if (!map) return;
-  if (props.fixedCenter) return;
-
-  if (pos) {
-    fitSelected();
-  } else {
-    fitAllMarkers();
-  }
-});
+watch(
+  () => [
+    props.markers,
+    props.dots,
+    props.polygons,
+    props.center,
+    props.level,
+    props.mode,
+  ],
+  redraw,
+  { deep: true },
+);
 
 watch(
   () => props.activeDotKey,
-  (key, previousKey) => {
-    if (previousKey) {
-      dotElements.get(previousKey)?.classList.remove('infra-dot--active');
-    }
-
-    if (key) {
-      dotElements.get(key)?.classList.add('infra-dot--active');
-    }
-  },
+  (newVal, oldVal) => updateActiveDot(newVal, oldVal),
 );
 
 onMounted(async () => {
@@ -283,7 +455,10 @@ onUnmounted(() => {
     o.setMap(null);
   });
   overlays = [];
+  polygonOverlays.forEach((p) => p.setMap(null));
+  polygonOverlays = [];
   dotElements.clear();
+
   if (map) {
     window.kakao.maps.event.removeListener(map, 'idle', handleIdle);
     map = null;

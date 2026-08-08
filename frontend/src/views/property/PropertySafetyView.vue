@@ -1,29 +1,37 @@
 <template>
   <div class="safety-page">
-    <!-- 1. 상단 지도 영역 -->
     <div class="map-section">
       <div class="map-container">
+        <!-- fixed-center를 제거하여 모든 좌표가 지도 안에 들어오도록 자동 조절 -->
         <KakaoMap
           :center="propertyCenter"
           :markers="mapMarkers"
           :dots="activeDots"
-          :level="4"
-          :fixed-center="true"
+          :polygons="activePolygons"
+          mode="safety"
         />
       </div>
     </div>
 
-    <!-- 2. 하단 스크롤 영역 -->
     <SimpleBar class="scroll-area">
       <div class="scroll-wrapper">
         <div class="scroll-content">
-          <!-- 타이틀 -->
           <div class="title-area">
             <h1 class="main-title">매물 기준 안전 지표예요</h1>
-            <p class="sub-title">반경 500m 공공데이터 기준 · 2026.07 갱신</p>
+            <p
+              v-if="isLoading"
+              class="sub-title"
+            >
+              데이터를 불러오는 중입니다...
+            </p>
+            <p
+              v-else
+              class="sub-title"
+            >
+              반경 500m 공공데이터 기준
+            </p>
           </div>
 
-          <!-- 세그먼트 탭 -->
           <div class="tab-bar">
             <button
               v-for="tab in tabs"
@@ -36,35 +44,44 @@
             </button>
           </div>
 
-          <!-- 리스트 카드 영역 -->
           <div class="info-card">
-            <div
-              v-for="item in activeTabItems"
-              :key="item.key"
-              class="list-item"
-              :class="{ selected: selectedItemKey === item.key }"
-              @click="toggleItemSelection(item.key)"
-            >
-              <div class="item-left">
-                <div class="icon-badge">
-                  <component
-                    :is="item.icon"
-                    class="item-icon"
-                  />
-                </div>
-                <span class="item-label">{{ item.label }}</span>
-              </div>
-              <span
-                class="item-value"
-                :class="{ 'text-warning': item.status === 'warning' }"
+            <template v-if="activeTabItems.length > 0">
+              <div
+                v-for="item in activeTabItems"
+                :key="item.key"
+                class="list-item"
+                :class="{
+                  selected: selectedItemKey === item.key,
+                  disabled: item.count === 0,
+                }"
+                @click="toggleItemSelection(item)"
               >
-                {{ item.value }}
-              </span>
+                <div class="item-left">
+                  <div class="icon-badge">
+                    <component
+                      :is="item.icon"
+                      class="item-icon"
+                    />
+                  </div>
+                  <span class="item-label">{{ item.label }}</span>
+                </div>
+                <span
+                  class="item-value"
+                  :class="{ 'text-muted': item.count === 0 }"
+                >
+                  {{ item.value }}
+                </span>
+              </div>
+            </template>
+            <div
+              v-else-if="!isLoading"
+              class="empty-msg"
+            >
+              안전 정보 데이터가 없습니다.
             </div>
           </div>
         </div>
 
-        <!-- 하단 출처 -->
         <div class="data-source">
           <p class="source-title">데이터 출처</p>
           <p class="source-desc">
@@ -78,31 +95,32 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
-import { SAFETY_CATEGORIES } from '@/constants/preferenceOptions';
+import { ref, computed, onMounted } from 'vue';
+import { useRoute } from 'vue-router';
 import SimpleBar from 'simplebar-vue';
-import 'simplebar-vue/dist/simplebar.min.css';
 import KakaoMap from '@/components/KakaoMap.vue';
+import { propertyApi } from '@/api/services';
+import { SAFETY_CATEGORIES } from '@/constants/preferenceOptions';
 
-// 내 매물 중심 좌표
-const propertyCenter = ref({ lat: 35.223, lng: 128.682 });
-const mapMarkers = ref([
-  { lat: 35.223, lng: 128.682, selected: true, count: 1 },
-]);
+const route = useRoute();
 
-// 실제 지도 위에 뿌려질 안전 시설물 데이터 (categoryKey 기반으로 지도 색상/아이콘 적용)
-const apiMapDots = ref([
-  { id: 1, lat: 35.2245, lng: 128.6805, categoryKey: 'POLICE' },
-  { id: 2, lat: 35.2235, lng: 128.6812, categoryKey: 'CCTV' },
-  { id: 3, lat: 35.222, lng: 128.683, categoryKey: 'CCTV' },
-  { id: 4, lat: 35.2215, lng: 128.6825, categoryKey: 'EMERGENCY_BELL' },
-  { id: 5, lat: 35.224, lng: 128.6835, categoryKey: 'STREET_LIGHT' },
-  { id: 6, lat: 35.225, lng: 128.684, categoryKey: 'CHILD_PROTECTION' },
-  { id: 7, lat: 35.221, lng: 128.685, categoryKey: 'CHILD_ACCIDENT' },
-]);
+const CATEGORY_KEY_MAP = {
+  POLICE_CENTER: 'POLICE',
+  CCTV: 'CCTV',
+  SAFETY_BELL: 'EMERGENCY_BELL',
+  SECURITY_LIGHT: 'STREET_LIGHT',
+  CHILD_SAFE_ZONE: 'SCHOOL_ZONE',
+  CHILD_GUARD_HOUSE: 'CHILD_PROTECTION',
+  CHILD_ACCIDENT_ZONE: 'CHILD_ACCIDENT',
+  PEDESTRIAN_ACCIDENT_ZONE: 'PEDESTRIAN_ACCIDENT',
+};
 
+const isLoading = ref(true);
 const currentTab = ref('crime');
 const selectedItemKey = ref(null);
+const rawSafetyData = ref(null);
+
+const propertyCenter = ref({ lat: 36.3273128, lng: 127.4647872 });
 
 const tabs = ref([
   {
@@ -123,48 +141,185 @@ const tabs = ref([
   },
 ]);
 
-const mockValues = {
-  POLICE: { value: '상남지구대 350m', status: 'safe' },
-  CCTV: { value: '반경 내 34대', status: 'safe' },
-  EMERGENCY_BELL: { value: '반경 내 3곳', status: 'safe' },
-  STREET_LIGHT: { value: '반경 내 15곳', status: 'safe' },
-  CHILD_PROTECTION: { value: '반경 내 2곳', status: 'safe' },
-  SCHOOL_ZONE: { value: '2곳 지정', status: 'safe' },
-  CHILD_ACCIDENT: { value: '반경 내 3곳', status: 'warning' },
-  PEDESTRIAN_ACCIDENT: { value: '반경 내 4곳', status: 'warning' },
+onMounted(async () => {
+  const propertyId = route.params.id;
+  try {
+    isLoading.value = true;
+    const res = await propertyApi.safety(propertyId);
+    const actualData = res?.data || res;
+
+    if (actualData) {
+      rawSafetyData.value = actualData;
+
+      const lat = Number(actualData.latitude);
+      const lng = Number(actualData.longitude);
+      if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
+        propertyCenter.value = { lat, lng };
+      }
+    }
+  } catch (e) {
+    console.error('안전 정보 불러오기 실패:', e);
+  } finally {
+    isLoading.value = false;
+  }
+});
+
+const mapMarkers = computed(() => {
+  if (!propertyCenter.value?.lat) return [];
+  return [
+    {
+      lat: propertyCenter.value.lat,
+      lng: propertyCenter.value.lng,
+      selected: true,
+      count: 1,
+    },
+  ];
+});
+
+const getTabItemCount = (tabKey) => {
+  if (!rawSafetyData.value) return 0;
+  return tabKey === 'crime'
+    ? rawSafetyData.value.crimeSafetyCount || 0
+    : rawSafetyData.value.trafficSafetyCount || 0;
 };
 
-// 현재 탭 항목 리스트
 const activeTabItems = computed(() => {
+  if (!rawSafetyData.value?.safetyList) return [];
+
   const currentCategoryKeys =
     tabs.value.find((t) => t.key === currentTab.value)?.categoryKeys || [];
 
   return currentCategoryKeys.map((key) => {
-    const categoryInfo = SAFETY_CATEGORIES.find((c) => c.key === key);
-    const apiData = mockValues[key] || { value: '-', status: 'safe' };
+    const categoryMeta = SAFETY_CATEGORIES.find((c) => c.key === key) || {};
+    const apiItem = rawSafetyData.value.safetyList.find((s) => {
+      const mappedKey = CATEGORY_KEY_MAP[s.safeCategory] || s.safeCategory;
+      return mappedKey === key;
+    });
+
+    const count = apiItem?.countWithin500m || 0;
+    const unit = key === 'CCTV' ? '대' : '곳';
+    const displayValue = `반경 내 ${count}${unit}`;
+
     return {
-      ...categoryInfo,
-      value: apiData.value,
-      status: apiData.status,
+      key,
+      label: categoryMeta.label || key,
+      icon: categoryMeta.icon,
+      color: categoryMeta.color,
+      value: displayValue,
+      count,
+      apiCategoryKey: apiItem?.safeCategory,
+      details: apiItem?.details || [],
     };
   });
 });
 
-const getTabItemCount = (tabKey) => {
-  return tabs.value.find((t) => t.key === tabKey)?.categoryKeys.length || 0;
-};
-
-// 지도 위 핀(도트) 필터링 (항목 클릭 시 해당 카테고리 핀만 지도에 표시)
 const activeDots = computed(() => {
+  if (!rawSafetyData.value?.safetyList) return [];
+
+  const extractDots = (categoryKeys) => {
+    const rawDots = [];
+
+    rawSafetyData.value.safetyList.forEach((s) => {
+      const mappedKey = CATEGORY_KEY_MAP[s.safeCategory] || s.safeCategory;
+      if (categoryKeys.includes(mappedKey) && s.details) {
+        s.details.forEach((detail) => {
+          const lat = Number(detail.latitude);
+          const lng = Number(detail.longitude);
+          if (!isNaN(lat) && !isNaN(lng)) {
+            rawDots.push({
+              id: detail.safeDetailId,
+              lat,
+              lng,
+              categoryKey: mappedKey,
+              name: detail.safeName,
+            });
+          }
+        });
+      }
+    });
+
+    const coordCountMap = new Map();
+
+    return rawDots.map((dot) => {
+      const coordKey = `${dot.lat.toFixed(6)},${dot.lng.toFixed(6)}`;
+      const count = coordCountMap.get(coordKey) || 0;
+      coordCountMap.set(coordKey, count + 1);
+
+      if (count > 0) {
+        const offset = count * 0.00015;
+        return {
+          ...dot,
+          lat: dot.lat + offset,
+          lng: dot.lng + offset,
+        };
+      }
+
+      return dot;
+    });
+  };
+
+  if (selectedItemKey.value) {
+    return extractDots([selectedItemKey.value]);
+  }
+
   const currentCategoryKeys =
     tabs.value.find((t) => t.key === currentTab.value)?.categoryKeys || [];
 
-  return apiMapDots.value.filter((dot) => {
-    if (selectedItemKey.value) {
-      return dot.categoryKey === selectedItemKey.value;
+  return extractDots(currentCategoryKeys);
+});
+
+const activePolygons = computed(() => {
+  if (!rawSafetyData.value?.safetyList) return [];
+
+  const polygons = [];
+  const currentCategoryKeys = selectedItemKey.value
+    ? [selectedItemKey.value]
+    : tabs.value.find((t) => t.key === currentTab.value)?.categoryKeys || [];
+
+  rawSafetyData.value.safetyList.forEach((s) => {
+    const mappedKey = CATEGORY_KEY_MAP[s.safeCategory] || s.safeCategory;
+
+    if (currentCategoryKeys.includes(mappedKey) && s.details) {
+      const categoryMeta =
+        SAFETY_CATEGORIES.find((c) => c.key === mappedKey) || {};
+      const categoryColor = categoryMeta.color || '#10B981';
+
+      s.details.forEach((detail) => {
+        if (detail.polygon) {
+          try {
+            let parsed = detail.polygon;
+
+            while (typeof parsed === 'string') {
+              parsed = JSON.parse(parsed);
+            }
+
+            if (parsed?.type === 'Feature') {
+              parsed = parsed.geometry;
+            }
+
+            if (
+              parsed?.type === 'Polygon' &&
+              Array.isArray(parsed?.coordinates?.[0])
+            ) {
+              polygons.push({
+                id: detail.safeDetailId,
+                path: parsed.coordinates[0],
+                strokeColor: categoryColor,
+                strokeWeight: 2.5,
+                strokeOpacity: 0.8,
+                fillColor: categoryColor,
+                fillOpacity: 0.2,
+              });
+            }
+          } catch (e) {
+            console.warn('Polygon 파싱 오류 스킵:', e);
+          }
+        }
+      });
     }
-    return currentCategoryKeys.includes(dot.categoryKey);
   });
+
+  return polygons;
 });
 
 const changeTab = (tabKey) => {
@@ -172,8 +327,9 @@ const changeTab = (tabKey) => {
   selectedItemKey.value = null;
 };
 
-const toggleItemSelection = (itemKey) => {
-  selectedItemKey.value = selectedItemKey.value === itemKey ? null : itemKey;
+const toggleItemSelection = (item) => {
+  if (item.count === 0) return;
+  selectedItemKey.value = selectedItemKey.value === item.key ? null : item.key;
 };
 </script>
 
@@ -195,38 +351,8 @@ const toggleItemSelection = (itemKey) => {
 
 .map-container {
   width: 100%;
-  height: 190px;
+  height: 220px;
   position: relative;
-}
-
-.map-legend {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 16px;
-  padding: 10px 18px 4px 18px;
-  font-size: 12px;
-  color: #666666;
-}
-
-.legend-item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.legend-item .dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-}
-.dot.my-property {
-  background-color: #ffb703;
-}
-.dot.safe-facility {
-  background-color: #10b981;
-}
-.dot.accident-zone {
-  background-color: #dc2626;
 }
 
 .scroll-area {
@@ -315,9 +441,15 @@ const toggleItemSelection = (itemKey) => {
   border-bottom-left-radius: 15px;
   border-bottom-right-radius: 15px;
 }
+
 .list-item.selected {
   background-color: #fffdf5;
   box-shadow: inset 0 0 0 2px #ffb703;
+}
+
+.list-item.disabled {
+  opacity: 0.55;
+  cursor: default;
 }
 
 .item-left {
@@ -326,12 +458,11 @@ const toggleItemSelection = (itemKey) => {
   gap: 12px;
 }
 
-/* 💡 2번째 사진처럼 리스트 아이콘 뱃지 스타일 통일 (연노랑 배경 + 브라운/주황 아이콘) */
 .icon-badge {
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  background-color: #fff8e1; /* 연한 크림/옐로우 톤 */
+  background-color: #fff8e1;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -340,7 +471,7 @@ const toggleItemSelection = (itemKey) => {
 .item-icon {
   width: 18px;
   height: 18px;
-  color: #d97706; /* 따뜻한 주황/브라운 톤 통일 */
+  color: #d97706;
 }
 
 .item-label {
@@ -351,10 +482,18 @@ const toggleItemSelection = (itemKey) => {
 .item-value {
   font-size: 13px;
   font-weight: 600;
-  color: var(--kb-gray);
+  color: #222222;
 }
-.item-value.text-warning {
-  color: #dc2626;
+.item-value.text-muted {
+  color: #888888;
+  font-weight: 500;
+}
+
+.empty-msg {
+  padding: 24px;
+  text-align: center;
+  font-size: 13px;
+  color: #888888;
 }
 
 .data-source {
