@@ -117,6 +117,21 @@ export const propertyApi = {
         },
       ],
     ),
+  getList: async ({ centerLat, centerLng } = {}) => {
+    const params = {};
+    if (centerLat != null && centerLng != null) {
+      params.centerLat = centerLat;
+      params.centerLng = centerLng;
+    }
+    const res = await client.get('/properties', { params });
+    return (res.data.data ?? []).map((p) => ({ ...p, propertyId: p.id }));
+  },
+};
+
+// ---------- building ----------
+export const buildingApi = {
+  infraPoints: async (buildingId) =>
+    (await client.get(`/buildings/${buildingId}/infrastructures`)).data,
 };
 
 // ---------- favorite ----------
