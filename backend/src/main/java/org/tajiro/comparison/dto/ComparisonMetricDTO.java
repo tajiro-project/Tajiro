@@ -28,7 +28,7 @@ public class ComparisonMetricDTO {
     private Integer infraCount;
     private Integer evaluationScore;
     private Integer cctvCountWithin500m;
-    private Integer policeCountWithin500m;
+    private Integer policeNearestDistanceMeters;
     private Integer childrenCountWithin500m;
     private Integer bellCountWithin500m;
     private Integer safetyLightCountWithin500m;

@@ -43,6 +43,7 @@ public class OpenAiComparisonClient implements ComparisonAiClient {
             "deposit, monthlyRent, maintenanceFee의 단위는 만원입니다.",
             "commuteMinutes는 예상 왕복 통근 시간으로 낮을수록 좋습니다.",
             "evaluationScore는 주변 시세 대비 차이(%)이며 0에 가까울수록 시세 안정성이 높습니다.",
+            "policeNearestDistanceMeters는 가장 가까운 경찰서·지구대까지의 직선거리(m)이며 낮을수록 가깝습니다.",
             "안전 시설 개수는 참고 지표일 뿐 실제 안전을 보장하지 않습니다.",
             "우선순위 배열의 앞 항목을 더 중요하게 반영하고, 없으면 모든 지표를 균형 있게 비교하세요.",
             "반드시 전달된 매물 중 정확히 하나를 추천하세요.",

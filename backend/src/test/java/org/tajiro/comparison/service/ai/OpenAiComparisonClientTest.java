@@ -106,6 +106,7 @@ class OpenAiComparisonClientTest {
                         .monthlyRent(20)
                         .maintenanceFee(5)
                         .commuteMinutes(30)
+                        .policeNearestDistanceMeters(350)
                         .updateDate(LocalDateTime.of(2026, 7, 24, 12, 30))
                         .build(),
                 ComparisonMetricDTO.builder()
@@ -114,6 +115,7 @@ class OpenAiComparisonClientTest {
                         .monthlyRent(38)
                         .maintenanceFee(5)
                         .commuteMinutes(20)
+                        .policeNearestDistanceMeters(620)
                         .build());
     }
 }

@@ -577,9 +577,9 @@ const safetyRows = computed(() => {
     },
     {
       label: '경찰·지구대',
-      values: metrics.value.map((m) => m.policeCountWithin500m ?? 0),
-      fmt: (v) => `${v}곳`,
-      better: 'max',
+      values: metrics.value.map((m) => m.policeNearestDistanceMeters ?? null),
+      fmt: (v) => `${v.toLocaleString()}m`,
+      better: 'min',
     },
     {
       label: '보안등',
@@ -601,20 +601,19 @@ const safetyRows = computed(() => {
     },
   ];
   return rows.map((row) => {
-    // min, max에 따라 순서 정렬
-    const sorted = [...row.values].sort((a, b) =>
+    const sorted = row.values.filter(Number.isFinite).sort((a, b) =>
       row.better === 'max' ? b - a : a - b,
     );
-    // 순서 정렬 후 가장 높은 값과 두 번째로 높은 값을 가져옴
     const best = sorted[0];
     const second = sorted[1];
     return {
       label: row.label,
       cells: row.values.map((value) => ({
-        text: row.fmt(value),
-        // tone 결정: best, second, plain
+        text: Number.isFinite(value) ? row.fmt(value) : '정보 없음',
         tone:
-          value === best
+          !Number.isFinite(value)
+            ? 'plain'
+            : value === best
             ? 'best'
             : value === second && row.values.length > 2
               ? 'mid'
