@@ -165,10 +165,6 @@
                 {{ letters[i] }} {{ shortName(item.title) }}
               </span>
             </div>
-            <div class="best-bar">
-              <span class="bb-label">가장 높은 영역</span>
-              <b class="bb-value">{{ bestAreaText }}</b>
-            </div>
             <p
               v-if="unavailableAxes.length"
               class="metric-note"
@@ -262,23 +258,6 @@
                 </tr>
               </tbody>
             </table>
-            <div class="win-bar">
-              <span class="bb-label">항목 우위</span>
-              <span class="win-chips">
-                <span
-                  v-for="(item, i) in items"
-                  :key="i"
-                  class="win-chip"
-                  :class="{
-                    top:
-                      winCounts[i] === Math.max(...winCounts) &&
-                      winCounts[i] > 0,
-                  }"
-                >
-                  <b>{{ letters[i] }}</b> {{ winCounts[i] }}개
-                </span>
-              </span>
-            </div>
           </div>
         </section>
 
