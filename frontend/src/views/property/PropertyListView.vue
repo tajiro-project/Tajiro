@@ -964,7 +964,10 @@ const housingChipOn = computed(
 const housingChipLabel = computed(() => {
   if (!housingChipOn.value) return '주거 조건';
   const parts = [];
-  if (filter.tradeTypes.length < TRADE_TYPES.length) {
+  if (
+    filter.tradeTypes.length > 0 &&
+    filter.tradeTypes.length < TRADE_TYPES.length
+  ) {
     parts.push(
       filter.tradeTypes.length === 1
         ? filter.tradeTypes[0]
