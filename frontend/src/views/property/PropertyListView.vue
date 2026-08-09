@@ -626,7 +626,7 @@ async function loadPreference() {
     preference.value = res.data.data ?? res.data;
     applyPreferenceToFilter(preference.value);
   } catch (e) {
-    console.warn('[preference] 실패', e.response?.status, e.response?.data);
+    // console.warn('[preference] 실패', e.response?.status, e.response?.data);
   }
 }
 
@@ -700,7 +700,7 @@ async function commitFilter() {
   isLoading.value = true;
   try {
     const res = await client.put('/users/me/preferences', body);
-    preference.value = res.data.data;
+    preference.value = res.data.data ?? res.data;
     await fetchProperties();
   } catch (e) {
     loadError.value = getApiErrorMessage(e);
