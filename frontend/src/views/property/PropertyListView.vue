@@ -625,8 +625,8 @@ async function loadPreference() {
     const res = await client.get('/users/me/preferences');
     preference.value = res.data.data ?? res.data;
     applyPreferenceToFilter(preference.value);
-  } catch (e) {
-    // console.warn('[preference] 실패', e.response?.status, e.response?.data);
+  } catch {
+    // 가치관이 없으면 fetchProperties 가 404 를 받아 PreferenceWizardView로 보낸다
   }
 }
 
