@@ -134,6 +134,7 @@
       </ul>
 
       <button
+        v-if="items.length < 3"
         class="add-btn"
         type="button"
         @click="goPropertyListForAdd"
@@ -153,12 +154,6 @@
         </svg>
         매물 리스트에서 추가하기
       </button>
-      <p
-        v-if="toastMessage"
-        class="toast-msg"
-      >
-        {{ toastMessage }}
-      </p>
 
       <p class="tip">
         <svg
@@ -209,8 +204,6 @@ const errorMessage = ref('');
 const items = ref([]);
 const checkedIds = ref([]);
 const imageErrorIds = ref([]);
-const toastMessage = ref('');
-let toastTimer = null;
 
 onMounted(loadCompareBox);
 
@@ -270,22 +263,11 @@ function startCompare() {
 }
 
 function goPropertyListForAdd() {
-  if (items.value.length >= 3) {
-    showToast('비교함에는 최대 3개까지만 담을 수 있어요.');
-    return;
-  }
+  if (items.value.length >= 3) return;
 
   router.push('/properties');
 }
 
-function showToast(message) {
-  toastMessage.value = message;
-  if (toastTimer) clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => {
-    toastMessage.value = '';
-    toastTimer = null;
-  }, 2200);
-}
 
 function goBack() {
   if (history.length > 1) router.back();
@@ -488,25 +470,6 @@ function formatFloorInfo(floorInfo) {
 }
 .remove:disabled {
   opacity: 0.45;
-}
-.toast-msg {
-  position: fixed;
-  left: 50%;
-  bottom: 92px;
-  z-index: 80;
-  width: max-content;
-  max-width: min(300px, calc(100% - 72px));
-  transform: translateX(-50%);
-  padding: 9px 12px;
-  border-radius: 10px;
-  background: rgba(33, 30, 24, 0.92);
-  color: #fff;
-  font-size: 11.5px;
-  font-weight: 700;
-  line-height: 1.4;
-  text-align: center;
-  white-space: pre-line;
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.16);
 }
 .add-btn {
   display: flex;
