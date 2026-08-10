@@ -31,6 +31,7 @@
         <result property="areaM2" column="area_m2"/>
         <result property="floorInfo" column="floor_info"/>
         <result property="address" column="address"/>
+        <result property="parkAvailability" column="park_availability"/>
         <result property="thumbnailUrl" column="thumbnail_url"/>
         <result property="distanceMeters" column="distance_meters"/>
         <result property="desiredInfraCount" column="desired_infra_count"/>
@@ -81,6 +82,7 @@
         p.area_m2,
         p.floor_info,
         p.address,
+        p.park_availability,
         b.id AS b_id,
         b.bld_nm AS b_bld_nm,
         b.latitude AS b_latitude,
@@ -201,6 +203,9 @@
                 AND i.count_within2000m &gt; 0
                 AND FIND_IN_SET(i.infra_category, #{desiredAmenityCategories})
                 )
+            </if>
+            <if test="hasCar != null and hasCar">
+                AND p.park_availability = 1
             </if>
         </where>
         ORDER BY p.id

@@ -54,11 +54,11 @@ public class PropertyMapperTest {
     @Test
     @DisplayName("가치관 경로")
     public void getListByPreference() {
-        HousingPreferenceVO pref = housingPreferenceMapper.findByUserId(2L);
-        assertNotNull(pref);
+        HousingPreferenceVO pref = housingPreferenceMapper.findByUserId(3L);
+        assertNotNull(pref, "user 3 의 가치관이 없습니다");
 
-        PropertySearchRequest request = new PropertySearchRequest().builder()
-                .userId(2L)
+        PropertySearchRequest request = PropertySearchRequest.builder()
+                .userId(3L)
                 .refLat(pref.getWorkplaceLatitude())
                 .refLng(pref.getWorkplaceLongitude())
                 .maxWorkplaceDistanceMeters(pref.getMaxWorkplaceDistanceMeters())
@@ -75,36 +75,56 @@ public class PropertyMapperTest {
                 .maxAreaM2(pref.getMaxArea())
                 .desiredInfraCategories(pref.getDesiredInfraCategories())
                 .desiredAmenityCategories(pref.getDesiredAmenityCategories())
+                .hasCar(pref.getHasCar())
                 .build();
 
         List<PropertyVO> list = propertyMapper.getList(request);
 
         list.forEach(p->System.out.printf(
-                "%d %s %s %s %d/%d %s㎡ [%s] %dm 점수=%s 인프라=%d 편의=%d%n",
+                "%d %s %s %s %d/%d %s㎡ 주차%s [%s] %dm 점수=%s 인프라=%d 편의=%d%n",
                 p.getId(), p.getPropertyType(), p.getTradeType(), p.getFloorInfo(),
                 p.getDeposit(), p.getMonthlyRent(), p.getAreaM2(),
+                Boolean.TRUE.equals(p.getParkAvailability()) ? "O" : "X",
                 p.getBuildingVO().getBldNm(), p.getDistanceMeters(),
                 p.getPropertyValueAnalysisResultVO() == null ? "없음" : p.getPropertyValueAnalysisResultVO().getRecommendScore(),
                 p.getDesiredInfraCount(), p.getDesiredAmenityCount()));
 
-        System.out.println("총 " + list.size() + "건");
+        System.out.println("총 " + list.size() + "건 (자차 보유 = " + pref.getHasCar() + ")");
 
-        // userId : 1L 검증
-//        assertTrue(list.stream().allMatch(p ->
-//                p.getTradeType().equals("월세")
-//                        && p.getDeposit() >= 500 && p.getDeposit() <= 3000
-//                        && p.getMonthlyRent() >= 20 && p.getMonthlyRent() <= 65
-//                        && p.getDistanceMeters() <= 2300));
+        assertFalse(list.isEmpty());
 
-        // userId : 2L 검증
+        List<String> types  = split(pref.getHousingTypes());
+        List<String> trades = split(pref.getTradeTypes());
+
         assertTrue(list.stream().allMatch(p ->
-                (p.getTradeType().equals("월세") || p.getTradeType().equals("전세"))
-                        && p.getDeposit() >= 1000
-                        && p.getDeposit() <= 20000
-                        && p.getAreaM2().compareTo(new BigDecimal("59")) >= 0
-                        && p.getAreaM2().compareTo(new BigDecimal("112")) <= 0
-                        && p.getDistanceMeters() <= 3000
+                types.contains(p.getPropertyType())
+                        && trades.contains(p.getTradeType())
+                        && p.getAreaM2().compareTo(pref.getMinArea()) >= 0
+                        && p.getAreaM2().compareTo(pref.getMaxArea()) <= 0
+                        && p.getDistanceMeters() <= pref.getMaxWorkplaceDistanceMeters()
         ));
+
+        assertTrue(list.stream().allMatch(p -> {
+            switch (p.getTradeType()) {
+                case "월세":
+                    return p.getDeposit() >= pref.getMinDeposit()
+                            && p.getDeposit() <= pref.getMaxDeposit()
+                            && p.getMonthlyRent() >= pref.getMinMonthlyRent()
+                            && p.getMonthlyRent() <= pref.getMaxMonthlyRent();
+                case "전세":
+                    return p.getDeposit() >= pref.getMinDeposit()
+                            && p.getDeposit() <= pref.getMaxDeposit();
+                case "매매":
+                    return p.getDeposit() >= pref.getMinSellingPrice()
+                            && p.getDeposit() <= pref.getMaxSellingPrice();
+                default:
+                    return false;
+            }
+        }));
+
+        if (Boolean.TRUE.equals(pref.getHasCar())) {
+            assertTrue(list.stream().allMatch(p -> Boolean.TRUE.equals(p.getParkAvailability())));
+        }
     }
 
     @Test
