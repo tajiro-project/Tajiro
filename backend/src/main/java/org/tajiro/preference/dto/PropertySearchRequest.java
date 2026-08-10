@@ -27,6 +27,7 @@ public class PropertySearchRequest {
     private Integer maxMonthlyRent;
     private Integer minSellingPrice;
     private Integer maxSellingPrice;
+    private Boolean hasCar;
 
     private BigDecimal minAreaM2;
     private BigDecimal maxAreaM2;
