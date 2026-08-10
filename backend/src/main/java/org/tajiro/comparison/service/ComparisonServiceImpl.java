@@ -62,7 +62,11 @@ public class ComparisonServiceImpl implements ComparisonService {
     //사용자 ID와 매물 ID 목록을 검증한 다음, DB에서 비교 지표를 조회하여 DTO로 반환
     @Override
     @Transactional(readOnly = true)
-    public ComparisonMetricsResponseDTO getComparisonMetrics(Long userId, List<Long> propertyIds) {
+    public ComparisonMetricsResponseDTO getComparisonMetrics(
+            Long userId,
+            List<Long> propertyIds,
+            Double workplaceLat,
+            Double workplaceLng) {
         if (propertyIds == null
                 || propertyIds.size() < MIN_COMPARISON_PROPERTIES
                 || propertyIds.size() > MAX_COMPARE_PROPERTIES
@@ -70,8 +74,15 @@ public class ComparisonServiceImpl implements ComparisonService {
                 || new HashSet<>(propertyIds).size() != propertyIds.size()) {
             throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
         }
+
+        validateWorkplace(workplaceLat, workplaceLng);
+
         //Mapper를 통해 DB에서 매물 ID에 해당하는 ComparisonMetricDTO를 조회한다.
-        List<ComparisonMetricDTO> items = comparisonMapper.findMetrics(userId, propertyIds);
+        List<ComparisonMetricDTO> items = comparisonMapper.findMetrics(
+                userId,
+                propertyIds,
+                workplaceLat,
+                workplaceLng);
 
         if (items.size() != propertyIds.size()) {
             throw new BusinessException(ErrorCode.PROPERTY_NOT_FOUND);
@@ -80,5 +91,22 @@ public class ComparisonServiceImpl implements ComparisonService {
         return ComparisonMetricsResponseDTO.builder()
                 .items(items)
                 .build();
+    }
+
+    private void validateWorkplace(Double workplaceLat, Double workplaceLng) {
+        if (workplaceLat == null && workplaceLng == null) {
+            return;
+        }
+
+        if (workplaceLat == null
+                || workplaceLng == null
+                || !Double.isFinite(workplaceLat)
+                || !Double.isFinite(workplaceLng)
+                || workplaceLat < -90
+                || workplaceLat > 90
+                || workplaceLng < -180
+                || workplaceLng > 180) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
+        }
     }
 }

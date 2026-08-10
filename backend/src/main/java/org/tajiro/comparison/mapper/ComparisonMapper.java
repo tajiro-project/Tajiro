@@ -22,7 +22,9 @@ public interface ComparisonMapper {
     int delete(@Param("userId") Long userId, @Param("propertyId") Long propertyId);
 
     List<ComparisonMetricDTO> findMetrics(@Param("userId") Long userId,
-                                          @Param("propertyIds") List<Long> propertyIds);
+                                          @Param("propertyIds") List<Long> propertyIds,
+                                          @Param("workplaceLat") Double workplaceLat,
+                                          @Param("workplaceLng") Double workplaceLng);
 
     List<String> findPreferencePriorities(@Param("userId") Long userId);
 }

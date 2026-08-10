@@ -170,7 +170,7 @@ export const PRIORITY_OPTIONS = [
   },
   {
     criterion: 'COST',
-    title: '가성비',
+    title: '가격 낮은 순',
     sub: '월세·관리비 등 주거비 절약',
     icon: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7.2" stroke="#545045" stroke-width="1.5"/><path d="M7 8h6M7 10.5h6M9 6.5l2 7" stroke="#545045" stroke-width="1.3" stroke-linecap="round"/></svg>',
   },

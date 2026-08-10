@@ -79,6 +79,21 @@
                p.floor_info,
                p.update_date,
                CASE
+                   WHEN #{workplaceLat} IS NOT NULL
+                        AND #{workplaceLng} IS NOT NULL
+                        AND b.latitude IS NOT NULL
+                        AND b.longitude IS NOT NULL
+                       THEN CEIL(
+                           (
+                               6371000 * ACOS(LEAST(1,
+                                   COS(RADIANS(#{workplaceLat}))
+                                   * COS(RADIANS(b.latitude))
+                                   * COS(RADIANS(b.longitude) - RADIANS(#{workplaceLng}))
+                                   + SIN(RADIANS(#{workplaceLat}))
+                                   * SIN(RADIANS(b.latitude))
+                               ))
+                           ) * 2 / 67.0
+                       )
                    WHEN pvar.workplace_distance_meters IS NULL THEN NULL
                    ELSE CEIL(pvar.workplace_distance_meters * 2 / 67.0)
                END AS commute_minutes,
@@ -90,12 +105,19 @@
                COALESCE(safety.bell_count, 0) AS bell_count_within500m,
                COALESCE(safety.safety_light_count, 0) AS safety_light_count_within500m
         FROM property p
+        LEFT JOIN building b ON b.id = p.building_id
         LEFT JOIN property_value_analysis_result pvar
                ON pvar.property_id = p.id
               AND pvar.user_id = #{userId}
         LEFT JOIN (
             SELECT building_id,
-                   SUM(count_within2000m) AS infra_count,
+                   ROUND(AVG(
+                       CASE
+                           WHEN count_within2000m > 0
+                               THEN 80 + LEAST(count_within2000m, 5) * 4
+                           ELSE 0
+                       END
+                   )) AS infra_count,
                    MAX(CASE WHEN infra_category = 'POLICE'
                             THEN nearest_distance_meters END) AS police_nearest_distance_meters
             FROM infrastructure

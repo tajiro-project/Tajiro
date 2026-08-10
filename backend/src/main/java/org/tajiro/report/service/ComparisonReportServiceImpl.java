@@ -1,5 +1,7 @@
 package org.tajiro.report.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -10,12 +12,17 @@ import org.tajiro.report.dto.ComparisonReportCreateRequest;
 import org.tajiro.report.dto.ComparisonReportResponse;
 import org.tajiro.report.mapper.ComparisonReportMapper;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class ComparisonReportServiceImpl implements ComparisonReportService {
+
+    private static final String COMPARISON_WORKPLACE_PREFIX = "__COMPARE_WORKPLACE__:";
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private final ComparisonReportMapper comparisonReportMapper;
 
@@ -58,6 +65,8 @@ public class ComparisonReportServiceImpl implements ComparisonReportService {
 
     private ComparisonReportResponse toResponse(ComparisonReportVO report) {
         String propertyIdsJson = report.getComparedPropertyIdsJson();
+        Double[] workplace = extractComparisonWorkplace(
+                report.getPreferencePrioritiesJson());
         return ComparisonReportResponse.builder()
                 .reportId(report.getReportId())
                 .title(report.getTitle())
@@ -67,7 +76,68 @@ public class ComparisonReportServiceImpl implements ComparisonReportService {
                 .aiSummary(report.getAiSummary())
                 .aiRecommendedPropertyId(report.getAiRecommendedPropertyId())
                 .aiAtp(report.getAiAtp())
+                .workplaceLat(workplace[0])
+                .workplaceLng(workplace[1])
+                .priorities(extractComparisonPriorities(
+                        report.getPreferencePrioritiesJson()))
                 .createdAt(report.getCreatedAt())
                 .build();
+    }
+
+    private Double[] extractComparisonWorkplace(String contextJson) {
+        Double[] workplace = new Double[]{null, null};
+        if (contextJson == null || contextJson.trim().isEmpty()) {
+            return workplace;
+        }
+
+        try {
+            JsonNode context = OBJECT_MAPPER.readTree(contextJson);
+            if (!context.isArray()) {
+                return workplace;
+            }
+
+            for (JsonNode value : context) {
+                String text = value.asText("");
+                if (!text.startsWith(COMPARISON_WORKPLACE_PREFIX)) {
+                    continue;
+                }
+
+                String[] coordinates = text
+                        .substring(COMPARISON_WORKPLACE_PREFIX.length())
+                        .split(",", 2);
+                if (coordinates.length == 2) {
+                    workplace[0] = Double.valueOf(coordinates[0]);
+                    workplace[1] = Double.valueOf(coordinates[1]);
+                }
+                break;
+            }
+        } catch (Exception ignored) {
+            // 이전 형식의 리포트는 위치 좌표 없이 반환한다.
+        }
+        return workplace;
+    }
+
+    private List<String> extractComparisonPriorities(String contextJson) {
+        if (contextJson == null || contextJson.trim().isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        try {
+            JsonNode context = OBJECT_MAPPER.readTree(contextJson);
+            if (!context.isArray()) {
+                return Collections.emptyList();
+            }
+
+            List<String> priorities = new ArrayList<>();
+            for (JsonNode value : context) {
+                String text = value.asText("");
+                if (!text.startsWith(COMPARISON_WORKPLACE_PREFIX)) {
+                    priorities.add(text);
+                }
+            }
+            return priorities;
+        } catch (Exception ignored) {
+            return Collections.emptyList();
+        }
     }
 }
