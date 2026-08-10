@@ -39,4 +39,8 @@ public class PropertySearchRequest {
                 || minMonthlyRent != null || maxMonthlyRent != null
                 || minSellingPrice != null || maxSellingPrice != null;
     }
+
+    public Integer getEffectiveRadiusMeters() {
+        return radiusMeters != null ? radiusMeters : maxWorkplaceDistanceMeters;
+    }
 }
