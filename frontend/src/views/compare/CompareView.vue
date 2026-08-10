@@ -1,22 +1,11 @@
 <template>
   <div class="cmp">
     <simplebar class="scroll-area">
-      <div
-        v-if="loading"
-        class="state"
-      >
-        비교 결과를 불러오는 중이에요.
-      </div>
-      <div
-        v-else-if="errorMessage"
-        class="state error"
-      >
+      <div v-if="loading" class="state">비교 결과를 불러오는 중이에요.</div>
+      <div v-else-if="errorMessage" class="state error">
         {{ errorMessage }}
       </div>
-      <div
-        v-else-if="items.length < 2"
-        class="state"
-      >
+      <div v-else-if="items.length < 2" class="state">
         비교할 매물이 부족해요. 비교함에서 2개 이상 선택해주세요.
       </div>
 
@@ -45,12 +34,7 @@
 
         <section class="ai-card">
           <p class="ai-head">
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 16 16"
-              fill="none"
-            >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <path
                 d="M8 1L9.9 6.1L15 8L9.9 9.9L8 15L6.1 9.9L1 8L6.1 6.1L8 1Z"
                 fill="#ffbc00"
@@ -66,24 +50,13 @@
           >
             {{ aiPrimaryText }}
           </p>
-          <p
-            v-if="aiSecondaryText"
-            class="ai-p"
-          >
+          <p v-if="aiSecondaryText" class="ai-p">
             {{ aiSecondaryText }}
           </p>
         </section>
 
-        <p
-          v-if="warningText"
-          class="warn"
-        >
-          <svg
-            width="15"
-            height="15"
-            viewBox="0 0 15 15"
-            fill="none"
-          >
+        <p v-if="warningText" class="warn">
+          <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
             <path
               d="M7.5 1.8L14 13H1L7.5 1.8z"
               stroke="#8a7a55"
@@ -107,12 +80,7 @@
             @click="showOverall = !showOverall"
           >
             <span class="ph-left">
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 16 16"
-                fill="none"
-              >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                 <path
                   d="M2 14V7M6 14V3M10 14V9M14 14V5"
                   stroke="#85714D"
@@ -142,33 +110,17 @@
               </svg>
             </span>
           </button>
-          <div
-            v-show="showOverall"
-            class="panel-body"
-          >
+          <div v-show="showOverall" class="panel-body">
             <div class="radar-wrap">
-              <canvas
-                ref="radarEl"
-                class="radar-canvas"
-              />
+              <canvas ref="radarEl" class="radar-canvas" />
             </div>
             <div class="legend">
-              <span
-                v-for="(item, i) in items"
-                :key="i"
-                class="lg"
-              >
-                <i
-                  class="dot"
-                  :style="{ background: colors[i].dot }"
-                />
+              <span v-for="(item, i) in items" :key="i" class="lg">
+                <i class="dot" :style="{ background: colors[i].dot }" />
                 {{ letters[i] }} {{ shortName(item.title) }}
               </span>
             </div>
-            <p
-              v-if="unavailableAxes.length"
-              class="metric-note"
-            >
+            <p v-if="unavailableAxes.length" class="metric-note">
               데이터 부족으로 제외된 지표: {{ unavailableAxes.join(', ') }}
             </p>
           </div>
@@ -181,12 +133,7 @@
             @click="showSafety = !showSafety"
           >
             <span class="ph-left">
-              <svg
-                width="15"
-                height="15"
-                viewBox="0 0 15 15"
-                fill="none"
-              >
+              <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
                 <path
                   d="M7.5 1.5l5 2.2v3.6c0 3.2-2.1 5-5 6.2-2.9-1.2-5-3-5-6.2V3.7l5-2.2z"
                   stroke="#85714D"
@@ -223,37 +170,21 @@
               </svg>
             </span>
           </button>
-          <div
-            v-show="showSafety"
-            class="panel-body"
-          >
+          <div v-show="showSafety" class="panel-body">
             <table class="safety-table">
               <thead>
                 <tr>
                   <th></th>
-                  <th
-                    v-for="(item, i) in items"
-                    :key="i"
-                  >
+                  <th v-for="(item, i) in items" :key="i">
                     {{ letters[i] }}
                   </th>
                 </tr>
               </thead>
               <tbody>
-                <tr
-                  v-for="row in safetyRows"
-                  :key="row.label"
-                >
+                <tr v-for="row in safetyRows" :key="row.label">
                   <td class="row-label">{{ row.label }}</td>
-                  <td
-                    v-for="(cell, i) in row.cells"
-                    :key="i"
-                  >
-                    <span
-                      class="cell"
-                      :class="cell.tone"
-                      >{{ cell.text }}</span
-                    >
+                  <td v-for="(cell, i) in row.cells" :key="i">
+                    <span class="cell" :class="cell.tone">{{ cell.text }}</span>
                   </td>
                 </tr>
               </tbody>
@@ -270,21 +201,14 @@
         >
           리포트 보관
         </button>
-        <p
-          v-if="savedMsg"
-          class="saved-msg"
-          :class="{ error: savedMsgError }"
-        >
+        <p v-if="savedMsg" class="saved-msg" :class="{ error: savedMsgError }">
           {{ savedMsg }}
         </p>
       </template>
     </simplebar>
 
     <Teleport to="body">
-      <div
-        v-if="showAiRefreshModal"
-        class="modal-overlay"
-      >
+      <div v-if="showAiRefreshModal" class="modal-overlay">
         <div
           class="modal"
           role="dialog"
@@ -292,12 +216,7 @@
           aria-labelledby="ai-refresh-title"
         >
           <span class="m-icon">
-            <svg
-              width="22"
-              height="22"
-              viewBox="0 0 22 22"
-              fill="none"
-            >
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
               <rect
                 x="5"
                 y="2.5"
@@ -315,11 +234,7 @@
               />
             </svg>
           </span>
-          <p
-            id="ai-refresh-title"
-            v
-            class="m-title"
-          >
+          <p id="ai-refresh-title" v class="m-title">
             AI 코칭 업데이트가 필요해요
           </p>
           <p class="m-text">
@@ -401,6 +316,8 @@ const radarEl = ref(null);
 const savedMsg = ref('');
 const savedMsgError = ref(false);
 const currentPropertyIds = ref([]);
+const activeWorkplace = ref(null);
+const activePriorities = ref([]);
 const showAiRefreshModal = ref(false);
 const refreshingCoaching = ref(false);
 let chart = null;
@@ -415,6 +332,41 @@ const selectedIds = computed(() =>
     .sort((a, b) => a - b)
     .slice(0, 3),
 );
+const comparisonWorkplace = computed(() => {
+  const lat = Number(firstQueryValue(route.query.workplaceLat));
+  const lng = Number(firstQueryValue(route.query.workplaceLng));
+
+  if (
+    !Number.isFinite(lat) ||
+    !Number.isFinite(lng) ||
+    lat < -90 ||
+    lat > 90 ||
+    lng < -180 ||
+    lng > 180
+  ) {
+    return null;
+  }
+
+  return {
+    lat,
+    lng,
+    name: firstQueryValue(route.query.workplaceName),
+  };
+});
+const comparisonPriorities = computed(() => {
+  const allowed = new Set(['COMMUTE', 'COST', 'INFRA', 'AMENITY', 'AREA']);
+  const seen = new Set();
+
+  return String(firstQueryValue(route.query.priorities) ?? '')
+    .split(',')
+    .map((criterion) => criterion.trim())
+    .filter((criterion) => {
+      if (!allowed.has(criterion) || seen.has(criterion)) return false;
+      seen.add(criterion);
+      return true;
+    })
+    .slice(0, 3);
+});
 const reportId = computed(() =>
   String(route.params.reportId ?? route.query.reportId ?? ''),
 );
@@ -471,7 +423,7 @@ const allScoreSpecs = computed(() => {
       invert: true,
     },
     {
-      label: '가성비',
+      label: '가격 낮은 순',
       available: metrics.value.every(
         (m) => hasNumber(m.monthlyRent) && hasNumber(m.maintenanceFee),
       ),
@@ -580,19 +532,18 @@ const safetyRows = computed(() => {
     },
   ];
   return rows.map((row) => {
-    const sorted = row.values.filter(Number.isFinite).sort((a, b) =>
-      row.better === 'max' ? b - a : a - b,
-    );
+    const sorted = row.values
+      .filter(Number.isFinite)
+      .sort((a, b) => (row.better === 'max' ? b - a : a - b));
     const best = sorted[0];
     const second = sorted[1];
     return {
       label: row.label,
       cells: row.values.map((value) => ({
         text: Number.isFinite(value) ? row.fmt(value) : '정보 없음',
-        tone:
-          !Number.isFinite(value)
-            ? 'plain'
-            : value === best
+        tone: !Number.isFinite(value)
+          ? 'plain'
+          : value === best
             ? 'best'
             : value === second && row.values.length > 2
               ? 'mid'
@@ -631,6 +582,11 @@ async function loadComparison() {
     const savedReport = isReportMode.value
       ? await getReportDetail(reportId.value)
       : null;
+    const workplace =
+      comparisonWorkplace.value ?? getSavedReportWorkplace(savedReport);
+    const priorities = isReportMode.value
+      ? getSavedReportPriorities(savedReport)
+      : comparisonPriorities.value;
     const propertyIds = (
       savedReport?.comparedPropertyIds ?? selectedIds.value
     ).slice(0, 3);
@@ -642,7 +598,14 @@ async function loadComparison() {
       return;
     }
 
-    const metricsResult = await getMetrics(propertyIds);
+    if (!isReportMode.value && (!workplace || !priorities.length)) {
+      router.replace('/compare-box');
+      return;
+    }
+
+    activeWorkplace.value = workplace;
+    activePriorities.value = priorities;
+    const metricsResult = await getMetrics(propertyIds, workplace);
     let coachingDto = null;
     coachingError.value = '';
 
@@ -653,7 +616,7 @@ async function loadComparison() {
       }
     } else {
       try {
-        coachingDto = await getCoaching(propertyIds);
+        coachingDto = await getCoaching(propertyIds, workplace, priorities);
       } catch (error) {
         coachingError.value = error.message;
       }
@@ -699,6 +662,18 @@ function createReportCoaching(report) {
   };
 }
 
+function getSavedReportWorkplace(report) {
+  if (report?.workplaceLat == null || report?.workplaceLng == null) return null;
+  const lat = Number(report?.workplaceLat);
+  const lng = Number(report?.workplaceLng);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  return { lat, lng };
+}
+
+function getSavedReportPriorities(report) {
+  return Array.isArray(report?.priorities) ? report.priorities : [];
+}
+
 function shouldShowAiRefreshModal(report) {
   return route.query.aiRefresh === '1' || hasUpdatedReportProperty(report);
 }
@@ -719,7 +694,11 @@ async function refreshAiCoaching() {
   refreshingCoaching.value = true;
   coachingError.value = '';
   try {
-    coaching.value = await getCoaching(currentPropertyIds.value);
+    coaching.value = await getCoaching(
+      currentPropertyIds.value,
+      activeWorkplace.value,
+      activePriorities.value,
+    );
     showAiRefreshModal.value = false;
   } catch (error) {
     coaching.value = null;
@@ -730,9 +709,9 @@ async function refreshAiCoaching() {
   }
 }
 
-async function getMetrics(propertyIds) {
+async function getMetrics(propertyIds, workplace) {
   try {
-    return unwrapApiData(await comparisonApi.metrics(propertyIds));
+    return unwrapApiData(await comparisonApi.metrics(propertyIds, workplace));
   } catch (error) {
     throw new Error(
       getApiErrorMessage(
@@ -743,14 +722,20 @@ async function getMetrics(propertyIds) {
   }
 }
 
-async function getCoaching(propertyIds) {
+async function getCoaching(propertyIds, workplace, priorities) {
   try {
-    return unwrapApiData(await comparisonApi.analyze(propertyIds));
+    return unwrapApiData(
+      await comparisonApi.analyze(propertyIds, workplace, priorities),
+    );
   } catch (error) {
     const message =
       error.response?.data?.message ?? AI_COACHING_UNAVAILABLE_MESSAGE;
     throw new Error(message);
   }
+}
+
+function firstQueryValue(value) {
+  return Array.isArray(value) ? value[0] : value;
 }
 
 // 서버에서 받아온 비교 결과를 화면에 적용하는 함수

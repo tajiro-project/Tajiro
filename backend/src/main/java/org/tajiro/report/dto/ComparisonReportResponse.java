@@ -21,5 +21,8 @@ public class ComparisonReportResponse {
     private String aiSummary;
     private Long aiRecommendedPropertyId;
     private String aiAtp;
+    private Double workplaceLat;
+    private Double workplaceLng;
+    private List<String> priorities;
     private LocalDateTime createdAt;
 }

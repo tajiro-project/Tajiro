@@ -1,6 +1,5 @@
-<template>
+﻿<template>
   <div class="cbox">
-
     <simplebar class="scroll-area">
       <h1 class="title">비교할 매물을 골라주세요 (최대 3개)</h1>
       <p class="sub">
@@ -10,46 +9,105 @@
         >
       </p>
 
-      <div
-        v-if="loading"
-        class="state"
-      >
-        비교함을 불러오는 중이에요.
-      </div>
-      <div
-        v-else-if="errorMessage"
-        class="state error"
-      >
+      <section class="commute-setting">
+        <p class="field-name">
+          <MapPin class="field-icon" :size="16" :stroke-width="2.4" />
+          <span>선호 위치</span>
+        </p>
+        <button
+          class="location-input"
+          type="button"
+          @click="openLocationPicker"
+        >
+          <span :class="{ placeholder: !comparisonWorkplace }">
+            {{
+              comparisonWorkplace?.name ||
+              comparisonWorkplace?.address ||
+              '예) 창원시 성산구 상남동'
+            }}
+          </span>
+          <ChevronRight
+            class="location-arrow"
+            :size="22"
+            :stroke-width="2.2"
+            aria-hidden="true"
+          />
+        </button>
+        <p v-if="locationMessage" class="location-message">
+          {{ locationMessage }}
+        </p>
+      </section>
+
+      <section class="priority-setting">
+        <button
+          class="priority-row"
+          type="button"
+          @click="openPrioritySheet"
+        >
+          <svg
+            class="priority-row-icon"
+            width="18"
+            height="18"
+            viewBox="0 0 18 18"
+            fill="none"
+            aria-hidden="true"
+          >
+            <path
+              d="M2 5.5h3M8.5 5.5H16M2 12.5h7.5M13 12.5H16"
+              stroke="#33302a"
+              stroke-width="1.6"
+              stroke-linecap="round"
+            />
+            <circle
+              cx="6.75"
+              cy="5.5"
+              r="1.9"
+              stroke="#33302a"
+              stroke-width="1.6"
+            />
+            <circle
+              cx="11.25"
+              cy="12.5"
+              r="1.9"
+              stroke="#33302a"
+              stroke-width="1.6"
+            />
+          </svg>
+
+          <template v-if="comparisonPriorities.length">
+            <span
+              v-for="priority in comparisonPriorities"
+              :key="priority.criterion"
+              class="priority-chip"
+            >
+              <b class="priority-number">{{ priority.priorityOrder }}</b>
+              {{ criterionLabel(priority.criterion) }}
+            </span>
+          </template>
+          <span v-else class="priority-placeholder">가치관을 선택해주세요</span>
+        </button>
+        <p v-if="priorityMessage" class="priority-message">
+          {{ priorityMessage }}
+        </p>
+      </section>
+
+      <div v-if="loading" class="state">비교함을 불러오는 중이에요.</div>
+      <div v-else-if="errorMessage" class="state error">
         {{ errorMessage }}
       </div>
-      <div
-        v-else-if="items.length === 0"
-        class="state"
-      >
+      <div v-else-if="items.length === 0" class="state">
         아직 비교함에 담긴 매물이 없어요.
       </div>
 
-      <ul
-        v-else
-        class="items"
-      >
-        <li
-          v-for="item in items"
-          :key="item.propertyId"
-          class="item"
-        >
+      <ul v-else class="items">
+        <li v-for="item in items" :key="item.propertyId" class="item">
           <button
             class="check"
             :class="{ on: checkedIds.includes(item.propertyId) }"
             type="button"
             @click="toggleCheck(item.propertyId)"
           >
-            <svg
-              width="12"
-              height="12"
-              viewBox="0 0 12 12"
-              fill="none"
-            >
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
               <path
                 d="M2 6.5L4.7 9L10 3.5"
                 stroke="#545045"
@@ -97,8 +155,10 @@
             <div class="item-texts">
               <p class="item-title">{{ item.title }}</p>
               <p class="item-sub">
-                {{ item.propertyType || '매물' }}<template v-if="item.buildingName?.trim()">
-                  · {{ item.buildingName.trim() }}</template>
+                {{ item.propertyType || '매물'
+                }}<template v-if="item.buildingName?.trim()">
+                  · {{ item.buildingName.trim() }}</template
+                >
               </p>
               <p class="item-price">{{ formatTrade(item) }}</p>
               <p class="item-meta">
@@ -115,12 +175,7 @@
               :disabled="deletingId === item.propertyId"
               @click="removeItem(item.propertyId)"
             >
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 14 14"
-                fill="none"
-              >
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                 <path
                   d="M3.5 3.5L10.5 10.5M10.5 3.5L3.5 10.5"
                   stroke="#8a8d8f"
@@ -139,12 +194,7 @@
         type="button"
         @click="goPropertyListForAdd"
       >
-        <svg
-          width="14"
-          height="14"
-          viewBox="0 0 14 14"
-          fill="none"
-        >
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
           <path
             d="M7 2v10M2 7h10"
             stroke="var(--kb-gold)"
@@ -156,12 +206,7 @@
       </button>
 
       <p class="tip">
-        <svg
-          width="14"
-          height="14"
-          viewBox="0 0 14 14"
-          fill="none"
-        >
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
           <path
             d="M7 1.5a4.2 4.2 0 00-2.4 7.6c.5.4.9 1 .9 1.6v.3h3v-.3c0-.6.4-1.2.9-1.6A4.2 4.2 0 007 1.5z"
             stroke="#8a8477"
@@ -180,12 +225,66 @@
       <button
         class="btn-cta"
         type="button"
-        :disabled="checkedIds.length < 2"
+        :disabled="checkedIds.length < 2 || startingComparison"
         @click="startCompare"
       >
-        비교 시작 ({{ checkedIds.length }}개)
+        {{
+          startingComparison
+            ? '비교 준비 중...'
+            : `비교 시작 (${checkedIds.length}개)`
+        }}
       </button>
     </simplebar>
+
+    <KakaoLocation
+      :open="isLocationPickerOpen"
+      :initial-location="comparisonWorkplace"
+      @close="isLocationPickerOpen = false"
+      @select="selectWorkplace"
+    />
+
+    <BottomSheet
+      :model-value="isPrioritySheetOpen"
+      title="비교 가치관 설정"
+      @update:model-value="closePrioritySheet"
+    >
+      <p class="sheet-note">
+        중요한 순서대로 최대 3개까지 선택하세요.<br />
+        이 값은 비교 리포트에만 적용되며 내 가치관에는 저장되지 않아요.
+      </p>
+      <div class="priority-list">
+        <button
+          v-for="option in PRIORITY_OPTIONS"
+          :key="option.criterion"
+          class="priority-card"
+          :class="{ on: priorityRank(option.criterion) != null }"
+          type="button"
+          @click="togglePriority(option.criterion)"
+        >
+          <span class="priority-option-icon" v-html="option.icon" />
+          <span class="priority-texts">
+            <span class="priority-title">{{ option.title }}</span>
+            <span class="priority-sub">{{ option.sub }}</span>
+          </span>
+          <span v-if="priorityRank(option.criterion)" class="priority-badge">
+            {{ priorityRank(option.criterion) }}
+          </span>
+        </button>
+      </div>
+      <div class="sheet-actions">
+        <button class="btn-ghost" type="button" @click="draftPriorities = []">
+          초기화
+        </button>
+        <button
+          class="btn-primary"
+          type="button"
+          :disabled="draftPriorities.length === 0"
+          @click="applyPriorities"
+        >
+          이 순서로 적용
+        </button>
+      </div>
+    </BottomSheet>
   </div>
 </template>
 
@@ -193,8 +292,15 @@
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import simplebar from 'simplebar-vue';
+import { ChevronRight, MapPin } from 'lucide-vue-next';
+import KakaoLocation from '@/components/KakaoLocation.vue';
+import BottomSheet from '@/components/BottomSheet.vue';
 import { getApiErrorMessage } from '@/api/client';
-import { comparisonApi } from '@/api/services';
+import { comparisonApi, preferenceApi } from '@/api/services';
+import {
+  MAX_PRIORITY_SELECTIONS,
+  PRIORITY_OPTIONS,
+} from '@/constants/preferenceOptions';
 
 const router = useRouter();
 
@@ -204,8 +310,20 @@ const errorMessage = ref('');
 const items = ref([]);
 const checkedIds = ref([]);
 const imageErrorIds = ref([]);
+const startingComparison = ref(false);
+const comparisonWorkplace = ref(null);
+const isLocationPickerOpen = ref(false);
+const locationMessage = ref('');
+const comparisonPriorities = ref([]);
+const draftPriorities = ref([]);
+const isPrioritySheetOpen = ref(false);
+const priorityMessage = ref('');
+const hasEditedPriorities = ref(false);
 
-onMounted(loadCompareBox);
+onMounted(() => {
+  loadCompareBox();
+  loadDefaultComparisonSettings();
+});
 
 async function loadCompareBox() {
   loading.value = true;
@@ -257,9 +375,156 @@ function markImageError(propertyId) {
   }
 }
 
-function startCompare() {
-  if (checkedIds.value.length < 2) return;
-  router.push({ path: '/compare', query: { propertyIds: checkedIds.value } });
+async function startCompare() {
+  if (checkedIds.value.length < 2 || startingComparison.value) return;
+
+  if (!hasDesiredLocation(comparisonWorkplace.value)) {
+    locationMessage.value = '직주근접 비교 기준이 될 위치를 선택해주세요.';
+    isLocationPickerOpen.value = true;
+    return;
+  }
+
+  if (!comparisonPriorities.value.length) {
+    priorityMessage.value = '비교 기준이 될 가치관을 선택해주세요.';
+    openPrioritySheet();
+    return;
+  }
+
+  startingComparison.value = true;
+  errorMessage.value = '';
+
+  try {
+    await router.push({
+      path: '/compare',
+      query: {
+        propertyIds: checkedIds.value,
+        workplaceLat: comparisonWorkplace.value.lat,
+        workplaceLng: comparisonWorkplace.value.lng,
+        workplaceName:
+          comparisonWorkplace.value.name || comparisonWorkplace.value.address,
+        priorities: comparisonPriorities.value
+          .map((priority) => priority.criterion)
+          .join(','),
+      },
+    });
+  } catch (error) {
+    errorMessage.value = getApiErrorMessage(
+      error,
+      '비교 화면을 열지 못했습니다. 잠시 후 다시 시도해주세요.',
+    );
+  } finally {
+    startingComparison.value = false;
+  }
+}
+
+async function loadDefaultComparisonSettings() {
+  try {
+    const preference = await preferenceApi.get();
+    if (
+      !comparisonWorkplace.value &&
+      hasDesiredLocation(preference?.workplace)
+    ) {
+      comparisonWorkplace.value = { ...preference.workplace };
+    }
+
+    if (!hasEditedPriorities.value && Array.isArray(preference?.priorities)) {
+      comparisonPriorities.value = normalizePriorities(preference.priorities);
+    }
+  } catch (error) {
+    if (error.response?.status !== 404 && import.meta.env.DEV) {
+      console.warn('[api] comparison settings default failed:', error);
+    }
+  }
+}
+
+function normalizePriorities(priorities) {
+  const validCriteria = new Set(
+    PRIORITY_OPTIONS.map((option) => option.criterion),
+  );
+  const seen = new Set();
+
+  return [...priorities]
+    .sort((a, b) => Number(a?.priorityOrder) - Number(b?.priorityOrder))
+    .filter((priority) => {
+      const criterion = priority?.criterion;
+      if (!validCriteria.has(criterion) || seen.has(criterion)) return false;
+      seen.add(criterion);
+      return true;
+    })
+    .slice(0, MAX_PRIORITY_SELECTIONS)
+    .map((priority, index) => ({
+      criterion: priority.criterion,
+      priorityOrder: index + 1,
+    }));
+}
+
+function criterionLabel(criterion) {
+  return (
+    PRIORITY_OPTIONS.find((option) => option.criterion === criterion)?.title ??
+    criterion
+  );
+}
+
+function openPrioritySheet() {
+  draftPriorities.value = comparisonPriorities.value.map(
+    (priority) => priority.criterion,
+  );
+  isPrioritySheetOpen.value = true;
+}
+
+function closePrioritySheet() {
+  isPrioritySheetOpen.value = false;
+}
+
+function togglePriority(criterion) {
+  const index = draftPriorities.value.indexOf(criterion);
+  if (index >= 0) {
+    draftPriorities.value.splice(index, 1);
+  } else if (draftPriorities.value.length < MAX_PRIORITY_SELECTIONS) {
+    draftPriorities.value.push(criterion);
+  }
+}
+
+function priorityRank(criterion) {
+  const index = draftPriorities.value.indexOf(criterion);
+  return index < 0 ? null : index + 1;
+}
+
+function applyPriorities() {
+  comparisonPriorities.value = draftPriorities.value.map(
+    (criterion, index) => ({
+      criterion,
+      priorityOrder: index + 1,
+    }),
+  );
+  hasEditedPriorities.value = true;
+  priorityMessage.value = '';
+  closePrioritySheet();
+}
+
+function hasDesiredLocation(workplace) {
+  if (!workplace) return false;
+
+  const hasLatitude =
+    workplace.lat !== null &&
+    workplace.lat !== undefined &&
+    Number.isFinite(Number(workplace.lat));
+  const hasLongitude =
+    workplace.lng !== null &&
+    workplace.lng !== undefined &&
+    Number.isFinite(Number(workplace.lng));
+
+  return hasLatitude && hasLongitude;
+}
+
+function openLocationPicker() {
+  locationMessage.value = '';
+  isLocationPickerOpen.value = true;
+}
+
+function selectWorkplace(location) {
+  comparisonWorkplace.value = location;
+  locationMessage.value = '';
 }
 
 function goPropertyListForAdd() {
@@ -267,7 +532,6 @@ function goPropertyListForAdd() {
 
   router.push('/properties');
 }
-
 
 function goBack() {
   if (history.length > 1) router.back();
@@ -485,6 +749,206 @@ function formatFloorInfo(floorInfo) {
   font-size: 13.5px;
   font-weight: 700;
   color: var(--kb-gold);
+}
+.commute-setting {
+  margin-top: 16px;
+}
+.field-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+  font-size: 12.5px;
+  font-weight: 400;
+  color: var(--kb-silver);
+}
+.field-icon {
+  flex-shrink: 0;
+  color: #ffbc00;
+}
+.location-input {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  min-height: 46px;
+  padding: 0 14px;
+  border: 1px solid #dcdcdc;
+  border-radius: 5px;
+  background: #fff;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.14);
+  font-size: 14px;
+  color: #222;
+  text-align: left;
+}
+.location-input span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.location-input .placeholder {
+  color: #b4b0a8;
+}
+.location-arrow {
+  flex-shrink: 0;
+  color: #9b9b9b;
+}
+.location-message {
+  margin-top: 8px;
+  font-size: 11.5px;
+  color: var(--danger);
+}
+.priority-setting {
+  margin-top: 12px;
+}
+.priority-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  height: 42px;
+  padding: 9px 16px;
+  border: 1.5px solid #ffdd80;
+  border-radius: 100px;
+  background: #fdf7e6;
+  overflow-x: auto;
+  text-align: left;
+  scrollbar-width: none;
+}
+.priority-row::-webkit-scrollbar {
+  display: none;
+}
+.priority-row-icon {
+  flex-shrink: 0;
+}
+.priority-chip {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  height: 24px;
+  padding: 6px 15px 6px 6px;
+  border-radius: 100px;
+  background: #fff;
+  flex-shrink: 0;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #33302a;
+  white-space: nowrap;
+}
+.priority-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #f0c33c;
+  flex-shrink: 0;
+  font-size: 9px;
+  font-weight: 800;
+  color: #545045;
+}
+.priority-placeholder {
+  font-size: 12px;
+  color: var(--kb-silver);
+  white-space: nowrap;
+}
+.priority-message {
+  margin-top: 8px;
+  font-size: 11.5px;
+  color: var(--danger);
+}
+.sheet-note {
+  margin-bottom: 12px;
+  font-size: 11.5px;
+  color: #8a8d8f;
+}
+.priority-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.priority-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--white);
+  text-align: left;
+}
+.priority-card.on {
+  padding: 11px 13px;
+  border: 2px solid #ffdd80;
+  background: var(--yellow-tint);
+}
+.priority-option-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 100px;
+  background: rgba(255, 188, 0, 0.14);
+  flex-shrink: 0;
+}
+.priority-texts {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.priority-title {
+  font-size: 14px;
+  font-weight: 800;
+}
+.priority-sub {
+  font-size: 11.5px;
+  color: var(--kb-silver);
+}
+.priority-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #ffdd80;
+  flex-shrink: 0;
+  font-size: 12.5px;
+  font-weight: 800;
+}
+.sheet-actions {
+  display: flex;
+  gap: 8px;
+  padding-top: 18px;
+}
+.btn-ghost {
+  flex-shrink: 0;
+  padding: 13px 18px;
+  border: 1px solid #e9e7e2;
+  border-radius: 12px;
+  background: #fff;
+  font-size: 13.5px;
+  color: #60584c;
+}
+.btn-primary {
+  flex: 1;
+  padding: 13px;
+  border: 0;
+  border-radius: 12px;
+  background: #ffdd80;
+  font-size: 14px;
+  font-weight: 700;
+  color: #33302a;
+}
+.btn-primary:disabled {
+  background: #eceae5;
+  color: #b4b0a8;
 }
 .tip {
   display: flex;
