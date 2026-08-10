@@ -9,23 +9,33 @@ import org.tajiro.comparison.dto.ComparisonAnalysisRequestDTO;
 import org.tajiro.comparison.dto.ComparisonAnalysisResponseDTO;
 import org.tajiro.comparison.dto.ComparisonMetricDTO;
 import org.tajiro.comparison.dto.ComparisonMetricsResponseDTO;
-import org.tajiro.comparison.mapper.ComparisonMapper;
 import org.tajiro.comparison.service.ai.ComparisonAiClient;
 import org.tajiro.exception.BusinessException;
 import org.tajiro.report.domain.ComparisonReportVO;
 import org.tajiro.report.mapper.ComparisonReportMapper;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class ComparisonAiServiceImpl implements ComparisonAiService {
 
+    private static final String COMPARISON_WORKPLACE_PREFIX = "__COMPARE_WORKPLACE__:";
+    private static final Set<String> SUPPORTED_PRIORITIES = Set.of(
+            "COMMUTE",
+            "COST",
+            "INFRA",
+            "AMENITY",
+            "AREA");
+
     private final ComparisonService comparisonService;
-    private final ComparisonMapper comparisonMapper;
     private final ComparisonReportMapper comparisonReportMapper;
     private final ComparisonAiClient comparisonAiClient;
 
@@ -35,7 +45,11 @@ public class ComparisonAiServiceImpl implements ComparisonAiService {
             ComparisonAnalysisRequestDTO request) {
         if (request == null
                 || request.getPropertyIds() == null
-                || request.getPropertyIds().isEmpty()) {
+                || request.getPropertyIds().isEmpty()
+                || request.getWorkplaceLat() == null
+                || request.getWorkplaceLng() == null
+                || request.getPriorities() == null
+                || request.getPriorities().isEmpty()) {
             throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
         }
 
@@ -47,14 +61,18 @@ public class ComparisonAiServiceImpl implements ComparisonAiService {
         //비교 지표 조회
         ComparisonMetricsResponseDTO metrics = comparisonService.getComparisonMetrics(
                 userId,
-                propertyIds);
-        //사용자 가치관 우선순위 조회
-        List<String> priorities = comparisonMapper.findPreferencePriorities(userId);
+                propertyIds,
+                request.getWorkplaceLat(),
+                request.getWorkplaceLng());
+        List<String> priorities = validatePriorities(request.getPriorities());
         //비교 대상 매물 중 최신 업데이트 날짜 추출
         LocalDateTime maxPropertyUpdateDate = getMaxPropertyUpdateDate(metrics.getItems());
 
         String propertyIdsJson = toLongJson(propertyIds);
-        String prioritiesJson = toStringJson(priorities);
+        String prioritiesJson = toStringJson(buildComparisonContext(
+                priorities,
+                request.getWorkplaceLat(),
+                request.getWorkplaceLng()));
         //재사용 가능한 리포트 조회: 사용자, 비교 대상 매물, 사용자 가치관 우선순위가 동일한 리포트
         ComparisonReportVO reusableReport = comparisonReportMapper.findReusable(
                 userId,
@@ -184,6 +202,40 @@ public class ComparisonAiServiceImpl implements ComparisonAiService {
         return additionalCount == 0
                 ? firstTitle
                 : firstTitle + " 외 " + additionalCount + "건";
+    }
+
+    private List<String> buildComparisonContext(
+            List<String> priorities,
+            Double workplaceLat,
+            Double workplaceLng) {
+        List<String> context = priorities == null
+                ? new ArrayList<>()
+                : new ArrayList<>(priorities);
+        context.add(String.format(
+                Locale.ROOT,
+                "%s%.6f,%.6f",
+                COMPARISON_WORKPLACE_PREFIX,
+                workplaceLat,
+                workplaceLng));
+        return context;
+    }
+
+    private List<String> validatePriorities(List<String> priorities) {
+        if (priorities.size() > 3) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
+        }
+
+        Set<String> seen = new HashSet<>();
+        List<String> validated = new ArrayList<>();
+        for (String priority : priorities) {
+            if (priority == null
+                    || !SUPPORTED_PRIORITIES.contains(priority)
+                    || !seen.add(priority)) {
+                throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
+            }
+            validated.add(priority);
+        }
+        return validated;
     }
 
     private String toLongJson(List<Long> values) {

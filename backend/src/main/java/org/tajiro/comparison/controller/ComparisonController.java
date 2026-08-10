@@ -60,9 +60,15 @@ public class ComparisonController {
     @GetMapping("/comparisons/metrics")
     public ResponseEntity<ComparisonMetricsResponseDTO> getComparisonMetrics(
             @ApiIgnore @AuthenticationPrincipal Long userId,
-            @RequestParam List<Long> propertyIds) {
+            @RequestParam List<Long> propertyIds,
+            @RequestParam(required = false) Double workplaceLat,
+            @RequestParam(required = false) Double workplaceLng) {
         return ResponseEntity.ok(
-                comparisonService.getComparisonMetrics(requireUserId(userId), propertyIds));
+                comparisonService.getComparisonMetrics(
+                        requireUserId(userId),
+                        propertyIds,
+                        workplaceLat,
+                        workplaceLng));
     }
 
     @PostMapping("/comparisons/analyze")

@@ -55,7 +55,7 @@ class OpenAiComparisonClientTest {
 
         ComparisonAnalysisResponseDTO result = clientWith("test-key").generate(
                 metrics(),
-                Arrays.asList("직주근접", "가성비"));
+                Arrays.asList("직주근접", "가격 낮은 순"));
 
         assertEquals(112L, result.getAiRecommendedPropertyId());
         assertEquals("두 매물을 비교했어요.", result.getAiPropertySummaryText());
