@@ -11,4 +11,7 @@ import java.util.List;
 @AllArgsConstructor
 public class ComparisonAnalysisRequestDTO {
     private List<Long> propertyIds;
+    private Double workplaceLat;
+    private Double workplaceLng;
+    private List<String> priorities;
 }

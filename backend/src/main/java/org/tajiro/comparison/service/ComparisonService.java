@@ -13,5 +13,9 @@ public interface ComparisonService {
 
     void removeCompareProperty(Long userId, Long propertyId);
 
-    ComparisonMetricsResponseDTO getComparisonMetrics(Long userId, List<Long> propertyIds);
+    ComparisonMetricsResponseDTO getComparisonMetrics(
+            Long userId,
+            List<Long> propertyIds,
+            Double workplaceLat,
+            Double workplaceLng);
 }

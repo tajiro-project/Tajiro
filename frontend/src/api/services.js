@@ -160,24 +160,33 @@ export const comparisonApi = {
     (await client.post(`/users/me/compare/${propertyId}`)).data,
   removeFromBox: async (propertyId) =>
     (await client.delete(`/users/me/compare/${propertyId}`)).data,
-  metrics: async (propertyIds) => {
+  metrics: async (propertyIds, workplace) => {
     const sortedIds = [...(propertyIds ?? [])]
       .map(Number)
       .sort((a, b) => a - b);
     return (
       await client.get('/comparisons/metrics', {
-        params: { propertyIds: sortedIds.join(',') },
+        params: {
+          propertyIds: sortedIds.join(','),
+          workplaceLat: workplace?.lat,
+          workplaceLng: workplace?.lng,
+        },
       })
     ).data;
   },
-  analyze: async (propertyIds) => {
+  analyze: async (propertyIds, workplace, priorities) => {
     const sortedIds = [...(propertyIds ?? [])]
       .map(Number)
       .sort((a, b) => a - b);
     return (
       await client.post(
         '/comparisons/analyze',
-        { propertyIds: sortedIds },
+        {
+          propertyIds: sortedIds,
+          workplaceLat: workplace?.lat,
+          workplaceLng: workplace?.lng,
+          priorities,
+        },
         { timeout: 35000 },
       )
     ).data;

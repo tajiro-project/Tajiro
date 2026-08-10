@@ -135,7 +135,7 @@ import { mockDashboard } from '@/api/mockData';
 
 const CRITERION_LABELS = {
   COMMUTE: '직주근접',
-  COST: '가성비',
+  COST: '가격 낮은 순',
   AMENITY: '편의',
   INFRA: '인프라',
   AREA: '매물면적',
