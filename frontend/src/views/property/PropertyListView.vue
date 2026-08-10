@@ -623,10 +623,10 @@ onMounted(async () => {
 async function loadPreference() {
   try {
     const res = await client.get('/users/me/preferences');
-    preference.value = res.data.data;
+    preference.value = res.data.data ?? res.data;
     applyPreferenceToFilter(preference.value);
-  } catch (e) {
-    console.warn('[preference] 실패', e.response?.status, e.response?.data);
+  } catch {
+    // 가치관이 없으면 fetchProperties 가 404 를 받아 PreferenceWizardView로 보낸다
   }
 }
 
@@ -659,9 +659,18 @@ function applyPreferenceToFilter(p) {
 async function commitFilter() {
   if (!preference.value) return;
 
+  const workplace = filter.workplace ?? preference.value.workplace;
+
   const body = {
     ...preference.value,
-    workplace: filter.workplace ?? preference.value.workplace,
+    workplace: workplace
+      ? {
+          name: workplace.name,
+          address: workplace.address,
+          lat: workplace.lat,
+          lng: workplace.lng,
+        }
+      : null,
     hasCar: filter.hasCar,
     maxCommuteDistanceMeters: filter.maxWorkplaceDistanceMeters,
     housingTypes: [...filter.propertyTypes],
@@ -691,7 +700,7 @@ async function commitFilter() {
   isLoading.value = true;
   try {
     const res = await client.put('/users/me/preferences', body);
-    preference.value = res.data.data;
+    preference.value = res.data.data ?? res.data;
     await fetchProperties();
   } catch (e) {
     loadError.value = getApiErrorMessage(e);
@@ -955,7 +964,10 @@ const housingChipOn = computed(
 const housingChipLabel = computed(() => {
   if (!housingChipOn.value) return '주거 조건';
   const parts = [];
-  if (filter.tradeTypes.length < TRADE_TYPES.length) {
+  if (
+    filter.tradeTypes.length > 0 &&
+    filter.tradeTypes.length < TRADE_TYPES.length
+  ) {
     parts.push(
       filter.tradeTypes.length === 1
         ? filter.tradeTypes[0]
