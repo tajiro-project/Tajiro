@@ -295,6 +295,7 @@ const router = useRouter();
 const letters = ['A', 'B', 'C'];
 const AI_COACHING_UNAVAILABLE_MESSAGE =
   'AI 코칭을 불러오지 못했어요. 잠시 후 다시 시도해주세요.';
+const CONVERSION_RATE = 0.053;
 const colors = [
   { dot: '#ffbc00', fill: 'rgba(255, 205, 60, 0.45)', line: '#f0b400' },
   { dot: '#88a860', fill: 'rgba(136, 168, 96, 0.45)', line: '#6f9048' },
@@ -425,9 +426,9 @@ const allScoreSpecs = computed(() => {
     {
       label: '가격 낮은 순',
       available: metrics.value.every(
-        (m) => hasNumber(m.monthlyRent) && hasNumber(m.maintenanceFee),
+        (m) => hasNumber(m.deposit) && hasNumber(m.monthlyRent),
       ),
-      values: metrics.value.map((m) => Number(m.monthlyRent) + feeValue(m)),
+      values: metrics.value.map((m) => monthlyCostValue(m)),
       invert: true,
     },
     {
@@ -906,8 +907,12 @@ function shortName(title) {
   return String(title ?? '').split(' ')[0];
 }
 
-function feeValue(item) {
-  return Number(item.maintenanceFee ?? 0);
+function monthlyCostValue(item) {
+  return (
+    Number(item.monthlyRent) +
+    (Number(item.deposit) * CONVERSION_RATE) / 12 +
+    Number(item.maintenanceFee ?? 0)
+  );
 }
 
 function goBack() {

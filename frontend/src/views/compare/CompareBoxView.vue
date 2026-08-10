@@ -9,22 +9,23 @@
         >
       </p>
 
-      <section class="commute-setting">
-        <p class="field-name">
-          <MapPin class="field-icon" :size="16" :stroke-width="2.4" />
-          <span>선호 위치</span>
-        </p>
-        <button
-          class="location-input"
-          type="button"
-          @click="openLocationPicker"
-        >
-          <span :class="{ placeholder: !comparisonWorkplace }">
-            {{
-              comparisonWorkplace?.name ||
-              comparisonWorkplace?.address ||
-              '예) 창원시 성산구 상남동'
-            }}
+      <section class="comparison-settings-card">
+        <button class="location-row" type="button" @click="openLocationPicker">
+          <span class="location-marker" aria-hidden="true">
+            <span class="location-marker-dot" />
+          </span>
+          <span class="location-texts">
+            <span class="location-label">선호 위치</span>
+            <span
+              class="location-address"
+              :class="{ placeholder: !comparisonWorkplace }"
+            >
+              {{
+                comparisonWorkplace?.name ||
+                comparisonWorkplace?.address ||
+                '선호 위치를 선택해주세요'
+              }}
+            </span>
           </span>
           <ChevronRight
             class="location-arrow"
@@ -33,17 +34,8 @@
             aria-hidden="true"
           />
         </button>
-        <p v-if="locationMessage" class="location-message">
-          {{ locationMessage }}
-        </p>
-      </section>
 
-      <section class="priority-setting">
-        <button
-          class="priority-row"
-          type="button"
-          @click="openPrioritySheet"
-        >
+        <button class="priority-row" type="button" @click="openPrioritySheet">
           <svg
             class="priority-row-icon"
             width="18"
@@ -86,10 +78,14 @@
           </template>
           <span v-else class="priority-placeholder">가치관을 선택해주세요</span>
         </button>
-        <p v-if="priorityMessage" class="priority-message">
-          {{ priorityMessage }}
-        </p>
       </section>
+
+      <p v-if="locationMessage" class="location-message">
+        {{ locationMessage }}
+      </p>
+      <p v-if="priorityMessage" class="priority-message">
+        {{ priorityMessage }}
+      </p>
 
       <div v-if="loading" class="state">비교함을 불러오는 중이에요.</div>
       <div v-else-if="errorMessage" class="state error">
@@ -100,24 +96,17 @@
       </div>
 
       <ul v-else class="items">
-        <li v-for="item in items" :key="item.propertyId" class="item">
-          <button
-            class="check"
-            :class="{ on: checkedIds.includes(item.propertyId) }"
-            type="button"
-            @click="toggleCheck(item.propertyId)"
-          >
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-              <path
-                d="M2 6.5L4.7 9L10 3.5"
-                stroke="#545045"
-                stroke-width="1.8"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </svg>
-          </button>
-
+        <li
+          v-for="item in items"
+          :key="item.propertyId"
+          class="item"
+          :class="{ selected: checkedIds.includes(item.propertyId) }"
+          role="button"
+          tabindex="0"
+          @click="toggleCheck(item.propertyId)"
+          @keydown.enter.prevent="toggleCheck(item.propertyId)"
+          @keydown.space.prevent="toggleCheck(item.propertyId)"
+        >
           <div class="item-card">
             <span class="thumb">
               <img
@@ -173,12 +162,12 @@
               type="button"
               aria-label="삭제"
               :disabled="deletingId === item.propertyId"
-              @click="removeItem(item.propertyId)"
+              @click.stop="removeItem(item.propertyId)"
             >
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                 <path
                   d="M3.5 3.5L10.5 10.5M10.5 3.5L3.5 10.5"
-                  stroke="#8a8d8f"
+                  stroke="currentColor"
                   stroke-width="1.4"
                   stroke-linecap="round"
                 />
@@ -219,7 +208,7 @@
             stroke-linecap="round"
           />
         </svg>
-        3개를 모두 담으면 AI가 가치관 기준으로 비교 코칭을 해드려요.
+        2~3개를 담으면 AI가 가치관 기준으로 비교 코칭을 해드려요.
       </p>
 
       <button
@@ -292,7 +281,7 @@
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import simplebar from 'simplebar-vue';
-import { ChevronRight, MapPin } from 'lucide-vue-next';
+import { ChevronRight } from 'lucide-vue-next';
 import KakaoLocation from '@/components/KakaoLocation.vue';
 import BottomSheet from '@/components/BottomSheet.vue';
 import { getApiErrorMessage } from '@/api/client';
@@ -638,53 +627,41 @@ function formatFloorInfo(floorInfo) {
 .items {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 15px;
   margin-top: 16px;
 }
 .item {
   display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.check {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  border-radius: 6px;
-  border: 1.5px solid #d8d5cf;
-  background: var(--white);
-  flex-shrink: 0;
-}
-.check svg {
-  opacity: 0;
-}
-.check.on {
-  background: var(--kb-yellow);
-  border-color: var(--kb-yellow);
-}
-.check.on svg {
-  opacity: 1;
+  cursor: pointer;
 }
 .item-card {
   flex: 1;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 15px;
+  min-height: 126px;
   padding: 14px;
   background: #ffffff;
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: 18px;
   min-width: 0;
+  transition:
+    background-color 0.16s ease,
+    border-color 0.16s ease,
+    box-shadow 0.16s ease;
+}
+.item.selected .item-card {
+  background: #fff6dc;
+  border: 2px solid var(--kb-yellow);
+  box-shadow: 0 2px 8px rgba(255, 188, 0, 0.18);
 }
 .thumb {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 56px;
-  height: 56px;
-  border-radius: 12px;
+  width: 96px;
+  height: 96px;
+  border-radius: 13px;
   background: var(--yellow-tint);
   border: 1px solid var(--border);
   overflow: hidden;
@@ -694,6 +671,10 @@ function formatFloorInfo(floorInfo) {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+.thumb > svg {
+  width: 36px;
+  height: 36px;
 }
 .item-texts {
   flex: 1;
@@ -706,31 +687,43 @@ function formatFloorInfo(floorInfo) {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 14px;
+  font-size: 18px;
   font-weight: 800;
+  line-height: 1.25;
 }
 .item-sub {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 11.5px;
+  font-size: 14px;
+  line-height: 1.35;
   color: var(--kb-gray);
 }
 .item-price {
-  font-size: 12.5px;
+  font-size: 14px;
   font-weight: 700;
+  line-height: 1.35;
 }
 .item-meta {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 11px;
+  font-size: 13px;
+  line-height: 1.35;
   color: var(--kb-silver);
 }
 .remove {
   display: flex;
   flex-shrink: 0;
   padding: 4px;
+  color: var(--kb-silver);
+}
+.remove svg {
+  width: 18px;
+  height: 18px;
+}
+.item.selected .remove {
+  color: var(--kb-yellow);
 }
 .remove:disabled {
   opacity: 0.45;
@@ -750,48 +743,72 @@ function formatFloorInfo(floorInfo) {
   font-weight: 700;
   color: var(--kb-gold);
 }
-.commute-setting {
+.comparison-settings-card {
+  overflow: hidden;
   margin-top: 16px;
+  border: 1px solid #e5e5e5;
+  border-radius: 18px;
+  background: var(--white);
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.1);
 }
-.field-name {
+.location-row {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-bottom: 8px;
-  font-size: 12.5px;
-  font-weight: 400;
-  color: var(--kb-silver);
-}
-.field-icon {
-  flex-shrink: 0;
-  color: #ffbc00;
-}
-.location-input {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
+  gap: 12px;
   width: 100%;
-  min-height: 46px;
-  padding: 0 14px;
-  border: 1px solid #dcdcdc;
-  border-radius: 5px;
-  background: #fff;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.14);
-  font-size: 14px;
-  color: #222;
+  min-height: 76px;
+  padding: 12px 16px;
   text-align: left;
 }
-.location-input span:first-child {
+.location-marker {
+  position: relative;
+  width: 20px;
+  height: 20px;
+  border-radius: 50% 50% 50% 0;
+  background: #ffbc00;
+  flex-shrink: 0;
+  transform: rotate(-45deg);
+}
+.location-marker-dot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--white);
+  transform: translate(-50%, -50%);
+}
+.location-texts {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.location-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--kb-silver);
+}
+.location-address {
   overflow: hidden;
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.35;
+  color: #1a1a1a;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.location-input .placeholder {
+.location-address.placeholder {
+  font-size: 15px;
+  font-weight: 600;
   color: #b4b0a8;
 }
 .location-arrow {
   flex-shrink: 0;
+  width: 18px;
+  height: 18px;
   color: #9b9b9b;
 }
 .location-message {
@@ -799,19 +816,14 @@ function formatFloorInfo(floorInfo) {
   font-size: 11.5px;
   color: var(--danger);
 }
-.priority-setting {
-  margin-top: 12px;
-}
 .priority-row {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 7px;
   width: 100%;
-  height: 42px;
-  padding: 9px 16px;
-  border: 1.5px solid #ffdd80;
-  border-radius: 100px;
-  background: #fdf7e6;
+  min-height: 46px;
+  padding: 8px 16px;
+  border-top: 1px solid #e5e5e5;
   overflow-x: auto;
   text-align: left;
   scrollbar-width: none;
@@ -821,41 +833,47 @@ function formatFloorInfo(floorInfo) {
 }
 .priority-row-icon {
   flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+}
+.priority-row-icon path,
+.priority-row-icon circle {
+  stroke: #8c7950;
 }
 .priority-chip {
   display: flex;
   align-items: center;
-  gap: 7px;
-  height: 24px;
-  padding: 6px 15px 6px 6px;
+  gap: 5px;
+  height: 27px;
+  padding: 4px 9px 4px 5px;
   border-radius: 100px;
-  background: #fff;
+  background: #fff6dc;
   flex-shrink: 0;
-  font-size: 11.5px;
+  font-size: 12.5px;
   font-weight: 700;
-  color: #33302a;
+  color: #5e5547;
   white-space: nowrap;
 }
 .priority-number {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 16px;
-  height: 16px;
+  width: 19px;
+  height: 19px;
   border-radius: 50%;
-  background: #f0c33c;
+  background: var(--kb-yellow);
   flex-shrink: 0;
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 800;
-  color: #545045;
+  color: #3f392f;
 }
 .priority-placeholder {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--kb-silver);
   white-space: nowrap;
 }
 .priority-message {
-  margin-top: 8px;
+  margin-top: 6px;
   font-size: 11.5px;
   color: var(--danger);
 }
