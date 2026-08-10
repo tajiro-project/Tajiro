@@ -44,11 +44,28 @@
     </sql>
 
     <sql id="distanceExpr">
-        6371000 * ACOS(LEAST(1,
-        COS(RADIANS(#{refLat})) * COS(RADIANS(b.latitude))
-        * COS(RADIANS(b.longitude) - RADIANS(#{refLng}))
-        + SIN(RADIANS(#{refLat})) * SIN(RADIANS(b.latitude))
-        ))
+        CAST(ROUND(ST_Distance_Sphere(
+        b.geom,
+        ST_SRID(POINT(#{refLng}, #{refLat}), 4326)
+        )) AS SIGNED)
+    </sql>
+
+    <sql id="boundingBox">
+        MBRContains(
+        ST_SRID(ST_GeomFromText(CONCAT('POLYGON((',
+        #{refLng} - #{effectiveRadiusMeters} / (111320.0 * COS(RADIANS(#{refLat}))), ' ',
+        #{refLat} - #{effectiveRadiusMeters} / 111320.0, ',',
+        #{refLng} + #{effectiveRadiusMeters} / (111320.0 * COS(RADIANS(#{refLat}))), ' ',
+        #{refLat} - #{effectiveRadiusMeters} / 111320.0, ',',
+        #{refLng} + #{effectiveRadiusMeters} / (111320.0 * COS(RADIANS(#{refLat}))), ' ',
+        #{refLat} + #{effectiveRadiusMeters} / 111320.0, ',',
+        #{refLng} - #{effectiveRadiusMeters} / (111320.0 * COS(RADIANS(#{refLat}))), ' ',
+        #{refLat} + #{effectiveRadiusMeters} / 111320.0, ',',
+        #{refLng} - #{effectiveRadiusMeters} / (111320.0 * COS(RADIANS(#{refLat}))), ' ',
+        #{refLat} - #{effectiveRadiusMeters} / 111320.0,
+        '))')), 4326),
+        b.geom
+        )
     </sql>
 
     <select id="getList" parameterType="PropertySearchRequest" resultMap="propertyMap">
@@ -98,6 +115,10 @@
         ON r.property_id = p.id AND r.user_id = #{userId}
 
         <where>
+            <if test="effectiveRadiusMeters != null">
+                AND <include refid="boundingBox"/>
+            </if>
+
             <if test="radiusMeters != null">
                 AND <include refid="distanceExpr"/> &lt;= #{radiusMeters}
             </if>
