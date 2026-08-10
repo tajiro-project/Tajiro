@@ -103,6 +103,7 @@ public class PropertyServiceImpl implements PropertyService{
                 .maxAreaM2(preferenceVO.getMaxArea())
                 .desiredInfraCategories(preferenceVO.getDesiredInfraCategories())
                 .desiredAmenityCategories(preferenceVO.getDesiredAmenityCategories())
+                .hasCar(preferenceVO.getHasCar())
                 .build();
     }
 
