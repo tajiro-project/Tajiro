@@ -587,9 +587,9 @@ import DualSlider from '@/components/DualSlider.vue';
 import SingleSlider from '@/components/SingleSlider.vue';
 import KakaoLocation from '@/components/KakaoLocation.vue';
 import InfraTogglePanel from '@/components/InfraTogglePanel.vue';
-import medalGold from '@/assets/img/medals/medal_gold_ribbon2.svg';
-import medalSilver from '@/assets/img/medals/medal_silver_ribbon2.svg';
-import medalBronze from '@/assets/img/medals/medal_bronze_ribbon2.svg';
+import medalGold from '@/assets/img/medals/medal_gold_ribbon.svg';
+import medalSilver from '@/assets/img/medals/medal_silver_ribbon.svg';
+import medalBronze from '@/assets/img/medals/medal_bronze_ribbon.svg';
 
 import {
   computed,
