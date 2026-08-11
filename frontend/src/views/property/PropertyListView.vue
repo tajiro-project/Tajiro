@@ -1046,7 +1046,7 @@ const commuteChipLabel = computed(() => {
   if (placeName) parts.push(placeName);
   const m = filter.maxWorkplaceDistanceMeters;
   if (m !== DEFAULT_DISTANCE)
-    parts.push(m >= 1000 ? `${(m / 1000).toFixed(1)}km 이내` : `${m}m 이내`);
+    parts.push(`${Number((m / 1000).toFixed(1))}km 이내`);
   if (filter.hasCar) parts.push('자차 O');
   return parts.slice(0, 2).join(' · ') || '이주/통근';
 });
@@ -1132,7 +1132,7 @@ const areaLabel = computed(() => {
 
 const distanceLabel = computed(() => {
   const m = draft.distance;
-  return m >= 1000 ? `${(m / 1000).toFixed(1)}km 이내` : `${m}m 이내`;
+  return `${Number((m / 1000).toFixed(1))}km 이내`;
 });
 
 const totalCount = computed(() => listItems.value.length);
