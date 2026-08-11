@@ -9,7 +9,6 @@ import org.tajiro.property.domain.PropertyDetailVO;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
-
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -34,15 +33,21 @@ public class PropertyDetailDTO {
     private LocalDateTime moveInDate;
     private LocalDateTime availableDate;
     private Boolean discussionStatus;
-    private Integer evaluationScore;
-    private Boolean isFavorite;
 
-    // 1:N 관계 데이터
+    private Integer recommendScore; // API 응답 데이터
+    private Boolean isFavorite;     // API 응답 데이터
+
     private List<String> images;
     private List<InfraSummaryDTO> infraSummary;
 
-    // VO -> DTO 변환 정적 팩토리 메서드 (isFavorite 파라미터 추가)
-    public static PropertyDetailDTO of(PropertyDetailVO vo, List<String> images, List<InfraSummaryDTO> infraSummary, Boolean isFavorite) {
+    // ✨ recommendScore를 파라미터로 추가 수용
+    public static PropertyDetailDTO of(
+            PropertyDetailVO vo,
+            List<String> images,
+            List<InfraSummaryDTO> infraSummary,
+            Boolean isFavorite,
+            Integer recommendScore
+    ) {
         if (vo == null) {
             return null;
         }
@@ -66,8 +71,8 @@ public class PropertyDetailDTO {
                 .moveInDate(vo.getMoveInDate())
                 .availableDate(vo.getAvailableDate())
                 .discussionStatus(vo.getDiscussionStatus())
-                .evaluationScore(vo.getEvaluationScore())
-                .isFavorite(isFavorite) // ✨ 찜 상태 바인딩
+                .recommendScore(recommendScore) // ✨ 전달받은 값 바인딩
+                .isFavorite(isFavorite)
                 .images(images)
                 .infraSummary(infraSummary)
                 .build();
