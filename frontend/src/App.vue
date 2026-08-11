@@ -10,7 +10,7 @@ const headerTitle = computed(() => route.meta.headerTitle ?? '');
 const showHeader = computed(() => Boolean(headerTitle.value));
 const headerBack = computed(() => {
   const value = route.meta.headerBack;
-  return typeof value === 'function' ? value(route) : value ?? true;
+  return typeof value === 'function' ? value(route) : (value ?? true);
 });
 const headerBackTo = computed(() => route.meta.headerBackTo ?? null);
 
@@ -36,6 +36,8 @@ const activeTab = computed(() => {
 const showTabBar = computed(() => {
   return !['/', '/login', '/register'].includes(route.path);
 });
+
+const KEEP_ALIVE_VIEWS = ['PropertyListView'];
 </script>
 
 <template>
@@ -54,14 +56,14 @@ const showTabBar = computed(() => {
     </PageHeader>
 
     <main class="route-content">
-      <router-view />
+      <router-view v-slot="{ Component }">
+        <KeepAlive :include="KEEP_ALIVE_VIEWS">
+          <component :is="Component" />
+        </KeepAlive>
+      </router-view>
     </main>
 
-    <AppTabBar
-      v-if="showTabBar"
-      :active="activeTab"
-      class="global-tab-bar"
-    />
+    <AppTabBar v-if="showTabBar" :active="activeTab" class="global-tab-bar" />
   </div>
 </template>
 
