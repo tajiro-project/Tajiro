@@ -133,7 +133,7 @@ export const PREFERENCE_SLIDER_CONFIG = {
     max: 10000,
     step: 100,
     defaultValue: 1500,
-    marks: ['0', '2km', '4km', '6km', '8km', '10km'],
+    marks: ['0km', '2.5km', '5km', '7.5km', '10km'],
   },
   DEPOSIT_JEONSE: {
     min: 0,

@@ -2,6 +2,13 @@
   <div class="dual-slider">
     <div class="track" @click="onTrackClick">
       <div class="fill" :style="fillStyle" />
+      <span
+        v-for="(mark, index) in marks"
+        :key="`tick-${index}`"
+        class="track-mark"
+        :style="markPositionStyle(index)"
+        aria-hidden="true"
+      />
       <input
         type="range"
         :min="min"
@@ -19,8 +26,15 @@
         @input="onHigh"
       />
     </div>
-    <div class="marks">
-      <span v-for="(m, i) in marks" :key="i">{{ m }}</span>
+    <div v-if="marks.length" class="marks" aria-hidden="true">
+      <span
+        v-for="(mark, index) in marks"
+        :key="index"
+        class="mark-label"
+        :style="markLabelStyle(index)"
+      >
+        {{ mark }}
+      </span>
     </div>
   </div>
 </template>
@@ -92,6 +106,18 @@ function onTrackClick(event) {
   const nextHigh = Math.max(clickedValue, low + minimumGap);
   emit('update:modelValue', [low, Math.min(props.max, nextHigh)]);
 }
+
+function markPositionStyle(index) {
+  const denominator = Math.max(props.marks.length - 1, 1);
+  return { left: `${(index / denominator) * 100}%` };
+}
+
+function markLabelStyle(index) {
+  const style = markPositionStyle(index);
+  const lastIndex = props.marks.length - 1;
+  const translate = index === 0 ? '0' : index === lastIndex ? '-100%' : '-50%';
+  return { ...style, transform: `translateX(${translate})` };
+}
 </script>
 
 <style scoped>
@@ -120,6 +146,16 @@ function onTrackClick(event) {
   border-radius: 3px;
   background: var(--kb-yellow);
 }
+.track-mark {
+  position: absolute;
+  z-index: 1;
+  width: 2px;
+  height: 9px;
+  border-radius: 1px;
+  background: #c8c3b8;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
 input[type='range'] {
   position: absolute;
   inset: 0;
@@ -129,6 +165,7 @@ input[type='range'] {
   background: transparent;
   pointer-events: none;
   margin: 0;
+  z-index: 2;
 }
 input[type='range']::-webkit-slider-thumb {
   -webkit-appearance: none;
@@ -152,10 +189,15 @@ input[type='range']::-moz-range-thumb {
   cursor: pointer;
 }
 .marks {
-  display: flex;
-  justify-content: space-between;
+  position: relative;
+  height: 14px;
   margin-top: 6px;
   font-size: 11px;
   color: var(--kb-silver);
+}
+.mark-label {
+  position: absolute;
+  top: 0;
+  white-space: nowrap;
 }
 </style>

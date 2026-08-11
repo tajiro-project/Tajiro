@@ -96,6 +96,7 @@ const routes = [
     path: '/preferences/:step',
     name: 'preferences',
     component: () => import('@/views/preferences/PreferenceWizardView.vue'),
+    meta: { headerTitle: '가치관 설정' },
   },
   {
     path: '/mypage',

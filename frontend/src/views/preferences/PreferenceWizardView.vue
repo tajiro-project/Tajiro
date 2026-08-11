@@ -384,9 +384,10 @@ const errorMessage = ref('');
 
 onMounted(loadPreference);
 
-const commuteDistanceLabel = computed(
-  () => `${pref.maxCommuteDistanceMeters.toLocaleString()}m 이내`,
-);
+const commuteDistanceLabel = computed(() => {
+  const kilometers = pref.maxCommuteDistanceMeters / 1000;
+  return `${Number(kilometers.toFixed(1))}km 이내`;
+});
 
 const formatPrice = (value, max) => {
   if (value <= 0) return '최소';
