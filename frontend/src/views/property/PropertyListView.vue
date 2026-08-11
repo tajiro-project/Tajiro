@@ -1,45 +1,69 @@
 <template>
   <div class="property-list">
-    <div class="fixed-top">
-      <div class="map-area">
-        <KakaoMap
-          :markers="markers"
-          :dots="dots"
-          :center="center"
-          :active-dot-key="activeDotKey"
-          @marker-click="onMarkerClick"
-          @dot-click="onDotClick"
-          @dot-hover="onDotHover"
-        />
+    <div class="map-area">
+      <KakaoMap
+        :markers="markers"
+        :dots="dots"
+        :center="center"
+        :active-dot-key="activeDotKey"
+        @marker-click="onMarkerClick"
+        @dot-click="onDotClick"
+        @dot-hover="onDotHover"
+      />
 
-        <div v-if="activeDot" class="dot-info">
-          <span
-            class="dot-info-swatch"
-            :style="{ background: activeDotColor }"
-          />
-          <span class="dot-info-text">{{ activeDotText }}</span>
-          <button v-if="pinnedDot" class="dot-info-close" @click="closePanel">
-            ×
-          </button>
-        </div>
-
-        <div v-if="selectedBuildingId" class="map-overlay">
-          <InfraTogglePanel
-            v-model="mapLayers"
-            :categories="layerCategories"
-            @open-settings="openSheet('infra')"
-          />
-        </div>
-
-        <button
-          v-if="selectedBuildingId"
-          class="reset-btn"
-          @click="clearSelection"
-        >
-          전체 보기
+      <div v-if="activeDot" class="dot-info">
+        <span class="dot-info-swatch" :style="{ background: activeDotColor }" />
+        <span class="dot-info-text">{{ activeDotText }}</span>
+        <button v-if="pinnedDot" class="dot-info-close" @click="closePanel">
+          ×
         </button>
       </div>
 
+      <div v-if="selectedBuildingId" class="map-overlay">
+        <InfraTogglePanel
+          v-model="mapLayers"
+          :categories="layerCategories"
+          @open-settings="openSheet('infra')"
+        />
+      </div>
+
+      <button
+        v-if="selectedBuildingId"
+        class="reset-btn"
+        @click="clearSelection"
+      >
+        전체 보기
+      </button>
+    </div>
+    <div
+      class="sheet-top"
+      :class="{ dragging: isSheetDragging }"
+      :style="{ marginTop: `-${sheetOffset}px` }"
+    >
+      <button
+        class="sheet-handle"
+        :aria-label="isSheetUp ? '지도 보기' : '목록 넓게 보기'"
+        @pointerdown="startSheetDrag"
+        @click="toggleSheet"
+      >
+        <span class="handle-bar" />
+        <svg
+          class="handle-chevron"
+          :class="{ down: isSheetUp }"
+          width="16"
+          height="16"
+          viewBox="0 0 16 16"
+          fill="none"
+        >
+          <path
+            d="M3.5 10L8 5.5L12.5 10"
+            stroke="#8a8477"
+            stroke-width="1.6"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+      </button>
       <div v-if="!isRegionSearch" class="filter-chips" @wheel="onWheelX">
         <button
           class="fchip"
@@ -558,7 +582,14 @@ import SingleSlider from '@/components/SingleSlider.vue';
 import KakaoLocation from '@/components/KakaoLocation.vue';
 import InfraTogglePanel from '@/components/InfraTogglePanel.vue';
 
-import { computed, ref, reactive, watch, onMounted } from 'vue';
+import {
+  computed,
+  ref,
+  reactive,
+  watch,
+  onMounted,
+  onBeforeUnmount,
+} from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { infraColor } from '@/constants/infraIcons';
 
@@ -752,9 +783,9 @@ const filter = reactive({
 const SORT_OPTIONS = [
   { key: 'recommend', label: '추천순' },
   { key: 'distance', label: '거리순' },
-  { key: 'price', label: '가격순' },
-  { key: 'infra', label: '인프라 많은순' },
-  { key: 'amenity', label: '편의시설 많은순' },
+  { key: 'price', label: '가격 낮은 순' },
+  { key: 'infra', label: '인프라 많은 순' },
+  { key: 'amenity', label: '편의시설 많은 순' },
   { key: 'area', label: '면적순' },
 ];
 
@@ -1302,6 +1333,62 @@ function scrollToTop() {
   el?.scrollTo?.({ top: 0 });
 }
 
+const MAP_HEIGHT = 250;
+const DRAG_THRESHOLD = 5;
+
+const sheetOffset = ref(0);
+const isSheetDragging = ref(false);
+const isSheetUp = computed(() => sheetOffset.value >= MAP_HEIGHT / 2);
+
+let dragStartY = 0;
+let dragStartOffset = 0;
+let movedBy = 0;
+let wasDragged = false;
+
+function startSheetDrag(e) {
+  isSheetDragging.value = true;
+  dragStartY = e.clientY;
+  dragStartOffset = sheetOffset.value;
+  movedBy = 0;
+  window.addEventListener('pointermove', onSheetDrag);
+  window.addEventListener('pointerup', endSheetDrag);
+}
+
+function onSheetDrag(e) {
+  const delta = dragStartY - e.clientY;
+  movedBy = Math.max(movedBy, Math.abs(delta));
+  if (movedBy < DRAG_THRESHOLD) return;
+  sheetOffset.value = Math.min(
+    MAP_HEIGHT,
+    Math.max(0, dragStartOffset + delta),
+  );
+}
+
+function endSheetDrag() {
+  isSheetDragging.value = false;
+  stopDragListeners();
+
+  if (movedBy < DRAG_THRESHOLD) return;
+
+  wasDragged = true;
+  sheetOffset.value = sheetOffset.value > MAP_HEIGHT / 2 ? MAP_HEIGHT : 0;
+}
+
+function toggleSheet() {
+  if (wasDragged) {
+    wasDragged = false;
+    return;
+  }
+  sheetOffset.value = sheetOffset.value > 0 ? 0 : MAP_HEIGHT;
+}
+
+function stopDragListeners() {
+  window.removeEventListener('pointermove', onSheetDrag);
+  window.removeEventListener('pointerup', endSheetDrag);
+}
+
+onBeforeUnmount(stopDragListeners);
+
 watch(selectedBuildingId, (id) => {
   closePanel();
   if (id && selectionSource.value === 'pin') scrollToTop();
@@ -1316,14 +1403,72 @@ watch(filter, scrollToTop);
   display: flex;
   flex-direction: column;
   background: var(--bg);
+  overflow: hidden;
 }
 
-.fixed-top {
+.sheet-top {
+  position: relative;
+  z-index: 1;
   flex-shrink: 0;
   background: var(--bg);
+  border-radius: 16px 16px 0 0;
+  box-shadow: 0 -6px 16px rgba(0, 0, 0, 0.08);
+  transition: margin-top 0.22s ease;
+}
+
+.sheet-top.dragging {
+  transition: none;
+}
+
+.sheet-handle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 0 4px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  touch-action: none;
+}
+
+.handle-bar {
+  width: 40px;
+  height: 4px;
+  border-radius: 2px;
+  background: #d8d2c4;
+}
+
+.handle-chevron {
+  display: none;
+  transition: transform 0.22s ease;
+}
+
+.handle-chevron.down {
+  transform: rotate(180deg);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .sheet-handle {
+    min-height: 30px;
+  }
+
+  .handle-bar {
+    display: none;
+  }
+
+  .handle-chevron {
+    display: block;
+  }
 }
 
 .scroll-area {
+  position: relative;
+  z-index: 1;
+  background: var(--bg);
   flex: 1;
   min-height: 0;
   overflow-y: auto;
@@ -1333,6 +1478,8 @@ watch(filter, scrollToTop);
 .map-area {
   position: relative;
   height: 250px;
+  flex-shrink: 0;
+  z-index: 0;
 }
 
 .cards {
@@ -1527,7 +1674,7 @@ watch(filter, scrollToTop);
 .filter-chips {
   display: flex;
   gap: 8px;
-  padding: 12px 16px 0;
+  padding: 0px 16px 0;
   overflow-x: auto;
 }
 
