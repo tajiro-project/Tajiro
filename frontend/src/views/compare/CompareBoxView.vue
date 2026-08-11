@@ -732,16 +732,20 @@ function formatFloorInfo(floorInfo) {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 10px;
   width: 100%;
-  height: 48px;
+  height: 78px;
   margin-top: 16px;
   border: 1.5px dashed var(--kb-gold);
   border-radius: 14px;
   background: var(--white);
-  font-size: 13.5px;
+  font-size: 16px;
   font-weight: 700;
   color: var(--kb-gold);
+}
+.add-btn svg {
+  width: 18px;
+  height: 18px;
 }
 .comparison-settings-card {
   overflow: hidden;
