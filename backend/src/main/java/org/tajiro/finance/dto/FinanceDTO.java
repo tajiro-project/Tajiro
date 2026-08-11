@@ -35,6 +35,10 @@ public class FinanceDTO {
     private LocalDateTime createdAt; // 등록일
     private String baseType;
 
+    private String tradeType;
+    private String productType;
+    private BigDecimal categorySimilarity;
+
 
     // VO  DTO 변환
     public static FinanceDTO of(FinanceVO vo) {
@@ -59,6 +63,9 @@ public class FinanceDTO {
                 .validEndDate(vo.getValidEndDate())
                 .createdAt(vo.getCreatedAt())
                 .baseType(vo.getBaseType())
+                .tradeType(vo.getTradeType())
+                .productType(vo.getProductType())
+                .categorySimilarity(vo.getCategorySimilarity())
                 .build();
     }
 }

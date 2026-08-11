@@ -29,4 +29,20 @@ public class FinanceServiceImpl implements FinanceService {
     public FinanceDTO get(Long id) {
         return FinanceDTO.of(mapper.get(id));
     }
+
+
+    @Override
+    public List<FinanceDTO>
+    getRecommendedByPropertyId(
+            Long propertyId
+    ) {
+
+        return mapper
+                .getRecommendedByPropertyId(
+                        propertyId
+                )
+                .stream()
+                .map(FinanceDTO::of)
+                .toList();
+    }
 }

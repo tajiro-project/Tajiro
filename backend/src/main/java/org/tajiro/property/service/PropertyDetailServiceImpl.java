@@ -34,13 +34,16 @@ public class PropertyDetailServiceImpl implements PropertyDetailService {
             infraSummary = propertyDetailMapper.selectInfraSummaryByBuildingId(vo.getBuildingId());
         }
 
-        // ✨ 로그인 유저인 경우에만 찜 여부 조회 (비로그인은 false)
+        // 로그인 유저인 경우에만 찜 여부 및 추천 점수 조회 (비로그인은 false / null)
         boolean isFavorite = false;
+        Integer recommendScore = null;
+
         if (userId != null) {
             isFavorite = propertyDetailMapper.selectIsFavorite(userId, id);
+            recommendScore = propertyDetailMapper.selectRecommendScore(id, userId); // ✨ 추천 점수 추가 조회
         }
 
-        // isFavorite 추가 전달
-        return PropertyDetailDTO.of(vo, images, infraSummary, isFavorite);
+        // ✨ recommendScore 파라미터 추가 전달
+        return PropertyDetailDTO.of(vo, images, infraSummary, isFavorite, recommendScore);
     }
 }
