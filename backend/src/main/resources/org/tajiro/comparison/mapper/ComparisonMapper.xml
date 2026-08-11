@@ -98,6 +98,7 @@
                    ELSE CEIL(pvar.workplace_distance_meters * 2 / 67.0)
                END AS commute_minutes,
                COALESCE(infra.infra_count, 0) AS infra_count,
+               COALESCE(infra.amenity_count, 0) AS amenity_count,
                infra.police_nearest_distance_meters AS police_nearest_distance_meters,
                p.evaluation_score,
                COALESCE(safety.cctv_count, 0) AS cctv_count_within500m,
@@ -113,11 +114,30 @@
             SELECT building_id,
                    ROUND(AVG(
                        CASE
-                           WHEN count_within2000m > 0
-                               THEN 80 + LEAST(count_within2000m, 5) * 4
-                           ELSE 0
+                           WHEN infra_category IN (
+                               'SUBWAY', 'BUS_TERMINAL', 'TRAIN', 'HOSPITAL',
+                               'PHARMACY', 'SCHOOL', 'KINDERGARTEN', 'ACADEMY',
+                               'LIBRARY', 'PARK', 'POLICE', 'FIRE', 'GOV_OFFICE',
+                               'PUBLIC', 'POST_OFFICE', 'BANK'
+                           ) THEN CASE
+                               WHEN count_within2000m > 0
+                                   THEN 80 + LEAST(count_within2000m, 5) * 4
+                               ELSE 0
+                           END
                        END
                    )) AS infra_count,
+                   ROUND(AVG(
+                       CASE
+                           WHEN infra_category IN (
+                               'CONVENIENCE', 'MART', 'CAFE', 'FOOD', 'CULTURE',
+                               'SPORTS', 'SWIMMING', 'PARKING', 'GAS'
+                           ) THEN CASE
+                               WHEN count_within2000m > 0
+                                   THEN 80 + LEAST(count_within2000m, 5) * 4
+                               ELSE 0
+                           END
+                       END
+                   )) AS amenity_count,
                    MAX(CASE WHEN infra_category = 'POLICE'
                             THEN nearest_distance_meters END) AS police_nearest_distance_meters
             FROM infrastructure

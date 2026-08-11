@@ -438,14 +438,9 @@ const allScoreSpecs = computed(() => {
       invert: false,
     },
     {
-      label: '안전',
-      available: metrics.value.every(
-        (m) =>
-          hasNumber(m.cctvCountWithin500m) && hasNumber(m.bellCountWithin500m),
-      ),
-      values: metrics.value.map(
-        (m) => Number(m.cctvCountWithin500m) + Number(m.bellCountWithin500m),
-      ),
+      label: '편의시설',
+      available: metrics.value.every((m) => hasNumber(m.amenityCount)),
+      values: metrics.value.map((m) => Number(m.amenityCount)),
       invert: false,
     },
     {
