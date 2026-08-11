@@ -43,6 +43,9 @@
             AI 의사결정 코치
           </p>
 
+          <p v-if="aiRecommendationLine" class="ai-recommendation-line">
+            {{ aiRecommendationLine }}
+          </p>
           <p
             v-if="aiPrimaryText"
             class="ai-p"
@@ -91,7 +94,6 @@
               종합 비교
             </span>
             <span class="ph-right">
-              가치관 우선순위
               <svg
                 class="chev"
                 :class="{ open: showOverall }"
@@ -111,17 +113,97 @@
             </span>
           </button>
           <div v-show="showOverall" class="panel-body">
-            <div class="radar-wrap">
-              <canvas ref="radarEl" class="radar-canvas" />
+            <div class="score-tabs" role="tablist" aria-label="비교 지표 선택">
+              <button
+                v-for="spec in allScoreSpecs"
+                :key="spec.key"
+                class="score-tab"
+                :class="{ active: selectedScoreSpec?.key === spec.key }"
+                type="button"
+                role="tab"
+                :aria-selected="selectedScoreSpec?.key === spec.key"
+                :disabled="!spec.available"
+                @click="selectScore(spec.key)"
+              >
+                {{ spec.tabLabel }}
+              </button>
             </div>
-            <div class="legend">
-              <span v-for="(item, i) in items" :key="i" class="lg">
-                <i class="dot" :style="{ background: colors[i].dot }" />
-                {{ letters[i] }} {{ shortName(item.title) }}
-              </span>
+            <!-- 세로 막대그래프 템플릿 -->
+            <div v-if="selectedScoreSpec" class="metric-chart">
+              <div class="score-section-head">
+                <strong>{{ selectedScoreTitle }}</strong>
+                <span>높을수록 좋아요</span>
+              </div>
+              <div class="metric-chart-navigation">
+                <!-- 터치 스와이프 처리 -->
+                <div
+                  class="metric-slide-viewport"
+                  @touchstart.passive="handleMetricTouchStart"
+                  @touchend.passive="handleMetricTouchEnd"
+                >
+                  <!-- 지표 전환 애니메이션 -->
+                  <Transition :name="slideTransitionName">
+                    <div :key="selectedScoreSpec.key" class="metric-bars">
+                      <div
+                        v-for="bar in selectedMetricBars"
+                        :key="bar.propertyId"
+                        class="metric-bar-column"
+                      >
+                        <div class="metric-bar-visual">
+                          <div
+                            class="metric-bar-fill"
+                            :style="{
+                              height: `${bar.score}%`,
+                              background: selectedScoreSpec.color,
+                            }"
+                          >
+                            <span class="metric-bar-score">{{
+                              bar.score
+                            }}</span>
+                          </div>
+                        </div>
+                        <span class="metric-raw-label">
+                          {{ bar.letter }} · {{ bar.rawLabel }}
+                        </span>
+                      </div>
+                    </div>
+                  </Transition>
+                </div>
+              </div>
             </div>
-            <p v-if="unavailableAxes.length" class="metric-note">
-              데이터 부족으로 제외된 지표: {{ unavailableAxes.join(', ') }}
+
+            <div class="cumulative-chart">
+              <div class="score-section-head cumulative-head">
+                <strong>5개 지표 누적 점수</strong>
+                <span>총 500점</span>
+              </div>
+              <div
+                v-for="(scores, propertyIndex) in seriesScores"
+                :key="items[propertyIndex]?.propertyId ?? propertyIndex"
+                class="cumulative-row"
+              >
+                <strong class="cumulative-letter">{{
+                  letters[propertyIndex]
+                }}</strong>
+                <div class="cumulative-track">
+                  <span
+                    v-for="(score, scoreIndex) in scores"
+                    :key="scoreSpecs[scoreIndex].key"
+                    class="cumulative-segment"
+                    :style="{
+                      width: `${score / 5}%`,
+                      background: scoreSpecs[scoreIndex].color,
+                    }"
+                  />
+                </div>
+                <strong class="cumulative-total">
+                  {{ seriesTotals[propertyIndex] }}점
+                </strong>
+              </div>
+            </div>
+
+            <p v-if="showRecommendationMismatch" class="score-notice">
+              AI 코칭 결과와 종합 비교 점수는 일치하지 않을 수 있습니다.
             </p>
           </div>
         </section>
@@ -234,7 +316,7 @@
               />
             </svg>
           </span>
-          <p id="ai-refresh-title" v class="m-title">
+          <p id="ai-refresh-title" class="m-title">
             AI 코칭 업데이트가 필요해요
           </p>
           <p class="m-text">
@@ -267,40 +349,21 @@
 </template>
 
 <script setup>
-import { computed, nextTick, onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import {
-  Chart,
-  Filler,
-  LineElement,
-  PointElement,
-  RadarController,
-  RadialLinearScale,
-} from 'chart.js';
 import client, { getApiErrorMessage } from '@/api/client';
 import { comparisonApi } from '@/api/services';
 import simplebar from 'simplebar-vue';
-
-Chart.register(
-  RadarController,
-  RadialLinearScale,
-  PointElement,
-  LineElement,
-  Filler,
-);
 
 const route = useRoute();
 const router = useRouter();
 
 const letters = ['A', 'B', 'C'];
+const PRIORITY_KEYS = ['COMMUTE', 'COST', 'INFRA', 'AMENITY', 'AREA'];
+const SCORE_KEYS = ['COMMUTE', 'COST', 'INFRA', 'MARKET', 'AMENITY'];
 const AI_COACHING_UNAVAILABLE_MESSAGE =
   'AI 코칭을 불러오지 못했어요. 잠시 후 다시 시도해주세요.';
 const CONVERSION_RATE = 0.053;
-const colors = [
-  { dot: '#ffbc00', fill: 'rgba(255, 205, 60, 0.45)', line: '#f0b400' },
-  { dot: '#88a860', fill: 'rgba(136, 168, 96, 0.45)', line: '#6f9048' },
-  { dot: '#7aa8e8', fill: 'rgba(122, 168, 232, 0.30)', line: '#5c8fd6' },
-];
 const items = ref([]);
 const metrics = ref([]);
 
@@ -313,7 +376,8 @@ const saving = ref(false);
 const errorMessage = ref('');
 const showOverall = ref(true);
 const showSafety = ref(true);
-const radarEl = ref(null);
+const selectedScoreKey = ref('COMMUTE');
+const slideDirection = ref(1);
 const savedMsg = ref('');
 const savedMsgError = ref(false);
 const currentPropertyIds = ref([]);
@@ -321,7 +385,7 @@ const activeWorkplace = ref(null);
 const activePriorities = ref([]);
 const showAiRefreshModal = ref(false);
 const refreshingCoaching = ref(false);
-let chart = null;
+let metricTouchStartX = null;
 
 const selectedIds = computed(() =>
   []
@@ -355,33 +419,42 @@ const comparisonWorkplace = computed(() => {
   };
 });
 const comparisonPriorities = computed(() => {
-  const allowed = new Set(['COMMUTE', 'COST', 'INFRA', 'AMENITY', 'AREA']);
-  const seen = new Set();
-
-  return String(firstQueryValue(route.query.priorities) ?? '')
-    .split(',')
-    .map((criterion) => criterion.trim())
-    .filter((criterion) => {
-      if (!allowed.has(criterion) || seen.has(criterion)) return false;
-      seen.add(criterion);
-      return true;
-    })
-    .slice(0, 3);
+  return normalizePriorityKeys(
+    String(firstQueryValue(route.query.priorities) ?? '').split(','),
+  );
 });
 const reportId = computed(() =>
   String(route.params.reportId ?? route.query.reportId ?? ''),
 );
 const isReportMode = computed(() => Boolean(reportId.value));
-// AI가 추천한 매물 ID를 결정
-const hasAiRecommendation = computed(() =>
-  items.value.some(
-    (item) => item.propertyId === coaching.value?.aiRecommendedPropertyId,
-  ),
-);
-
-const recommendedId = computed(() =>
-  hasAiRecommendation.value ? coaching.value.aiRecommendedPropertyId : '',
-);
+// AI가 추천한 매물 객체
+const aiRecommendedItem = computed(() => {
+  const aiRecommendedPropertyId = coaching.value?.aiRecommendedPropertyId;
+  if (aiRecommendedPropertyId == null) return null;
+  return (
+    items.value.find(
+      (item) => String(item.propertyId) === String(aiRecommendedPropertyId),
+    ) ?? null
+  );
+});
+// AI 추천 매물이 있는지 여부
+const hasAiRecommendation = computed(() => Boolean(aiRecommendedItem.value));
+// AI가 추천한 매물 ID
+const recommendedId = computed(() => aiRecommendedItem.value?.propertyId ?? '');
+// AI 추천 매물 첫 줄 안내 문구
+const aiRecommendationLine = computed(() => {
+  if (coachingError.value || !aiRecommendedItem.value) return '';
+  const recommendedIndex = items.value.findIndex(
+    (item) => String(item.propertyId) === String(recommendedId.value),
+  );
+  const recommendedLetter = letters[recommendedIndex] ?? '';
+  const title = aiRecommendedItem.value.title
+    ? ` · ${aiRecommendedItem.value.title}`
+    : '';
+  return recommendedLetter
+    ? `AI 추천 매물은 ${recommendedLetter}${title}입니다.`
+    : '';
+});
 const aiPrimaryText = computed(() => {
   if (coachingError.value) return coachingError.value;
   return (
@@ -418,36 +491,56 @@ const allScoreSpecs = computed(() => {
 
   return [
     {
+      key: 'COMMUTE',
+      tabLabel: '직주',
       label: '직주근접',
+      color: '#f2926d',
       available: metrics.value.every((m) => hasNumber(m.commuteMinutes)),
       values: metrics.value.map((m) => Number(m.commuteMinutes)),
       invert: true,
+      formatRaw: (value) => `${formatCompactNumber(value)}분`,
     },
     {
-      label: '가격 낮은 순',
+      key: 'COST',
+      tabLabel: '가격',
+      label: '가격',
+      color: '#ffca43',
       available: metrics.value.every(
         (m) => hasNumber(m.deposit) && hasNumber(m.monthlyRent),
       ),
       values: metrics.value.map((m) => monthlyCostValue(m)),
       invert: true,
+      formatRaw: (value) => `${formatCompactNumber(value)}만원`,
     },
     {
+      key: 'INFRA',
+      tabLabel: '인프라',
       label: '인프라',
+      color: '#78b58c',
       available: metrics.value.every((m) => hasNumber(m.infraCount)),
       values: metrics.value.map((m) => Number(m.infraCount)),
       invert: false,
+      formatRaw: (value) => `${formatCompactNumber(value)}점`,
     },
     {
-      label: '편의시설',
-      available: metrics.value.every((m) => hasNumber(m.amenityCount)),
-      values: metrics.value.map((m) => Number(m.amenityCount)),
-      invert: false,
-    },
-    {
+      key: 'MARKET',
+      tabLabel: '시세',
       label: '시세안정',
+      color: '#68b2c7',
       available: metrics.value.every((m) => hasNumber(m.evaluationScore)),
       values: metrics.value.map((m) => Math.abs(Number(m.evaluationScore))),
       invert: true,
+      formatRaw: (value) => `${formatCompactNumber(value)}%`,
+    },
+    {
+      key: 'AMENITY',
+      tabLabel: '편의',
+      label: '편의시설',
+      color: '#8d82cc',
+      available: metrics.value.every((m) => hasNumber(m.amenityCount)),
+      values: metrics.value.map((m) => Number(m.amenityCount)),
+      invert: false,
+      formatRaw: (value) => `${formatCompactNumber(value)}점`,
     },
   ];
 });
@@ -455,14 +548,6 @@ const allScoreSpecs = computed(() => {
 const scoreSpecs = computed(() =>
   allScoreSpecs.value.filter((spec) => spec.available),
 );
-
-const unavailableAxes = computed(() =>
-  allScoreSpecs.value
-    .filter((spec) => !spec.available)
-    .map((spec) => spec.label),
-);
-
-const axes = computed(() => scoreSpecs.value.map((spec) => spec.label));
 
 // 차트 점수를 정규화하여 35~95점 사이로 변환
 const seriesScores = computed(() => {
@@ -476,22 +561,116 @@ const seriesScores = computed(() => {
     normalizedByAxis.map((axisScores) => axisScores[propertyIndex]),
   );
 });
-const bestAreaText = computed(() => {
-  if (!seriesScores.value.length) return '';
-  // 각 매물의 총점 계산
-  const sums = seriesScores.value.map((scores) =>
-    scores.reduce((acc, score) => acc + score, 0),
+//현재 선택된 지표 객체
+const selectedScoreSpec = computed(
+  () =>
+    scoreSpecs.value.find((spec) => spec.key === selectedScoreKey.value) ??
+    scoreSpecs.value[0] ??
+    null,
+);
+const slideTransitionName = computed(() =>
+  slideDirection.value > 0 ? 'metric-slide-next' : 'metric-slide-prev',
+);
+//우선순위 번호를 제목에 표시
+const selectedScoreTitle = computed(() => {
+  if (!selectedScoreSpec.value) return '';
+  const priorityIndex = activePriorities.value.indexOf(
+    selectedScoreSpec.value.key,
   );
-  // 총점이 가장 높은 매물 찾기
-  const best = sums.indexOf(Math.max(...sums));
-  // 총점이 가장 높은 매물의 상위 2개 영역 찾기
-  const top2 = axes.value
-    .map((axis, i) => ({ axis, value: seriesScores.value[best][i] }))
-    .sort((a, b) => b.value - a.value)
-    .slice(0, 2)
-    .map((item) => item.axis.slice(0, 2));
-  return `${letters[best]} 매물 (${top2.join('·')} 우위)`;
+  const priorityPrefix =
+    priorityIndex >= 0 ? `${priorityIndex + 1}순위 · ` : '';
+  return `${priorityPrefix}${selectedScoreSpec.value.label} 점수`;
 });
+const selectedMetricBars = computed(() => {
+  if (!selectedScoreSpec.value) return [];
+  const scoreIndex = scoreSpecs.value.findIndex(
+    (spec) => spec.key === selectedScoreSpec.value.key,
+  );
+
+  return metrics.value.map((metric, propertyIndex) => ({
+    propertyId: metric.propertyId,
+    letter: letters[propertyIndex],
+    score: seriesScores.value[propertyIndex]?.[scoreIndex] ?? 0,
+    rawLabel: selectedScoreSpec.value.formatRaw(
+      selectedScoreSpec.value.values[propertyIndex],
+    ),
+  }));
+});
+const seriesTotals = computed(() =>
+  seriesScores.value.map((scores) =>
+    scores.reduce((total, score) => total + score, 0),
+  ),
+);
+const topCumulativePropertyIds = computed(() => {
+  if (!seriesTotals.value.length) return [];
+  const highestScore = Math.max(...seriesTotals.value);
+  return items.value
+    .filter((_, index) => seriesTotals.value[index] === highestScore)
+    .map((item) => String(item.propertyId));
+});
+const showRecommendationMismatch = computed(
+  () =>
+    hasAiRecommendation.value &&
+    !topCumulativePropertyIds.value.includes(String(recommendedId.value)),
+);
+
+function selectInitialScore(priorities) {
+  const firstVisiblePriority = priorities.find((criterion) =>
+    SCORE_KEYS.includes(criterion),
+  );
+  selectedScoreKey.value = firstVisiblePriority ?? 'COMMUTE';
+}
+
+function normalizePriorityKeys(priorities) {
+  const allowed = new Set(PRIORITY_KEYS);
+  const seen = new Set();
+
+  return (priorities ?? [])
+    .map((priority) => String(priority ?? '').trim())
+    .filter((criterion) => {
+      if (!allowed.has(criterion) || seen.has(criterion)) return false;
+      seen.add(criterion);
+      return true;
+    })
+    .slice(0, 3);
+}
+
+function selectScore(scoreKey) {
+  const currentIndex = scoreSpecs.value.findIndex(
+    (spec) => spec.key === selectedScoreSpec.value?.key,
+  );
+  const targetIndex = scoreSpecs.value.findIndex(
+    (spec) => spec.key === scoreKey,
+  );
+  if (targetIndex < 0 || targetIndex === currentIndex) return;
+  slideDirection.value = targetIndex > currentIndex ? 1 : -1;
+  selectedScoreKey.value = scoreKey;
+}
+// 선택된 지표를 기준으로 이전/다음 지표로 전환
+function selectAdjacentScore(direction) {
+  if (scoreSpecs.value.length < 2 || !selectedScoreSpec.value) return;
+  const currentIndex = scoreSpecs.value.findIndex(
+    (spec) => spec.key === selectedScoreSpec.value.key,
+  );
+  const nextIndex =
+    (currentIndex + direction + scoreSpecs.value.length) %
+    scoreSpecs.value.length;
+  slideDirection.value = direction;
+  selectedScoreKey.value = scoreSpecs.value[nextIndex].key;
+}
+
+function handleMetricTouchStart(event) {
+  metricTouchStartX = event.touches[0]?.clientX ?? null;
+}
+
+function handleMetricTouchEnd(event) {
+  const touchEndX = event.changedTouches[0]?.clientX;
+  if (metricTouchStartX == null || touchEndX == null) return;
+  const distance = touchEndX - metricTouchStartX;
+  metricTouchStartX = null;
+  if (Math.abs(distance) < 40) return;
+  selectAdjacentScore(distance < 0 ? 1 : -1);
+}
 
 const safetyRows = computed(() => {
   if (!metrics.value.length) return [];
@@ -549,24 +728,7 @@ const safetyRows = computed(() => {
   });
 });
 
-const winCounts = computed(() => {
-  const counts = items.value.map(() => 0);
-  safetyRows.value.forEach((row) => {
-    row.cells.forEach((cell, i) => {
-      if (cell.tone === 'best') counts[i] += 1;
-    });
-  });
-  return counts;
-});
-
 onMounted(loadComparison);
-watch(seriesScores, () => nextTick(scheduleRenderChart), { deep: true });
-watch(showOverall, (open) => {
-  if (open) nextTick(scheduleRenderChart);
-});
-watch(loading, (isLoading) => {
-  if (!isLoading) nextTick(scheduleRenderChart);
-});
 
 // 매물 비교 화면에 필요한 데이터를 서버에서 불러오는 함수
 async function loadComparison() {
@@ -601,6 +763,7 @@ async function loadComparison() {
 
     activeWorkplace.value = workplace;
     activePriorities.value = priorities;
+    selectInitialScore(priorities);
     const metricsResult = await getMetrics(propertyIds, workplace);
     let coachingDto = null;
     coachingError.value = '';
@@ -667,7 +830,7 @@ function getSavedReportWorkplace(report) {
 }
 
 function getSavedReportPriorities(report) {
-  return Array.isArray(report?.priorities) ? report.priorities : [];
+  return normalizePriorityKeys(report?.priorities);
 }
 
 function shouldShowAiRefreshModal(report) {
@@ -817,55 +980,6 @@ function hasNumber(value) {
   );
 }
 
-function scheduleRenderChart() {
-  requestAnimationFrame(() => {
-    renderChart();
-  });
-}
-
-function renderChart() {
-  if (!radarEl.value || !seriesScores.value.length) return;
-  if (chart) chart.destroy();
-  const ctx = radarEl.value.getContext('2d');
-  if (!ctx) return;
-  chart = new Chart(ctx, {
-    type: 'radar',
-    data: {
-      labels: axes.value,
-      datasets: seriesScores.value.map((scores, i) => ({
-        data: scores,
-        backgroundColor: colors[i].fill,
-        borderColor: colors[i].line,
-        borderWidth: 1.5,
-        pointRadius: 2,
-        pointBackgroundColor: colors[i].line,
-      })),
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: { enabled: false } },
-      scales: {
-        r: {
-          min: 0,
-          max: 100,
-          ticks: { display: false, stepSize: 25 },
-          grid: { color: '#e9e7e2' },
-          angleLines: { color: '#e9e7e2' },
-          pointLabels: {
-            font: {
-              size: 11,
-              weight: 600,
-              family: "'Noto Sans KR', sans-serif",
-            },
-            color: '#33302a',
-          },
-        },
-      },
-    },
-  });
-}
-
 async function saveReport() {
   saving.value = true;
   savedMsg.value = '';
@@ -898,16 +1012,20 @@ function getReportSummaryText() {
   return coaching.value?.aiSummary ?? '';
 }
 
-function shortName(title) {
-  return String(title ?? '').split(' ')[0];
-}
-
 function monthlyCostValue(item) {
   return (
     Number(item.monthlyRent) +
     (Number(item.deposit) * CONVERSION_RATE) / 12 +
     Number(item.maintenanceFee ?? 0)
   );
+}
+// 숫자를 천 단위로 구분하여 문자열로 반환
+function formatCompactNumber(value) {
+  const numericValue = Number(value);
+  if (!Number.isFinite(numericValue)) return '-';
+  return Number.isInteger(numericValue)
+    ? numericValue.toLocaleString()
+    : numericValue.toLocaleString(undefined, { maximumFractionDigits: 1 });
 }
 
 function goBack() {
@@ -1039,6 +1157,13 @@ function goBack() {
   color: var(--kb-gray);
   margin-bottom: 10px;
 }
+.ai-recommendation-line {
+  margin-bottom: 8px;
+  color: #3f3b34;
+  font-size: 13.5px;
+  font-weight: 800;
+  line-height: 1.45;
+}
 .ai-p:last-child {
   margin-bottom: 0;
 }
@@ -1095,54 +1220,189 @@ function goBack() {
 .panel-body {
   padding: 0 16px 16px;
 }
-.radar-wrap {
-  position: relative;
-  height: 230px;
-}
-.legend {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  margin-top: 8px;
-  flex-wrap: wrap;
-}
-.lg {
+.score-tabs {
   display: flex;
   align-items: center;
   gap: 5px;
-  font-size: 11px;
-  color: var(--kb-gray);
 }
-.dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
+.score-tab {
+  flex: 1;
+  min-width: 0;
+  height: 26px;
+  padding: 0 4px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: #f1eee7;
+  color: #6f6a61;
+  font-size: 10.5px;
+  font-weight: 700;
 }
-.best-bar,
-.win-bar {
+.score-tab.active {
+  border-color: #f2bd2f;
+  background: #fff7d9;
+  color: #80682b;
+}
+.score-tab:disabled {
+  opacity: 0.42;
+  cursor: default;
+}
+.score-section-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 12px;
-  padding: 10px 14px;
-  background: var(--yellow-tint);
-  border-radius: 10px;
+  margin-top: 14px;
 }
-.bb-label {
+.score-section-head strong {
   font-size: 12px;
-  color: var(--kb-gray);
-}
-.bb-value {
-  font-size: 12.5px;
   font-weight: 800;
-  color: var(--kb-gold);
+  color: #3f3b34;
 }
-.metric-note {
-  margin-top: 8px;
-  font-size: 11.5px;
+.score-section-head span {
+  font-size: 9.5px;
+  color: #9b978f;
+}
+.metric-chart-navigation {
+  margin-top: 16px;
+}
+.metric-slide-viewport {
+  position: relative;
+  min-width: 0;
+  min-height: 182px;
+  overflow: hidden;
+  touch-action: pan-y;
+}
+.metric-bars {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  width: 100%;
+  padding: 22px 4px 0;
+}
+.metric-bars::before {
+  position: absolute;
+  inset: 22px 0 22px;
+  z-index: 0;
+  background: repeating-linear-gradient(
+    to bottom,
+    #e9e6df 0,
+    #e9e6df 1px,
+    transparent 1px,
+    transparent 44px
+  );
+  content: '';
+  pointer-events: none;
+}
+.metric-bar-column {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+  text-align: center;
+}
+.metric-bar-visual {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  width: 100%;
+  height: 132px;
+  flex-direction: column;
+}
+.metric-bar-fill {
+  position: relative;
+  width: 36px;
+  min-height: 2px;
+  border-radius: 8px 8px 0 0;
+  transition: height 0.2s ease;
+}
+.metric-bar-score {
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 11px;
+  font-weight: 800;
+  color: #36322c;
+}
+.metric-raw-label {
+  display: block;
+  margin-top: 6px;
+  overflow: hidden;
+  color: #777269;
+  font-size: 10.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.metric-slide-next-enter-active,
+.metric-slide-next-leave-active,
+.metric-slide-prev-enter-active,
+.metric-slide-prev-leave-active {
+  transition:
+    transform 0.22s ease,
+    opacity 0.22s ease;
+}
+.metric-slide-next-leave-active,
+.metric-slide-prev-leave-active {
+  position: absolute;
+  inset: 0;
+}
+.metric-slide-next-enter-from {
+  opacity: 0;
+  transform: translateX(36px);
+}
+.metric-slide-next-leave-to {
+  opacity: 0;
+  transform: translateX(-36px);
+}
+.metric-slide-prev-enter-from {
+  opacity: 0;
+  transform: translateX(-36px);
+}
+.metric-slide-prev-leave-to {
+  opacity: 0;
+  transform: translateX(36px);
+}
+.cumulative-chart {
+  margin-top: 20px;
+  padding-top: 2px;
+}
+.cumulative-head {
+  margin-bottom: 13px;
+}
+.cumulative-row {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) 45px;
+  gap: 7px;
+  align-items: center;
+  margin-top: 13px;
+}
+.cumulative-letter {
+  font-size: 11px;
+  color: #4b4740;
+}
+.cumulative-track {
+  display: flex;
+  width: 100%;
+  height: 15px;
+  overflow: hidden;
+  background: #f0eee9;
+}
+.cumulative-segment {
+  flex: 0 0 auto;
+  height: 100%;
+}
+.cumulative-total {
+  color: #8b7441;
+  font-size: 10.5px;
+  text-align: right;
+}
+.score-notice {
+  margin-top: 18px;
+  padding: 9px 11px;
+  border-radius: 10px;
+  background: #fff6d9;
+  color: #786f5e;
+  font-size: 10.5px;
   line-height: 1.45;
-  color: var(--kb-gray);
 }
 .safety-table {
   width: 100%;
