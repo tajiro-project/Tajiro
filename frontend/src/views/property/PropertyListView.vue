@@ -148,6 +148,9 @@
           <b class="pnum">{{ p.priorityOrder }}</b>
           {{ criterionLabel(p.criterion) }}
         </span>
+        <span v-if="!priorityChips.length" class="pchip-empty">
+          우선순위를 선택해 맞춤 매물을 확인해보세요.
+       </span>
       </div>
     </div>
     <sidebar ref="scrollArea" class="scroll-area">
@@ -563,7 +566,6 @@
       <button class="btn-ghost" @click="draft.priorities = []">초기화</button>
       <button
         class="btn-primary"
-        :disabled="draft.priorities.length === 0"
         @click="applyPriority"
       >
         이 순서로 적용
@@ -822,11 +824,7 @@ const SORT_SPECS = {
   area: { value: (p) => p.areaM2, dir: 'desc' },
 };
 
-const priorityChips = ref([
-  { criterion: 'COMMUTE', priorityOrder: 1 },
-  { criterion: 'COST', priorityOrder: 2 },
-  { criterion: 'AMENITY', priorityOrder: 3 },
-]);
+const priorityChips = ref([]);
 
 const isRegionSearch = computed(
   () => route.query.centerLat != null && route.query.centerLng != null,
@@ -1853,6 +1851,13 @@ watch(filter, scrollToTop);
   font-size: 11.5px;
   font-weight: 700;
   color: #33302a;
+  white-space: nowrap;
+}
+
+.pchip-empty {
+  flex-shrink: 0;
+  font-size: 11.5px;
+  color: #8a8477;
   white-space: nowrap;
 }
 
