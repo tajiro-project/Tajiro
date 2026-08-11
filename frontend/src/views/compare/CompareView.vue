@@ -1,7 +1,7 @@
 <template>
   <div class="cmp">
     <simplebar class="scroll-area">
-      <div v-if="loading" class="loading-state">
+      <div v-if="loading && !isReportMode" class="loading-state">
         <div class="loading-spinner" aria-hidden="true"></div>
         <p class="loading-title">AI 비교 리포트를 생성 중입니다</p>
         <p class="loading-text">가치관 기준으로 매물을 분석하고 있어요</p>
@@ -10,6 +10,9 @@
           <span></span>
           <span></span>
         </div>
+      </div>
+      <div v-else-if="loading" class="state">
+        저장된 리포트를 불러오는 중이에요.
       </div>
       <div v-else-if="errorMessage" class="state error">
         {{ errorMessage }}
@@ -212,6 +215,7 @@
             </div>
 
             <p v-if="showRecommendationMismatch" class="score-notice">
+              <!-- {{ recommendationMismatchText }} -->
               AI 코칭 결과와 종합 비교 점수는 일치하지 않을 수 있습니다.
             </p>
           </div>
@@ -622,6 +626,45 @@ const showRecommendationMismatch = computed(
     hasAiRecommendation.value &&
     !topCumulativePropertyIds.value.includes(String(recommendedId.value)),
 );
+// const recommendationMismatchText = computed(() => {
+//   if (!showRecommendationMismatch.value) return '';
+
+//   const recommendedIndex = items.value.findIndex(
+//     (item) => String(item.propertyId) === String(recommendedId.value),
+//   );
+//   const topIndex = items.value.findIndex((item) =>
+//     topCumulativePropertyIds.value.includes(String(item.propertyId)),
+//   );
+//   if (recommendedIndex < 0 || topIndex < 0) return '';
+
+//   const recommendedLetter = letters[recommendedIndex];
+//   const topLetter = letters[topIndex];
+//   const priorityOrder = new Map(
+//     activePriorities.value.map((key, index) => [key, index]),
+//   );
+//   const strongerMetrics = scoreSpecs.value
+//     .map((spec, scoreIndex) => ({
+//       key: spec.key,
+//       label: spec.label,
+//       difference:
+//         (seriesScores.value[recommendedIndex]?.[scoreIndex] ?? 0) -
+//         (seriesScores.value[topIndex]?.[scoreIndex] ?? 0),
+//     }))
+//     .filter((metric) => metric.difference > 0)
+//     .sort((a, b) => {
+//       const aPriority = priorityOrder.get(a.key) ?? Number.MAX_SAFE_INTEGER;
+//       const bPriority = priorityOrder.get(b.key) ?? Number.MAX_SAFE_INTEGER;
+//       return aPriority - bPriority || b.difference - a.difference;
+//     })
+//     .slice(0, 2)
+//     .map((metric) => metric.label);
+
+//   if (!strongerMetrics.length) {
+//     return `AI 추천 ${recommendedLetter}는 사용자 우선순위와 코칭 내용을 반영한 결과이며, 5개 지표를 동일하게 합산한 누적 점수는 ${topLetter}가 가장 높습니다.`;
+//   }
+
+//   return `AI 추천 ${recommendedLetter}는 ${strongerMetrics.join('·')} 지표에서 ${topLetter}보다 앞섰지만, 5개 지표를 동일하게 합산한 누적 점수는 ${topLetter}가 가장 높습니다.`;
+// });
 
 function selectInitialScore(priorities) {
   const firstVisiblePriority = priorities.find((criterion) =>
