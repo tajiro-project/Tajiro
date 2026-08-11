@@ -26,6 +26,7 @@ public class ComparisonMetricDTO {
     private LocalDateTime updateDate;
     private Integer commuteMinutes;
     private Integer infraCount;
+    private Integer amenityCount;
     private Integer evaluationScore;
     private Integer cctvCountWithin500m;
     private Integer policeNearestDistanceMeters;
