@@ -7,6 +7,8 @@ import org.tajiro.exception.BusinessException;
 import org.tajiro.property.dto.PropertySafetyDTO;
 import org.tajiro.property.mapper.SafetyMapper;
 
+import java.time.LocalDateTime;
+import java.util.Objects;
 import java.util.Set;
 
 @Service
@@ -15,13 +17,8 @@ public class SafetyServiceImpl implements SafetyService {
 
     private final SafetyMapper safetyMapper;
 
-    // 범죄안전 카테고리 5개 정의
     private static final Set<String> CRIME_SAFETY_CATEGORIES = Set.of(
-            "POLICE_CENTER",       // 경찰서·지구대
-            "CCTV",                // CCTV
-            "SAFETY_BELL",         // 안전 비상벨
-            "SECURITY_LIGHT",      // 보안등
-            "CHILD_GUARD_HOUSE"    // 아동안전지킴이집
+            "POLICE_CENTER", "CCTV", "SAFETY_BELL", "SECURITY_LIGHT", "CHILD_GUARD_HOUSE"
     );
 
     @Override
@@ -36,12 +33,20 @@ public class SafetyServiceImpl implements SafetyService {
             throw new BusinessException(ErrorCode.INFRASTRUCTURE_NOT_FOUND);
         }
 
-        // 범죄안전 5개 카테고리 개수 계산
+        // 1. 전체 안전 정보 중 가장 최신 업데이트 일시 추출하여 최상위에 세팅
+        LocalDateTime latestUpdate = result.getSafetyList().stream()
+                .map(PropertySafetyDTO.SafetyItemDTO::getUpdatedAt)
+                .filter(Objects::nonNull)
+                .max(LocalDateTime::compareTo)
+                .orElse(null);
+
+        result.setUpdatedAt(latestUpdate);
+
+        // 2. 범죄/교통 안전 카테고리 수 집계
         int crimeCount = (int) result.getSafetyList().stream()
                 .filter(item -> item.getSafeCategory() != null && CRIME_SAFETY_CATEGORIES.contains(item.getSafeCategory()))
                 .count();
 
-        // 나머지는 교통안전 카테고리 개수로 계산
         int trafficCount = result.getSafetyList().size() - crimeCount;
 
         result.setCrimeSafetyCount(crimeCount);

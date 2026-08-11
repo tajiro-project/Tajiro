@@ -41,7 +41,10 @@ public enum ErrorCode {
     FAVORITE_DUPLICATE(409, "FAV_409", "이미 찜한 매물입니다."),
 
     // --- 약관 ---
-    TERMS_NOT_FOUND(404, "TERMS_404", "존재하지 않는 약관입니다.");
+    TERMS_NOT_FOUND(404, "TERMS_404", "존재하지 않는 약관입니다."),
+
+    // --- 임베딩 ---
+    AI_EMBEDDING_UNAVAILABLE( 503, "AI_503_3","금융상품 임베딩 생성에 실패했습니다.");
 
     private final int status;
     private final String code;

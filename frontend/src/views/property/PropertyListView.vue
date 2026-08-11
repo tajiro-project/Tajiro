@@ -601,10 +601,10 @@ import {
   ref,
   reactive,
   watch,
-  onMounted,
+  onActivated,
   onBeforeUnmount,
 } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
+import { useRouter, useRoute, onBeforeRouteLeave } from 'vue-router';
 import { infraColor } from '@/constants/infraIcons';
 
 import { propertyApi, buildingApi } from '@/api/services';
@@ -620,6 +620,8 @@ import {
   MAX_PRIORITY_SELECTIONS,
   PREFERENCE_SLIDER_CONFIG,
 } from '@/constants/preferenceOptions';
+
+defineOptions({name:'PropertyListView'})
 
 const router = useRouter();
 const route = useRoute();
@@ -667,7 +669,23 @@ async function fetchProperties() {
   }
 }
 
-onMounted(async () => {
+let skipReload = false;
+
+onBeforeRouteLeave((to) => {
+  skipReload = /^\/properties\/\d+/.test(to.path);
+});
+
+onActivated(async () => {
+  if (skipReload) {
+    skipReload = false;
+    return;
+  }
+  
+  filter.sort = isRegionSearch.value ? 'distance' : 'recommend';
+  clearSelection();
+  closePanel();
+  sheetOffset.value = 0;
+
   if (!isRegionSearch.value) await loadPreference();
   await fetchProperties();
 });

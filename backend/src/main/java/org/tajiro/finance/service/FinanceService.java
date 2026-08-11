@@ -9,4 +9,8 @@ public interface FinanceService {
 
     public FinanceDTO get(Long id);
 
+    List<FinanceDTO>
+    getRecommendedByPropertyId(
+            Long propertyId
+    );
 }

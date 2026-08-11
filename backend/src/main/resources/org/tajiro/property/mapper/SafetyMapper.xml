@@ -4,8 +4,7 @@
 
 <mapper namespace="org.tajiro.property.mapper.SafetyMapper">
 
-    <!-- 세부 시설 (CCTV 위치 및 폴리곤 정보) 매핑 -->
-    <resultMap id="SafetyDetailMap" type="SafetyDetailDTO">
+    <resultMap id="SafetyDetailMap" type="org.tajiro.property.dto.PropertySafetyDTO$SafetyDetailDTO">
         <id property="safeDetailId" column="detail_id"/>
         <result property="safeName" column="detail_safe_name"/>
         <result property="latitude" column="detail_latitude"/>
@@ -14,25 +13,23 @@
         <result property="polygon" column="detail_polygon"/>
     </resultMap>
 
-    <!-- 안전 카테고리 매핑 -->
-    <resultMap id="SafetyItemMap" type="SafetyItemDTO">
+    <resultMap id="SafetyItemMap" type="org.tajiro.property.dto.PropertySafetyDTO$SafetyItemDTO">
         <id property="safeId" column="safe_id"/>
         <result property="safeCategory" column="safe_category"/>
         <result property="countWithin500m" column="count_within500m"/>
         <result property="nearestDistanceMeters" column="nearest_distance_meters"/>
         <result property="nearestSafeName" column="nearest_safe_name"/>
+        <result property="updatedAt" column="update_at"/> <!-- 업데이트 일시 매핑 -->
         <collection property="details" resultMap="SafetyDetailMap" notNullColumn="detail_id"/>
     </resultMap>
 
-    <!-- 최상위 매물 및 건물 위치 매핑 -->
-    <resultMap id="PropertySafetyResultMap" type="PropertySafetyDTO">
+    <resultMap id="PropertySafetyResultMap" type="org.tajiro.property.dto.PropertySafetyDTO">
         <id property="propertyId" column="property_id"/>
         <result property="latitude" column="building_latitude"/>
         <result property="longitude" column="building_longitude"/>
         <collection property="safetyList" resultMap="SafetyItemMap" notNullColumn="safe_id"/>
     </resultMap>
 
-    <!-- 매물 존재 여부 검증 -->
     <select id="existsPropertyById" resultType="boolean">
         SELECT EXISTS (
             SELECT 1
@@ -41,9 +38,8 @@
         )
     </select>
 
-    <!-- 매물 안전 정보 전체 조회 (Safety + Infrastructure Police 결합) -->
     <select id="selectPropertySafetyInfo" resultMap="PropertySafetyResultMap">
-        <!-- 1. 기존 안전 테이블 데이터 (경찰서·지구대 제외) -->
+        <!-- 1. 기존 안전 데이터 (safety.update_at) -->
         SELECT
         p.id AS property_id,
         b.latitude AS building_latitude,
@@ -59,13 +55,13 @@
         ORDER BY sd_near.sort_order ASC
         LIMIT 1
         ) AS nearest_safe_name,
+        s.update_at AS update_at,
         sd.id AS detail_id,
         sd.safe_name AS detail_safe_name,
         sd.latitude AS detail_latitude,
         sd.longitude AS detail_longitude,
         sd.distance_m AS detail_distance_m,
-        sd.polygon AS detail_polygon,
-        1 AS query_order
+        sd.polygon AS detail_polygon
         FROM property p
         INNER JOIN building b ON p.building_id = b.id
         INNER JOIN safety s ON b.id = s.building_id AND s.safe_category != 'POLICE_CENTER'
@@ -74,7 +70,7 @@
 
         UNION ALL
 
-        <!-- 2. 인프라 테이블의 경찰서/지구대(POLICE) 데이터 -->
+        <!-- 2. 경찰서/지구대 인프라 데이터 (infrastructure.computed_at) -->
         SELECT
         p.id AS property_id,
         b.latitude AS building_latitude,
@@ -90,13 +86,13 @@
         ORDER BY id_near.sort_order ASC
         LIMIT 1
         ) AS nearest_safe_name,
+        i.computed_at AS update_at,
         id.id AS detail_id,
         id.infra_name AS detail_safe_name,
         id.latitude AS detail_latitude,
         id.longitude AS detail_longitude,
         id.distance_m AS detail_distance_m,
-        NULL AS detail_polygon,
-        2 AS query_order
+        NULL AS detail_polygon
         FROM property p
         INNER JOIN building b ON p.building_id = b.id
         INNER JOIN infrastructure i ON b.id = i.building_id AND i.infra_category = 'POLICE'

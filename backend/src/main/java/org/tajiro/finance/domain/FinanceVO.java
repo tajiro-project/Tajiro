@@ -34,4 +34,9 @@ public class FinanceVO {
     private LocalDateTime validEndDate; // 종료일
     private LocalDateTime createdAt; // 등록일
     private String baseType;
+    private String tradeType; // 월세 / 전세 / 매매
+    private String productType; // 담보 / 보증 / 기타
+    private BigDecimal categorySimilarity; // 최종 선택 카테고리와의 cosine similarity
+    private String embedding;     // productName + eligibility 임베딩 // DB JSON 컬럼이지만 MyBatis에서는 JSON 문자열로 관리
+
 }
