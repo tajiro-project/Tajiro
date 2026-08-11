@@ -17,4 +17,7 @@ public interface PropertyDetailMapper {
 
     // 3. 건물 관리 번호(buildingId) 기준 인프라 요약 목록 조회
     List<PropertyDetailDTO.InfraSummaryDTO> selectInfraSummaryByBuildingId(@Param("buildingId") Long buildingId);
+
+    // 특정 유저가 해당 매물을 찜했는지 확인하는 쿼리 메서드
+    boolean selectIsFavorite(@Param("userId") Long userId, @Param("propertyId") Long propertyId);
 }
