@@ -103,13 +103,25 @@
         FROM infrastructure i
         WHERE i.building_id = p.building_id
         AND i.count_within2000m &gt; 0
-        AND FIND_IN_SET(i.infra_category, #{desiredInfraCategories})) AS desired_infra_count,
+        AND FIND_IN_SET(
+            i.infra_category,
+            COALESCE(NULLIF(#{desiredInfraCategories}, ''),
+                IF(#{useAllCategoriesWhenEmpty},
+                    'SUBWAY,BUS_TERMINAL,TRAIN,HOSPITAL,PHARMACY,SCHOOL,KINDERGARTEN,ACADEMY,LIBRARY,PARK,POLICE,FIRE,GOV_OFFICE,PUBLIC,POST_OFFICE,BANK',
+                    ''))
+        )) AS desired_infra_count,
 
         (SELECT COUNT(*)
         FROM infrastructure i
         WHERE i.building_id = p.building_id
         AND i.count_within2000m &gt; 0
-        AND FIND_IN_SET(i.infra_category, #{desiredAmenityCategories})) AS desired_amenity_count
+        AND FIND_IN_SET(
+            i.infra_category,
+            COALESCE(NULLIF(#{desiredAmenityCategories}, ''),
+                IF(#{useAllCategoriesWhenEmpty},
+                    'CONVENIENCE,MART,CAFE,FOOD,CULTURE,SPORTS,SWIMMING,PARKING,GAS',
+                    ''))
+        )) AS desired_amenity_count
 
         FROM property p
         JOIN building b ON b.id = p.building_id
@@ -187,7 +199,8 @@
                 )
             </if>
 
-            <if test="desiredInfraCategories != null and desiredInfraCategories != ''">
+            <if test="applyDesiredCategoryFilter
+                    and desiredInfraCategories != null and desiredInfraCategories != ''">
                 AND EXISTS (
                 SELECT 1 FROM infrastructure i
                 WHERE i.building_id = p.building_id
@@ -196,7 +209,8 @@
                 )
             </if>
 
-            <if test="desiredAmenityCategories != null and desiredAmenityCategories != ''">
+            <if test="applyDesiredCategoryFilter
+                    and desiredAmenityCategories != null and desiredAmenityCategories != ''">
                 AND EXISTS (
                 SELECT 1 FROM infrastructure i
                 WHERE i.building_id = p.building_id

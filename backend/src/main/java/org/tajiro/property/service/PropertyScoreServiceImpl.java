@@ -7,9 +7,11 @@ import org.tajiro.common.api.ErrorCode;
 import org.tajiro.exception.BusinessException;
 import org.tajiro.preference.domain.HousingPreferenceVO;
 import org.tajiro.preference.domain.PreferencePriorityVO;
+import org.tajiro.preference.dto.PropertySearchRequest;
 import org.tajiro.preference.mapper.PreferenceMapper;
 import org.tajiro.property.domain.PropertyVO;
 import org.tajiro.property.domain.PropertyValueAnalysisResultVO;
+import org.tajiro.property.mapper.PropertyMapper;
 import org.tajiro.property.mapper.PropertyScoreMapper;
 
 import java.math.BigDecimal;
@@ -31,14 +33,44 @@ public class PropertyScoreServiceImpl implements PropertyScoreService {
     private static final String INFRA = "INFRA";
     private static final String AMENITY = "AMENITY";
     private static final String AREA = "AREA";
-    private static final Set<String> SUPPORTED_CRITERIA = Set.of(
+    private static final String ALL_INFRA_CATEGORIES = String.join(",",
+            "SUBWAY", "BUS_TERMINAL", "TRAIN", "HOSPITAL", "PHARMACY", "SCHOOL",
+            "KINDERGARTEN", "ACADEMY", "LIBRARY", "PARK", "POLICE", "FIRE",
+            "GOV_OFFICE", "PUBLIC", "POST_OFFICE", "BANK");
+    private static final String ALL_AMENITY_CATEGORIES = String.join(",",
+            "CONVENIENCE", "MART", "CAFE", "FOOD", "CULTURE", "SPORTS",
+            "SWIMMING", "PARKING", "GAS");
+    private static final List<String> DEFAULT_CRITERIA = List.of(
             COMMUTE, COST, INFRA, AMENITY, AREA);
+    private static final Set<String> SUPPORTED_CRITERIA = Set.copyOf(DEFAULT_CRITERIA);
 
     private static final double MONTHLY_DEPOSIT_WEIGHT = 0.4;
     private static final double MONTHLY_RENT_WEIGHT = 0.6;
 
     private final PreferenceMapper preferenceMapper;
+    private final PropertyMapper propertyMapper;
     private final PropertyScoreMapper propertyScoreMapper;
+
+    @Override
+    @Transactional
+    public Map<Long, PropertyValueAnalysisResultVO> recalculateAllScores(Long userId) {
+        if (userId == null) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
+        }
+
+        HousingPreferenceVO preference = findPreference(userId);
+        List<PropertyVO> properties = propertyMapper.getList(PropertySearchRequest.builder()
+                .userId(userId)
+                .refLat(preference.getWorkplaceLatitude())
+                .refLng(preference.getWorkplaceLongitude())
+                .desiredInfraCategories(preference.getDesiredInfraCategories())
+                .desiredAmenityCategories(preference.getDesiredAmenityCategories())
+                .applyDesiredCategoryFilter(false)
+                .useAllCategoriesWhenEmpty(true)
+                .build());
+
+        return saveScores(userId, properties);
+    }
 
     @Override
     @Transactional
@@ -53,10 +85,7 @@ public class PropertyScoreServiceImpl implements PropertyScoreService {
             return Collections.emptyMap();
         }
 
-        HousingPreferenceVO preference = preferenceMapper.findByUserId(userId);
-        if (preference == null) {
-            throw new BusinessException(ErrorCode.PREFERENCE_NOT_FOUND);
-        }
+        HousingPreferenceVO preference = findPreference(userId);
 
         Map<String, Double> criterionWeights = calculateRankSumWeights(
                 preferenceMapper.findPrioritiesByUserId(userId));
@@ -82,8 +111,15 @@ public class PropertyScoreServiceImpl implements PropertyScoreService {
 
     private Map<String, Double> calculateRankSumWeights(
             List<PreferencePriorityVO> priorities) {
-        if (priorities == null || priorities.isEmpty() || priorities.size() > 3) {
+        if (priorities == null || priorities.size() > 3) {
             throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
+        }
+
+        if (priorities.isEmpty()) {
+            Map<String, Double> equalWeights = new LinkedHashMap<>();
+            double weight = 1.0 / DEFAULT_CRITERIA.size();
+            DEFAULT_CRITERIA.forEach(criterion -> equalWeights.put(criterion, weight));
+            return equalWeights;
         }
 
         int criterionCount = priorities.size();
@@ -140,11 +176,15 @@ public class PropertyScoreServiceImpl implements PropertyScoreService {
             case INFRA:
                 return calculateCoverageScore(
                         property.getDesiredInfraCount(),
-                        preference.getDesiredInfraCategories());
+                        categoriesOrAll(
+                                preference.getDesiredInfraCategories(),
+                                ALL_INFRA_CATEGORIES));
             case AMENITY:
                 return calculateCoverageScore(
                         property.getDesiredAmenityCount(),
-                        preference.getDesiredAmenityCategories());
+                        categoriesOrAll(
+                                preference.getDesiredAmenityCategories(),
+                                ALL_AMENITY_CATEGORIES));
             case AREA:
                 return higherIsBetter(
                         property.getAreaM2(),
@@ -208,6 +248,20 @@ public class PropertyScoreServiceImpl implements PropertyScoreService {
                 .filter(value -> !value.isEmpty())
                 .distinct()
                 .count();
+    }
+
+    private String categoriesOrAll(String selectedCategories, String allCategories) {
+        return selectedCategories == null || selectedCategories.trim().isEmpty()
+                ? allCategories
+                : selectedCategories;
+    }
+
+    private HousingPreferenceVO findPreference(Long userId) {
+        HousingPreferenceVO preference = preferenceMapper.findByUserId(userId);
+        if (preference == null) {
+            throw new BusinessException(ErrorCode.PREFERENCE_NOT_FOUND);
+        }
+        return preference;
     }
 
     private double lowerIsBetter(Number value, Number min, Number max) {
