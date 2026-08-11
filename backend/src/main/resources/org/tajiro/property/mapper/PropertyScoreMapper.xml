@@ -28,9 +28,4 @@
             computed_at = VALUES(computed_at)
     </insert>
 
-    <delete id="deleteByUserId">
-        DELETE FROM property_value_analysis_result
-        WHERE user_id = #{userId}
-    </delete>
-
 </mapper>

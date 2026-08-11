@@ -9,6 +9,4 @@ import java.util.List;
 @Mapper
 public interface PropertyScoreMapper {
     void upsertAll(@Param("scores") List<PropertyValueAnalysisResultVO> scores);
-
-    int deleteByUserId(@Param("userId") Long userId);
 }

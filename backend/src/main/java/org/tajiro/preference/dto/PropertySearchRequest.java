@@ -34,6 +34,8 @@ public class PropertySearchRequest {
 
     private String desiredInfraCategories;
     private String desiredAmenityCategories;
+    private boolean applyDesiredCategoryFilter;
+    private boolean useAllCategoriesWhenEmpty;
 
     public boolean isHasPriceFilter() {
         return minDeposit != null || maxDeposit != null

@@ -8,14 +8,16 @@ import org.tajiro.preference.domain.HousingPreferenceVO;
 import org.tajiro.preference.domain.PreferencePriorityVO;
 import org.tajiro.preference.dto.PreferenceDTO;
 import org.tajiro.preference.mapper.PreferenceMapper;
+import org.tajiro.property.domain.PropertyVO;
 import org.tajiro.property.domain.PropertyValueAnalysisResultVO;
-import org.tajiro.property.mapper.PropertyScoreMapper;
+import org.tajiro.property.service.PropertyScoreService;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -23,14 +25,14 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class PreferenceServiceImplTest {
 
     private InMemoryPreferenceMapper mapper;
-    private InMemoryPropertyScoreMapper propertyScoreMapper;
+    private InMemoryPropertyScoreService propertyScoreService;
     private PreferenceServiceImpl service;
 
     @BeforeEach
     void setUp() {
         mapper = new InMemoryPreferenceMapper();
-        propertyScoreMapper = new InMemoryPropertyScoreMapper();
-        service = new PreferenceServiceImpl(mapper, propertyScoreMapper);
+        propertyScoreService = new InMemoryPropertyScoreService();
+        service = new PreferenceServiceImpl(mapper, propertyScoreService);
     }
 
     @Test
@@ -42,7 +44,20 @@ class PreferenceServiceImplTest {
         assertEquals("서울특별시 중구 세종대로 110", saved.getWorkplace().getAddress());
         assertEquals("COMMUTE", saved.getPriorities().get(0).getCriterion());
         assertEquals(2, mapper.priorities.size());
-        assertEquals(1L, propertyScoreMapper.deletedUserId);
+        assertEquals(1L, propertyScoreService.recalculatedUserId);
+    }
+
+    @Test
+    void savesWithoutPrioritiesAndRecalculatesWithDefaultWeights() {
+        PreferenceDTO request = validPreference();
+        request.setPriorities(Collections.emptyList());
+
+        PreferenceDTO saved = service.save(1L, request);
+
+        assertEquals(Collections.emptyList(), saved.getPriorities());
+        assertEquals(Collections.emptyList(), mapper.priorities);
+        assertEquals(0, mapper.insertPrioritiesCallCount);
+        assertEquals(1L, propertyScoreService.recalculatedUserId);
     }
 
     @Test
@@ -101,6 +116,7 @@ class PreferenceServiceImplTest {
     private static class InMemoryPreferenceMapper implements PreferenceMapper {
         private HousingPreferenceVO preference;
         private List<PreferencePriorityVO> priorities = new ArrayList<>();
+        private int insertPrioritiesCallCount;
 
         @Override
         public HousingPreferenceVO findByUserId(Long userId) {
@@ -127,22 +143,26 @@ class PreferenceServiceImplTest {
 
         @Override
         public int insertPriorities(List<PreferencePriorityVO> priorities) {
+            insertPrioritiesCallCount++;
             this.priorities = new ArrayList<>(priorities);
             return priorities.size();
         }
     }
 
-    private static class InMemoryPropertyScoreMapper implements PropertyScoreMapper {
-        private Long deletedUserId;
+    private static class InMemoryPropertyScoreService implements PropertyScoreService {
+        private Long recalculatedUserId;
 
         @Override
-        public void upsertAll(List<PropertyValueAnalysisResultVO> scores) {
+        public Map<Long, PropertyValueAnalysisResultVO> saveScores(
+                Long userId,
+                List<PropertyVO> properties) {
+            return Collections.emptyMap();
         }
 
         @Override
-        public int deleteByUserId(Long userId) {
-            deletedUserId = userId;
-            return 1;
+        public Map<Long, PropertyValueAnalysisResultVO> recalculateAllScores(Long userId) {
+            recalculatedUserId = userId;
+            return Collections.emptyMap();
         }
     }
 }

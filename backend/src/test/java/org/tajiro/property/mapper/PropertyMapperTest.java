@@ -18,6 +18,8 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -52,6 +54,29 @@ public class PropertyMapperTest {
     }
 
     @Test
+    @DisplayName("빈 선택은 전체 카테고리와 모든 거래 유형을 사용한다")
+    void emptySelectionsUseAllCategoriesAndTradeTypes() {
+        PropertySearchRequest request = PropertySearchRequest.builder()
+                .userId(3L)
+                .refLat(new BigDecimal("36.33557"))
+                .refLng(new BigDecimal("127.45991"))
+                .desiredInfraCategories("")
+                .desiredAmenityCategories("")
+                .applyDesiredCategoryFilter(true)
+                .useAllCategoriesWhenEmpty(true)
+                .build();
+
+        List<PropertyVO> list = propertyMapper.getList(request);
+
+        assertFalse(list.isEmpty());
+        assertTrue(list.stream().allMatch(p -> p.getDesiredInfraCount() > 0));
+        assertTrue(list.stream().allMatch(p -> p.getDesiredAmenityCount() > 0));
+        assertEquals(
+                Set.of("월세", "전세", "매매"),
+                list.stream().map(PropertyVO::getTradeType).collect(Collectors.toSet()));
+    }
+
+    @Test
     @DisplayName("가치관 경로")
     public void getListByPreference() {
         HousingPreferenceVO pref = housingPreferenceMapper.findByUserId(3L);
@@ -75,6 +100,7 @@ public class PropertyMapperTest {
                 .maxAreaM2(pref.getMaxArea())
                 .desiredInfraCategories(pref.getDesiredInfraCategories())
                 .desiredAmenityCategories(pref.getDesiredAmenityCategories())
+                .applyDesiredCategoryFilter(true)
                 .hasCar(pref.getHasCar())
                 .build();
 
