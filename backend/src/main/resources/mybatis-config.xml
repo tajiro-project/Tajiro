@@ -14,6 +14,7 @@
         <typeAlias alias="FinanceVO" type="org.tajiro.finance.domain.FinanceVO"/>
         <typeAlias alias="PolicyVO" type="org.tajiro.policy.domain.PolicyVO"/>
         <typeAlias alias="UserProfileVO" type="org.tajiro.user.domain.UserProfileVO"/>
+        <typeAlias alias="FinanceCategoryVO" type="org.tajiro.finance.domain.FinanceCategoryVO"/>
 
         <typeAlias alias="PropertyDetailVO" type="org.tajiro.property.domain.PropertyDetailVO"/>
         <typeAlias alias="InfraSummaryDTO" type="org.tajiro.property.dto.PropertyDetailDTO$InfraSummaryDTO"/>
