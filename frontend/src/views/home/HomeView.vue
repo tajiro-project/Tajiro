@@ -8,54 +8,204 @@
       <p class="headline">어디로 이주하세요?</p>
       <p class="headline-sub">그 지역 주변 매물을 바로 찾아드려요</p>
 
+      <hr class="header-divider" />
+
+      <!-- 핵심 기능: 가치관 입력 / 매물 검색 (헤더 내 최상단, 원준수 멘토님 피드백 #1) -->
       <button
-        class="search-bar"
+        class="menu-card primary"
         type="button"
-        @click="goRegionSearch"
+        @click="router.push('/preferences/1')"
       >
-        <svg
-          width="18"
-          height="18"
-          viewBox="0 0 18 18"
-          fill="none"
-        >
-          <circle
-            cx="8"
-            cy="8"
-            r="5.5"
-            stroke="#8a8d8f"
-            stroke-width="1.6"
-          />
-          <path
-            d="M12.2 12.2L16 16"
-            stroke="#8a8d8f"
-            stroke-width="1.6"
-            stroke-linecap="round"
-          />
-        </svg>
-        <span class="search-text">{{
-          targetRegion || '이주할 지역 · 동네 검색'
-        }}</span>
-        <span class="search-submit">
+        <span class="menu-icon primary">
           <svg
-            width="16"
-            height="16"
-            viewBox="0 0 16 16"
+            width="20"
+            height="20"
+            viewBox="0 0 20 20"
             fill="none"
           >
             <path
-              d="M4 8h8M8 4l4 4-4 4"
+              d="M10 2c-3 0-5.5 2.4-5.5 5.5 0 4 5.5 10.5 5.5 10.5s5.5-6.5 5.5-10.5C15.5 4.4 13 2 10 2z"
               stroke="#545045"
-              stroke-width="1.8"
-              stroke-linecap="round"
+              stroke-width="1.6"
               stroke-linejoin="round"
+            />
+            <circle
+              cx="10"
+              cy="7.5"
+              r="1.8"
+              stroke="#545045"
+              stroke-width="1.6"
             />
           </svg>
         </span>
+        <span class="menu-texts">
+          <span class="menu-title">매물 검색</span>
+          <span class="menu-sub">가치관 입력하고 맞춤 매물 찾기</span>
+        </span>
+        <svg
+          class="menu-chevron"
+          width="16"
+          height="16"
+          viewBox="0 0 16 16"
+          fill="none"
+        >
+          <path
+            d="M6 3.5l5 4.5-5 4.5"
+            stroke="#545045"
+            stroke-width="1.6"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
       </button>
     </header>
 
     <simplebar class="scroll-area">
+      <section class="quick-menu">
+        <p class="section-title">무엇을 도와드릴까요?</p>
+
+        <button
+          class="search-bar"
+          type="button"
+          @click="goRegionSearch"
+        >
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 18 18"
+            fill="none"
+          >
+            <circle
+              cx="8"
+              cy="8"
+              r="5.5"
+              stroke="#8a8d8f"
+              stroke-width="1.6"
+            />
+            <path
+              d="M12.2 12.2L16 16"
+              stroke="#8a8d8f"
+              stroke-width="1.6"
+              stroke-linecap="round"
+            />
+          </svg>
+          <span class="search-text">{{
+            targetRegion || '가치관 입력 없이 지역만 빠르게 검색'
+          }}</span>
+          <span class="search-submit">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 16 16"
+              fill="none"
+            >
+              <path
+                d="M4 8h8M8 4l4 4-4 4"
+                stroke="#545045"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </span>
+        </button>
+
+        <div class="menu-grid">
+          <!-- 정책 · 대출 -->
+          <button
+            class="menu-card"
+            type="button"
+            @click="router.push('/benefits/policies')"
+          >
+            <span class="menu-icon">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 18 18"
+                fill="none"
+                aria-hidden="true"
+              >
+                <path
+                  d="M2.5 6.5L9 3l6.5 3.5-6.5 3.5-6.5-3.5z"
+                  stroke="#60584c"
+                  stroke-width="1.5"
+                  stroke-linejoin="round"
+                />
+                <path
+                  d="M2.5 6.5V12L9 15.5l6.5-3.5V6.5"
+                  stroke="#60584c"
+                  stroke-width="1.5"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </span>
+
+            <span class="menu-title small">정책 · 대출</span>
+            <span class="menu-sub">청년 혜택 · KB 상품</span>
+          </button>
+
+          <!-- 안전 거래 가이드 -->
+          <button
+            class="menu-card"
+            type="button"
+            @click="router.push('/safety-guide')"
+          >
+            <span class="menu-icon">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 18 18"
+                fill="none"
+                aria-hidden="true"
+              >
+                <path
+                  d="M9 2.2l5.5 2v3.9c0 3.6-2.3 6.4-5.5 7.7-3.2-1.3-5.5-4.1-5.5-7.7V4.2L9 2.2z"
+                  stroke="#60584c"
+                  stroke-width="1.5"
+                  stroke-linejoin="round"
+                />
+                <path
+                  d="M6.3 8.8l1.7 1.7 3.7-4"
+                  stroke="#60584c"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </span>
+
+            <span class="menu-title small">안전 거래 가이드</span>
+            <span class="menu-sub">계약 전 필수 가이드</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- 매물별 맞춤 정책 · 금융 추천 미리보기 (mock, 원준수 멘토님 피드백 #2) -->
+      <section class="benefit-preview">
+        <div class="benefit-title-row">
+          <p class="section-title">나에게 맞는 정책·금융 혜택을 추천해드려요</p>
+          <span class="benefit-example-tag">예시</span>
+        </div>
+        <div class="benefit-list">
+          <div
+            v-for="item in mockBenefitPreview"
+            :key="item.title"
+            class="benefit-item"
+          >
+            <span class="benefit-badge" :class="item.type">{{
+              item.type === 'policy' ? '정책' : '금융'
+            }}</span>
+            <div class="benefit-texts">
+              <span class="benefit-title">{{ item.title }}</span>
+              <span class="benefit-sub">{{ item.sub }}</span>
+            </div>
+          </div>
+        </div>
+        <p class="benefit-note">
+          가치관을 입력하면 내 조건에 맞는 혜택만 골라서 보여드려요
+        </p>
+      </section>
+
       <section class="safety-card">
         <p class="safety-title">
           <svg
@@ -174,127 +324,6 @@
           </li>
         </ul>
       </section>
-
-      <section class="quick-menu">
-        <p class="section-title">무엇을 도와드릴까요?</p>
-
-        <button
-          class="menu-card primary"
-          type="button"
-          @click="router.push('/preferences/1')"
-        >
-          <span class="menu-icon primary">
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 20 20"
-              fill="none"
-            >
-              <path
-                d="M10 2c-3 0-5.5 2.4-5.5 5.5 0 4 5.5 10.5 5.5 10.5s5.5-6.5 5.5-10.5C15.5 4.4 13 2 10 2z"
-                stroke="#545045"
-                stroke-width="1.6"
-                stroke-linejoin="round"
-              />
-              <circle
-                cx="10"
-                cy="7.5"
-                r="1.8"
-                stroke="#545045"
-                stroke-width="1.6"
-              />
-            </svg>
-          </span>
-          <span class="menu-texts">
-            <span class="menu-title">가치관 입력 / 매물 검색</span>
-            <span class="menu-sub">가치관 입력하고 맞춤 매물 찾기</span>
-          </span>
-          <svg
-            class="menu-chevron"
-            width="16"
-            height="16"
-            viewBox="0 0 16 16"
-            fill="none"
-          >
-            <path
-              d="M6 3.5l5 4.5-5 4.5"
-              stroke="#545045"
-              stroke-width="1.6"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
-        </button>
-
-        <div class="menu-grid">
-          <!-- 정책 · 대출 -->
-          <button
-            class="menu-card"
-            type="button"
-            @click="router.push('/benefits/policies')"
-          >
-            <span class="menu-icon">
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 18 18"
-                fill="none"
-                aria-hidden="true"
-              >
-                <path
-                  d="M2.5 6.5L9 3l6.5 3.5-6.5 3.5-6.5-3.5z"
-                  stroke="#60584c"
-                  stroke-width="1.5"
-                  stroke-linejoin="round"
-                />
-                <path
-                  d="M2.5 6.5V12L9 15.5l6.5-3.5V6.5"
-                  stroke="#60584c"
-                  stroke-width="1.5"
-                  stroke-linejoin="round"
-                />
-              </svg>
-            </span>
-
-            <span class="menu-title small">정책 · 대출</span>
-            <span class="menu-sub">청년 혜택 · KB 상품</span>
-          </button>
-
-          <!-- 안전 거래 가이드 -->
-          <button
-            class="menu-card"
-            type="button"
-            @click="router.push('/safety-guide')"
-          >
-            <span class="menu-icon">
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 18 18"
-                fill="none"
-                aria-hidden="true"
-              >
-                <path
-                  d="M9 2.2l5.5 2v3.9c0 3.6-2.3 6.4-5.5 7.7-3.2-1.3-5.5-4.1-5.5-7.7V4.2L9 2.2z"
-                  stroke="#60584c"
-                  stroke-width="1.5"
-                  stroke-linejoin="round"
-                />
-                <path
-                  d="M6.3 8.8l1.7 1.7 3.7-4"
-                  stroke="#60584c"
-                  stroke-width="1.5"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-              </svg>
-            </span>
-
-            <span class="menu-title small">안전 거래 가이드</span>
-            <span class="menu-sub">계약 전 필수 가이드</span>
-          </button>
-        </div>
-      </section>
     </simplebar>
 
     <KakaoLocation
@@ -316,6 +345,19 @@ import KakaoLocation from '@/components/KakaoLocation.vue';
 const router = useRouter();
 const targetRegion = ref('');
 const isLocationPickerOpen = ref(false);
+
+const mockBenefitPreview = [
+  {
+    type: 'policy',
+    title: '청년 전세자금 대출',
+    sub: '최대 2억원 · 저금리 지원',
+  },
+  {
+    type: 'finance',
+    title: 'KB 청년 전월세보증금 대출',
+    sub: '우대금리 최대 0.3%p',
+  },
+];
 
 onMounted(loadTargetRegion);
 
@@ -395,7 +437,14 @@ function onLocationSelected(location) {
 .headline-sub {
   font-size: 11.5px;
   color: var(--kb-gray);
-  margin-bottom: 10px;
+}
+
+.header-divider {
+  width: 100%;
+  height: 0;
+  margin: 6px 0 2px;
+  border: none;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 .search-bar {
@@ -510,6 +559,96 @@ function onLocationSelected(location) {
   margin-bottom: 10px;
 }
 
+/* ---- 정책·금융 맞춤 추천 미리보기 ---- */
+.benefit-preview {
+  padding: 15px 16px 16px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+}
+
+.benefit-title-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.benefit-title-row .section-title {
+  margin-bottom: 0;
+  white-space: nowrap;
+}
+
+.benefit-example-tag {
+  flex-shrink: 0;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 100px;
+  background: var(--bg);
+  color: var(--kb-gray);
+}
+
+.benefit-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.benefit-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  background: var(--bg);
+  border-radius: 10px;
+}
+
+.benefit-badge {
+  flex-shrink: 0;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 100px;
+}
+
+.benefit-badge.policy {
+  background: var(--yellow-tint);
+  color: var(--kb-dark-gray);
+}
+
+.benefit-badge.finance {
+  background: #e6f0ff;
+  color: var(--blue);
+}
+
+.benefit-texts {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.benefit-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.benefit-sub {
+  font-size: 10.5px;
+  color: var(--kb-silver);
+}
+
+.benefit-note {
+  margin-top: 10px;
+  font-size: 10.5px;
+  color: var(--kb-silver);
+  text-align: center;
+}
+
 .menu-card {
   display: flex;
   align-items: center;
@@ -523,9 +662,9 @@ function onLocationSelected(location) {
 
 .menu-card.primary {
   width: 100%;
-  background: var(--yellow-tint);
-  border-color: var(--kb-yellow);
-  margin-bottom: 10px;
+  background: var(--white);
+  border-color: var(--border);
+  box-shadow: var(--shadow-card);
 }
 
 .menu-icon {
@@ -573,6 +712,7 @@ function onLocationSelected(location) {
 .menu-grid {
   display: flex;
   gap: 10px;
+  margin-top: 12px;
 }
 
 .menu-grid .menu-card {
