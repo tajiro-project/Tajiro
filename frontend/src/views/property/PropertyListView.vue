@@ -590,6 +590,9 @@ import InfraTogglePanel from '@/components/InfraTogglePanel.vue';
 import medalGold from '@/assets/img/medals/medal_gold_ribbon.svg';
 import medalSilver from '@/assets/img/medals/medal_silver_ribbon.svg';
 import medalBronze from '@/assets/img/medals/medal_bronze_ribbon.svg';
+import medalGoldRound from '@/assets/img/medals/medal_gold_round.svg';
+import medalSilverRound from '@/assets/img/medals/medal_silver_round.svg';
+import medalBronzeRound from '@/assets/img/medals/medal_bronze_round.svg';
 
 import {
   computed,
@@ -626,7 +629,13 @@ const selectedPropertyId = ref(null);
 const selectionSource = ref(null);
 const pinnedDot = ref(null);
 const hoveredDot = ref(null);
+
 const MEDALS = { 1: medalGold, 2: medalSilver, 3: medalBronze };
+const MEDALS_ROUND = {
+  1: medalGoldRound,
+  2: medalSilverRound,
+  3: medalBronzeRound,
+};
 
 const activeDot = computed(() => hoveredDot.value ?? pinnedDot.value);
 const items = ref([]);
@@ -954,13 +963,25 @@ const markers = computed(() => {
         lng: Number(p.longitude),
         name: p.buildingName,
         count: 0,
+        rank: null,
       });
     }
-    grouped.get(p.buildingId).count += 1;
+
+    const group = grouped.get(p.buildingId);
+    group.count += 1;
+
+    const rank = rankByPropertyId.value[p.propertyId];
+    if (rank != null && (group.rank == null || rank < group.rank)) {
+      group.rank = rank;
+    }
   }
 
-  return [...grouped.values()]
-    .map((m) => ({ ...m, selected: m.id === selectedBuildingId.value }))
+    return [...grouped.values()]
+    .map((m) => ({
+      ...m,
+      selected: m.id === selectedBuildingId.value,
+      medalUrl: m.rank ? MEDALS_ROUND[m.rank] : null,
+    }))
     .filter((m) => !selectedBuildingId.value || m.selected);
 });
 
