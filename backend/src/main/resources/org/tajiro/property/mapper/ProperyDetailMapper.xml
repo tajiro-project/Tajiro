@@ -53,4 +53,13 @@
           AND count_within2000m > 0
     </select>
 
+    <!-- 4. 매물 찜 여부 확인 쿼리 -->
+    <select id="selectIsFavorite" resultType="boolean">
+        SELECT EXISTS (
+            SELECT 1
+            FROM favorite_property
+            WHERE user_id = #{userId}
+              AND property_id = #{propertyId}
+        )
+    </select>
 </mapper>

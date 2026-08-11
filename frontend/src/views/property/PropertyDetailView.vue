@@ -422,7 +422,6 @@ function handleTouchStart(e) {
 }
 
 function handleTouchEnd(e) {
-  ㅎ;
   const touchEndX = e.changedTouches[0].clientX;
   const diff = touchStartX - touchEndX;
   if (Math.abs(diff) > 40) {
@@ -446,7 +445,7 @@ onMounted(async () => {
         ];
       }
       p.value = detailData.data;
-      isFavorite.value = detailData.isFavorite ?? false;
+      isFavorite.value = detailData.data.isFavorite ?? false;
     }
   } catch (error) {
     console.error('매물 상세 정보를 불러오는 데 실패했습니다:', error);
