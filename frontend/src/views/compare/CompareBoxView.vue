@@ -1,9 +1,9 @@
 ﻿<template>
   <div class="cbox">
     <simplebar class="scroll-area">
-      <h1 class="title">비교할 매물을 골라주세요 (최대 3개)</h1>
+      <h1 class="title">비교할 매물을 확인해주세요 (최대 3개)</h1>
       <p class="sub">
-        {{ checkedIds.length }}개 선택됨
+        {{ items.length }}개 담겨 있어요
         <template v-if="items.length < 3">
           · {{ 3 - items.length }}개 더 담을 수 있어요</template
         >
@@ -100,12 +100,6 @@
           v-for="item in items"
           :key="item.propertyId"
           class="item"
-          :class="{ selected: checkedIds.includes(item.propertyId) }"
-          role="button"
-          tabindex="0"
-          @click="toggleCheck(item.propertyId)"
-          @keydown.enter.prevent="toggleCheck(item.propertyId)"
-          @keydown.space.prevent="toggleCheck(item.propertyId)"
         >
           <div class="item-card">
             <span class="thumb">
@@ -214,13 +208,13 @@
       <button
         class="btn-cta"
         type="button"
-        :disabled="checkedIds.length < 2 || startingComparison"
+        :disabled="items.length < 2 || startingComparison"
         @click="startCompare"
       >
         {{
           startingComparison
             ? '비교 준비 중...'
-            : `비교 시작 (${checkedIds.length}개)`
+            : `비교 시작 (${items.length}개)`
         }}
       </button>
     </simplebar>
@@ -297,7 +291,6 @@ const loading = ref(false);
 const deletingId = ref('');
 const errorMessage = ref('');
 const items = ref([]);
-const checkedIds = ref([]);
 const imageErrorIds = ref([]);
 const startingComparison = ref(false);
 const comparisonWorkplace = ref(null);
@@ -323,7 +316,6 @@ async function loadCompareBox() {
     const payload = data?.data ?? data;
     const nextItems = Array.isArray(payload) ? payload : (payload?.items ?? []);
     items.value = nextItems.slice(0, 3);
-    checkedIds.value = items.value.slice(0, 3).map((item) => item.propertyId);
     imageErrorIds.value = [];
   } catch (error) {
     errorMessage.value = getApiErrorMessage(
@@ -335,19 +327,12 @@ async function loadCompareBox() {
   }
 }
 
-function toggleCheck(id) {
-  const index = checkedIds.value.indexOf(id);
-  if (index >= 0) checkedIds.value.splice(index, 1);
-  else if (checkedIds.value.length < 3) checkedIds.value.push(id);
-}
-
 async function removeItem(propertyId) {
   deletingId.value = propertyId;
 
   try {
     await comparisonApi.removeFromBox(propertyId);
     items.value = items.value.filter((item) => item.propertyId !== propertyId);
-    checkedIds.value = checkedIds.value.filter((id) => id !== propertyId);
   } catch (error) {
     errorMessage.value = getApiErrorMessage(
       error,
@@ -365,7 +350,7 @@ function markImageError(propertyId) {
 }
 
 async function startCompare() {
-  if (checkedIds.value.length < 2 || startingComparison.value) return;
+  if (items.value.length < 2 || startingComparison.value) return;
 
   if (!hasDesiredLocation(comparisonWorkplace.value)) {
     locationMessage.value = '직주근접 비교 기준이 될 위치를 선택해주세요.';
@@ -386,7 +371,7 @@ async function startCompare() {
     await router.push({
       path: '/compare',
       query: {
-        propertyIds: checkedIds.value,
+        propertyIds: items.value.map((item) => item.propertyId),
         workplaceLat: comparisonWorkplace.value.lat,
         workplaceLng: comparisonWorkplace.value.lng,
         workplaceName:
@@ -632,7 +617,6 @@ function formatFloorInfo(floorInfo) {
 }
 .item {
   display: flex;
-  cursor: pointer;
 }
 .item-card {
   flex: 1;
@@ -645,15 +629,6 @@ function formatFloorInfo(floorInfo) {
   border: 1px solid var(--border);
   border-radius: 18px;
   min-width: 0;
-  transition:
-    background-color 0.16s ease,
-    border-color 0.16s ease,
-    box-shadow 0.16s ease;
-}
-.item.selected .item-card {
-  background: #fff6dc;
-  border: 2px solid var(--kb-yellow);
-  box-shadow: 0 2px 8px rgba(255, 188, 0, 0.18);
 }
 .thumb {
   display: flex;
@@ -721,9 +696,6 @@ function formatFloorInfo(floorInfo) {
 .remove svg {
   width: 18px;
   height: 18px;
-}
-.item.selected .remove {
-  color: var(--kb-yellow);
 }
 .remove:disabled {
   opacity: 0.45;
