@@ -167,6 +167,7 @@
             @click="onCardClick(p)"
           >
             <span class="thumb">
+              <img v-if="p.rank" :src="MEDALS[p.rank]" :alt="`추천 ${p.rank}위`"" class="medal"/>
               <img
                 v-if="p.thumbnailUrl && !p.thumbFailed"
                 :src="p.thumbnailUrl"
@@ -199,7 +200,12 @@
             </span>
 
             <div class="card-texts">
-              <p class="card-title">{{ p.title }}</p>
+              <div class="card-title-row">
+                <p class="card-title">{{ p.title }}</p>
+                <span v-if="p.recommendScore != null" class="score-chip">
+                  {{ p.recommendScore }}점
+                </span>
+              </div>
               <p class="card-sub">
                 {{ p.propertyType
                 }}<template v-if="p.buildingName?.trim()">
@@ -581,6 +587,9 @@ import DualSlider from '@/components/DualSlider.vue';
 import SingleSlider from '@/components/SingleSlider.vue';
 import KakaoLocation from '@/components/KakaoLocation.vue';
 import InfraTogglePanel from '@/components/InfraTogglePanel.vue';
+import medalGold from '@/assets/img/medals/medal_gold_ribbon2.svg';
+import medalSilver from '@/assets/img/medals/medal_silver_ribbon2.svg';
+import medalBronze from '@/assets/img/medals/medal_bronze_ribbon2.svg';
 
 import {
   computed,
@@ -617,6 +626,7 @@ const selectedPropertyId = ref(null);
 const selectionSource = ref(null);
 const pinnedDot = ref(null);
 const hoveredDot = ref(null);
+const MEDALS = { 1: medalGold, 2: medalSilver, 3: medalBronze };
 
 const activeDot = computed(() => hoveredDot.value ?? pinnedDot.value);
 const items = ref([]);
@@ -877,9 +887,36 @@ const sortedItems = computed(() => {
     .map((e) => e.item);
 });
 
+const rankByPropertyId = computed(() => {
+  if (filter.sort !== 'recommend') return {};
+
+  const scored = items.value
+    .filter((p) => p.recommendScore != null)
+    .sort((a, b) => b.recommendScore - a.recommendScore);
+
+  const map = {};
+  let rank = 0;
+  let prevScore = null;
+
+  for (let i = 0; i < scored.length; i++) {
+    const p = scored[i];
+
+    if (p.recommendScore !== prevScore) {
+      rank = i + 1;
+      prevScore = p.recommendScore;
+      if (rank > 3) break;
+    }
+
+    map[p.propertyId] = rank;
+  }
+
+  return map;
+});
+
 const listItems = computed(() => {
   const flagged = sortedItems.value.map((p) => ({
     ...p,
+    rank: rankByPropertyId.value[p.propertyId] ?? null,
     selected: selectedPropertyId.value
       ? p.propertyId === selectedPropertyId.value
       : p.buildingId === selectedBuildingId.value,
@@ -1528,6 +1565,7 @@ watch(filter, scrollToTop);
 }
 
 .thumb {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1536,6 +1574,17 @@ watch(filter, scrollToTop);
   flex-shrink: 0;
   background: #f5efdb;
   border-radius: 10px;
+}
+
+.medal {
+  position: absolute;
+  top: -9px;
+  left: -9px;
+  z-index: 1;
+  width: 32px;
+  height: 32px;
+  pointer-events: none;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.25));
 }
 
 .card.selected .thumb {
@@ -1547,7 +1596,26 @@ watch(filter, scrollToTop);
   min-width: 0;
 }
 
+.card-title-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.score-chip {
+  margin-left: auto;
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border-radius: 100px;
+  background: #f0eeea;
+  font-size: 10.5px;
+  font-weight: 800;
+  color: #60584c;
+  white-space: nowrap;
+}
+
 .card-title {
+  min-width: 0;
   font-size: 16px;
   font-weight: bold;
   color: #33302a;
