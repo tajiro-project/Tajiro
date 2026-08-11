@@ -76,7 +76,7 @@
           <p class="score-line">
             매물에 대한 <strong>{{ profileName }}</strong
             >님의 주거 가치관 반영 점수는
-            <span class="highlight">{{ p.evaluationScore ?? 0 }}점</span>
+            <span class="highlight">{{ p.recommendScore ?? 0 }}점</span>
             입니다!
           </p>
           <p class="score-line sub">
@@ -96,7 +96,7 @@
         <dl class="info-list">
           <div class="info-row">
             <dt>건물명</dt>
-            <dd>{{ buildingLine }}</dd>
+            <dd>{{ buildingName }}</dd>
           </div>
           <div class="info-row">
             <dt>거래 · 가격</dt>
@@ -367,7 +367,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue';
+import { inject, computed, onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import simplebar from 'simplebar-vue';
 import AppTabBar from '@/components/AppTabBar.vue';
@@ -395,10 +395,12 @@ const route = useRoute();
 const compareMsg = ref('');
 const isSubmitting = ref(false); // 버튼 연타 방지용
 
-const p = ref(null);
 const market = ref(null);
 const isFavorite = ref(false);
 const profileName = ref('홍길동');
+
+const p = inject('propertyDetail');
+const buildingName = inject('buildingName');
 
 const id = route.params.id;
 
@@ -429,28 +431,6 @@ function handleTouchEnd(e) {
     else prevImage();
   }
 }
-
-// API 연동 데이터 로드
-onMounted(async () => {
-  if (!id) return;
-
-  try {
-    // 매물 상세 정보 조회
-    const detailData = await propertyApi.getPropertyDetail(id);
-
-    if (detailData?.data) {
-      if (!detailData.data.images || detailData.data.images.length === 0) {
-        detailData.data.images = [
-          'https://via.placeholder.com/600x400/f5efdb/8a8477?text=Room+Image+1',
-        ];
-      }
-      p.value = detailData.data;
-      isFavorite.value = detailData.data.isFavorite ?? false;
-    }
-  } catch (error) {
-    console.error('매물 상세 정보를 불러오는 데 실패했습니다:', error);
-  }
-});
 
 // 숫자를 억/만 단위로 분리해 주는 헬퍼 함수
 const formatKoreanMoney = (value) => {
@@ -537,12 +517,6 @@ const regionLine = computed(() => {
     : '';
   const dongPart = p.value.dong ? ` ${p.value.dong}` : '';
   return `${addrPart}${dongPart} · ${p.value.propertyType || ''} ${pyeong.value}평 · ${formattedFloor.value}`;
-});
-
-// 건물명 (title을 기본으로 활용)
-const buildingLine = computed(() => {
-  if (!p.value?.title) return '건물명 정보 없음';
-  return p.value.title.replace(/\s*\d+호$/, '').trim();
 });
 
 const formatDateStr = (dateStr, delimiter = '.') => {

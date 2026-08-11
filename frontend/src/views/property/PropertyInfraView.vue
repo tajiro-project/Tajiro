@@ -18,8 +18,8 @@
 
     <!-- 2. 제목 및 탭 고정 -->
     <div class="title-area">
-      <h1 class="main-title">{{ propertyName }} 기준 도보 거리예요</h1>
-      <p class="sub-title">반경 500m 공공데이터 기준 · 2026.07 갱신</p>
+      <h1 class="main-title">{{ buildingName }} 기준 도보 거리예요</h1>
+      <p class="sub-title">반경 2km 공공데이터 기준</p>
     </div>
     <div class="tab-wrap">
       <button
@@ -53,23 +53,70 @@
             @mouseenter="onRowHover(item)"
             @mouseleave="onRowHover(null)"
           >
-            <span class="r-icon">
-              <component
-                :is="item.icon"
-                :size="18"
-              />
-            </span>
-
-            <div class="r-main">
-              <p class="r-name">{{ item.name }}</p>
-              <div class="r-bar">
-                <div
-                  class="r-fill"
-                  :style="{ width: item.pct + '%' }"
+            <!-- 좌측: 아이콘 + 카테고리 라벨 영역 -->
+            <div class="r-icon-col">
+              <span class="r-icon">
+                <component
+                  :is="item.icon"
+                  :size="18"
                 />
+              </span>
+              <span class="r-cat-label">{{ item.categoryLabel }}</span>
+            </div>
+
+            <!-- 우측: 이름 + 거리 정보 + 게이지 바 -->
+            <div class="r-main">
+              <div class="r-header">
+                <p class="r-name">{{ item.name }}</p>
+                <p class="r-dist">{{ item.dist }} · 도보 {{ item.walk }}분</p>
+              </div>
+
+              <!-- 게이지 바 + 500m 단위 눈금 영역 -->
+              <!-- 게이지 바 + 500m 단위 눈금 영역 -->
+              <div class="r-bar-wrapper">
+                <div class="r-track">
+                  <!-- 500m 단위 눈금선 (트랙 바깥으로 살짝 돌출) -->
+                  <div class="r-ticks">
+                    <span
+                      class="r-tick"
+                      style="left: 0%"
+                    ></span>
+                    <span
+                      class="r-tick"
+                      style="left: 25%"
+                    ></span>
+                    <span
+                      class="r-tick"
+                      style="left: 50%"
+                    ></span>
+                    <span
+                      class="r-tick"
+                      style="left: 75%"
+                    ></span>
+                    <span
+                      class="r-tick"
+                      style="left: 100%"
+                    ></span>
+                  </div>
+                  <div
+                    class="r-fill"
+                    :style="{ width: item.pct + '%' }"
+                  ></div>
+                  <div
+                    class="r-pin"
+                    :style="{ left: item.pct + '%' }"
+                  ></div>
+                </div>
+
+                <div class="r-scale">
+                  <span>0m</span>
+                  <span>500m</span>
+                  <span>1km</span>
+                  <span>1.5km</span>
+                  <span>2km</span>
+                </div>
               </div>
             </div>
-            <p class="r-dist">{{ item.dist }} · 도보 {{ item.walk }}분</p>
           </div>
         </template>
         <div
@@ -84,7 +131,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue';
+import { inject, computed, onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import simplebar from 'simplebar-vue';
 import KakaoMap from '@/components/KakaoMap.vue';
@@ -99,12 +146,13 @@ const route = useRoute();
 
 // 상태 관리
 const infras = ref([]);
-const propertyDetail = ref(null);
-const propertyName = ref('매물');
+const propertyDetail = inject('propertyDetail');
+const propertyName = propertyDetail.value.buildingName;
 const activeDotKey = ref(null);
 
 // 탭 상태 ('infra' | 'amenity')
 const currentTab = ref('infra');
+const buildingName = inject('buildingName');
 
 // 지도 중심 좌표
 const mapCenter = ref({ lat: 36.3320194, lng: 127.4570694 });
@@ -127,14 +175,6 @@ const categoryMap = computed(() => {
 onMounted(async () => {
   const propertyId = route.params.id;
   try {
-    if (propertyApi.detail) {
-      const res = await propertyApi.detail(propertyId);
-      propertyDetail.value = res;
-      if (res?.buildingName || res?.title || res?.name) {
-        propertyName.value = res.buildingName || res.title || res.name;
-      }
-    }
-
     const infraRes = await propertyApi.infrastructures(propertyId);
     const rawData = infraRes?.data || infraRes || {};
 
@@ -179,23 +219,22 @@ function formatRowItem(item) {
   const categoryLabel = catConfig?.label || item.category;
   const categoryIcon = catConfig?.icon || MapPin;
 
-  const MAX_DISTANCE = 2000;
+  const MAX_DISTANCE = 2000; // 기준 최대 거리 (2km = 2000m)
   const distMeters = item.distanceMeters ?? 0;
 
-  const calculatedPct =
-    distMeters >= MAX_DISTANCE
-      ? 5
-      : Math.round(((MAX_DISTANCE - distMeters) / MAX_DISTANCE) * 100);
+  const rawPct = (distMeters / MAX_DISTANCE) * 100;
+  const calculatedPct = Math.min(100, Math.max(0, Math.round(rawPct)));
 
   return {
     icon: categoryIcon,
-    name: `${categoryLabel} (${item.name})`,
+    categoryLabel: categoryLabel,
+    name: item.name,
     dist:
       distMeters >= 1000
         ? (distMeters / 1000).toFixed(1) + 'km'
         : distMeters + 'm',
     walk: item.walkMinutes,
-    pct: Math.max(5, Math.min(100, calculatedPct)),
+    pct: calculatedPct,
     lat: item.lat,
     lng: item.lng,
     category: item.category,
@@ -355,7 +394,6 @@ const onBoundsChange = () => {};
   background: var(--white);
   border: 1px solid var(--border);
   border-radius: 16px;
-  /* padding: 4px 16px; */
 }
 
 .empty-msg {
@@ -367,17 +405,31 @@ const onBoundsChange = () => {};
 
 .row {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 12px;
-  padding: 13px 12px;
+  padding: 14px 12px;
   border-radius: 12px;
   transition: all 0.15s ease;
   box-sizing: border-box;
 }
 
+.row.bordered {
+  border-top: 1px solid var(--border);
+}
+
 .row.active {
   background-color: #fffdf5;
   box-shadow: inset 0 0 0 2px #ffb703;
+}
+
+/* 좌측 아이콘 + 카테고리 레이아웃 */
+.r-icon-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 52px;
+  flex-shrink: 0;
 }
 
 .r-icon {
@@ -388,40 +440,121 @@ const onBoundsChange = () => {};
   height: 34px;
   border-radius: 100px;
   background: var(--yellow-tint);
-  flex-shrink: 0;
   color: #a8842c;
+}
+
+.r-cat-label {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #666666;
+  text-align: center;
+  line-height: 1.1;
+  word-break: keep-all;
 }
 
 .r-main {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.r-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
 }
 
 .r-name {
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 700;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.r-bar {
-  margin-top: 5px;
-  height: 4px;
-  border-radius: 2px;
-  background: var(--border);
-  overflow: hidden;
-}
-
-.r-fill {
-  height: 100%;
-  border-radius: 2px;
-  background: var(--kb-yellow);
+  color: #222222;
 }
 
 .r-dist {
   font-size: 11.5px;
   color: var(--kb-gray);
   flex-shrink: 0;
+}
+
+/* 게이지 트랙 및 눈금 스타일 */
+/* 게이지 트랙 및 눈금 고대비(High-Contrast) 스타일 */
+.r-bar-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 6px;
+  padding: 0 2px;
+}
+
+.r-track {
+  position: relative;
+  width: 100%;
+  height: 8px; /* 트랙 두께 확장 (6px -> 8px) */
+  background-color: #e2e8f0; /* 더 또렷한 배경색 */
+  border-radius: 4px;
+  overflow: visible;
+}
+
+/* 선명한 눈금선 (트랙 위아래로 2px씩 돌출) */
+.r-ticks {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+}
+
+.r-tick {
+  position: absolute;
+  top: 0;
+  width: 2px;
+  height: 100%;
+  background-color: #cbd5e1; /* 진한 눈금선 */
+  transform: translateX(-50%);
+  z-index: 1;
+}
+
+/* 게이지 채움 바 (선명한 개나리색 / 필요 시 #f59e0b 로 변경 가능) */
+.r-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background-color: var(--kb-yellow, #ffb703);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+  z-index: 2;
+}
+
+/* 핀 마커 (크기 확대 + 입체 그림자 추가) */
+.r-pin {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 10px;
+  height: 10px;
+  background-color: var(--kb-yellow, #ffb703);
+  border: 2.5px solid #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35); /* 그림자 강조 */
+  transition: left 0.3s ease;
+  z-index: 3;
+}
+
+/* 하단 거리 텍스트 가독성 보정 */
+.r-scale {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px; /* 글자 크기 확대 (9px -> 11px) */
+  font-weight: 600;
+  color: #475569; /* 진한 슬레이트 그레이로 변경 */
+  line-height: 1;
 }
 </style>
