@@ -730,7 +730,7 @@ const DEFAULT_DISTANCE = PREFERENCE_SLIDER_CONFIG.COMMUTE_DISTANCE.defaultValue;
 const PYEONG = 3.3058;
 
 const filter = reactive({
-  tradeTypes: [...TRADE_TYPES],
+  tradeTypes: [],
   propertyTypes: [],
   minDepositJeonse: null,
   maxDepositJeonse: null,
@@ -948,7 +948,8 @@ const commuteChipLabel = computed(() => {
 
 const housingChipOn = computed(
   () =>
-    filter.tradeTypes.length < TRADE_TYPES.length ||
+    (filter.tradeTypes.length > 0 &&
+      filter.tradeTypes.length < TRADE_TYPES.length) ||
     filter.minDepositJeonse != null ||
     filter.maxDepositJeonse != null ||
     filter.minSalePrice != null ||
@@ -1100,7 +1101,6 @@ function toggleIn(list, value) {
 function toggleDraftTrade(t) {
   const i = draft.tradeTypes.indexOf(t);
   if (i !== -1) {
-    if (draft.tradeTypes.length === 1) return;
     draft.tradeTypes.splice(i, 1);
   } else {
     draft.tradeTypes.push(t);
@@ -1168,7 +1168,7 @@ async function applyHousing() {
 }
 
 function resetHousing() {
-  draft.tradeTypes = [...TRADE_TYPES];
+  draft.tradeTypes = [];
   draft.depositJeonse = [0, DEPOSIT_JEONSE.max];
   draft.salePrice = [SALE_PRICE.min, SALE_PRICE.max];
   draft.rent = [0, MONTHLY_RENT.max];

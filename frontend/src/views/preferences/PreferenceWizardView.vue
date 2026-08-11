@@ -242,11 +242,14 @@
       </div>
     </simplebar>
 
-    <!-- STEP 4 — 가치관 우선순위 (1~3개 선택) -->
+    <!-- STEP 4 — 가치관 우선순위 (0~3개 선택) -->
     <simplebar v-else class="content">
       <div class="priority-head">
         <p class="section-title big">주거 가치관 우선순위</p>
-        <p class="caption">중요한 순서대로 최대 3개까지 선택하세요.</p>
+        <p class="caption">
+          최대 3개까지 선택하세요. 선택하지 않으면 모두 동일하게
+          반영돼요.
+        </p>
       </div>
       <div class="priority-list">
         <button
@@ -284,8 +287,7 @@
           :disabled="
             isLoading ||
             isSaving ||
-            (step === 1 && !pref.workplace) ||
-            (step === PREFERENCE_STEP_COUNT && pref.priorities.length < 1)
+            (step === 1 && !pref.workplace)
           "
           @click="onNext"
         >
