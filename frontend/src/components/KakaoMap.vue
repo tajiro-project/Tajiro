@@ -1,8 +1,5 @@
 <template>
-  <div
-    ref="mapElement"
-    class="kakao-map"
-  ></div>
+  <div ref="mapElement" class="kakao-map"></div>
 </template>
 
 <script setup>
@@ -61,15 +58,17 @@ ALL_CATEGORIES.forEach((cat) => {
   }
 });
 
-function pinSvg(selected, count) {
+function pinSvg(count, hasMedal) {
   const label =
-    count > 1
+    props.mode === 'list' && count != null && !hasMedal
       ? `<text x="13" y="16" text-anchor="middle" font-size="10" font-weight="700" fill="#33302a">${count}</text>`
       : '';
 
+  const fill = hasMedal ? '#fe7b00' : '#ffbc00';
+
   return `<svg width="30" height="37" viewBox="0 0 26 32" fill="none">
     <path d="M13 0C5.8 0 0 5.7 0 12.8 0 22.4 13 32 13 32s13-9.6 13-19.2C26 5.7 20.2 0 13 0z"
-          fill="${selected ? '#fe7b00' : '#ffbc00'}"/>
+          fill="${fill}"/>
     <circle cx="13" cy="12.5" r="7" fill="#fff"/>
     ${label}
   </svg>`;
@@ -78,7 +77,11 @@ function pinSvg(selected, count) {
 function createPinElement(marker) {
   const element = document.createElement('div');
   element.className = 'property-pin';
-  element.innerHTML = pinSvg(marker.selected, marker.count);
+  element.innerHTML =
+    pinSvg(marker.count, !!marker.medalUrl) +
+    (marker.medalUrl
+      ? `<img class="pin-medal" src="${marker.medalUrl}" alt="">`
+      : '');
   element.addEventListener('click', (e) => {
     e.stopPropagation();
     emit('marker-click', marker);
@@ -322,7 +325,7 @@ function redraw() {
       position: latlng,
       content: createPinElement(marker),
       yAnchor: 1,
-      zIndex: 5,
+      zIndex: marker.rank ? 10 - marker.rank : 5,
     });
     overlay.setMap(map);
     overlays.push(overlay);
@@ -475,6 +478,7 @@ onUnmounted(() => {
 }
 
 :deep(.property-pin) {
+  position: relative;
   display: block;
   cursor: pointer;
   filter: drop-shadow(0 2px 3px rgba(102, 77, 0, 0.35));
@@ -482,6 +486,18 @@ onUnmounted(() => {
 
 :deep(.property-pin svg) {
   display: block;
+}
+
+:deep(.pin-medal) {
+  position: absolute;
+  top: 14.5px;
+  left: 15px;
+  transform: translate(-50%, -50%);
+  width: 16.2px;
+  height: 16.2px;
+  pointer-events: none;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px #ffffff;
 }
 
 :deep(.infra-dot) {
