@@ -29,13 +29,7 @@
             for="birthDate"
             >생년월일*</label
           >
-          <input
-            id="birthDate"
-            v-model="birthDate"
-            class="field-input"
-            type="date"
-            required
-          />
+          <BirthDatePicker v-model="birthDate" />
         </div>
         <div class="field">
           <label
@@ -111,6 +105,7 @@ import { useRouter } from 'vue-router';
 import client, { getApiErrorMessage, withMock } from '@/api/client';
 import { mockProfile } from '@/api/mockData';
 import KakaoLocation from '@/components/KakaoLocation.vue';
+import BirthDatePicker from '@/components/BirthDatePicker.vue';
 import simplebar from 'simplebar-vue';
 
 const router = useRouter();
