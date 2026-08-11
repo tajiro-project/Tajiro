@@ -32,14 +32,22 @@
       </section>
 
       <section class="stat-row">
-        <div class="stat-box">
+        <button
+          class="stat-box"
+          type="button"
+          @click="router.push('/favorites')"
+        >
           <p class="stat-value">{{ dashboard.favoriteCount }}</p>
           <p class="stat-label">찜한 매물</p>
-        </div>
-        <div class="stat-box">
+        </button>
+        <button
+          class="stat-box"
+          type="button"
+          @click="router.push('/reports')"
+        >
           <p class="stat-value">{{ dashboard.reportCount }}</p>
           <p class="stat-label">비교 리포트</p>
-        </div>
+        </button>
       </section>
 
       <section class="priority-card">
