@@ -35,13 +35,14 @@ public class PropertyDetailDTO {
     private LocalDateTime availableDate;
     private Boolean discussionStatus;
     private Integer evaluationScore;
+    private Boolean isFavorite;
 
     // 1:N 관계 데이터
     private List<String> images;
     private List<InfraSummaryDTO> infraSummary;
 
-    // VO -> DTO 변환 정적 팩토리 메서드
-    public static PropertyDetailDTO of(PropertyDetailVO vo, List<String> images, List<InfraSummaryDTO> infraSummary) {
+    // VO -> DTO 변환 정적 팩토리 메서드 (isFavorite 파라미터 추가)
+    public static PropertyDetailDTO of(PropertyDetailVO vo, List<String> images, List<InfraSummaryDTO> infraSummary, Boolean isFavorite) {
         if (vo == null) {
             return null;
         }
@@ -59,19 +60,19 @@ public class PropertyDetailDTO {
                 .address(vo.getAddress())
                 .dong(vo.getDong())
                 .roomNum(vo.getRoomNum())
-                .parkAvailability(vo.getParkAvailability())
                 .bathroomNum(vo.getBathroomNum())
+                .parkAvailability(vo.getParkAvailability())
                 .propertyDescription(vo.getPropertyDescription())
                 .moveInDate(vo.getMoveInDate())
                 .availableDate(vo.getAvailableDate())
                 .discussionStatus(vo.getDiscussionStatus())
                 .evaluationScore(vo.getEvaluationScore())
+                .isFavorite(isFavorite) // ✨ 찜 상태 바인딩
                 .images(images)
                 .infraSummary(infraSummary)
                 .build();
     }
 
-    // 인프라 요약 DTO
     @NoArgsConstructor
     @AllArgsConstructor
     @Builder
