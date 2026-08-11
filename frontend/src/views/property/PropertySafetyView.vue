@@ -17,7 +17,7 @@
       <div class="scroll-wrapper">
         <div class="scroll-content">
           <div class="title-area">
-            <h1 class="main-title">매물 기준 안전 지표예요</h1>
+            <h1 class="main-title">{{ buildingName }} 기준 안전 지표예요</h1>
             <p
               v-if="isLoading"
               class="sub-title"
@@ -28,7 +28,7 @@
               v-else
               class="sub-title"
             >
-              반경 500m 공공데이터 기준
+              반경 500m 공공데이터 기준 · {{ formatDate(updateDate) }}
             </p>
           </div>
 
@@ -95,7 +95,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { inject, ref, computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import SimpleBar from 'simplebar-vue';
 import KakaoMap from '@/components/KakaoMap.vue';
@@ -119,6 +119,8 @@ const isLoading = ref(true);
 const currentTab = ref('crime');
 const selectedItemKey = ref(null);
 const rawSafetyData = ref(null);
+const buildingName = inject('buildingName');
+const updateDate = ref(null);
 
 const propertyCenter = ref({ lat: 36.3273128, lng: 127.4647872 });
 
@@ -151,6 +153,8 @@ onMounted(async () => {
     if (actualData) {
       rawSafetyData.value = actualData;
 
+      updateDate.value = actualData.updatedAt;
+
       const lat = Number(actualData.latitude);
       const lng = Number(actualData.longitude);
       if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
@@ -163,6 +167,12 @@ onMounted(async () => {
     isLoading.value = false;
   }
 });
+
+const formatDate = (dateStr) => {
+  if (!dateStr) return '';
+
+  return dateStr.slice(0, 10).replaceAll('-', '.');
+};
 
 const mapMarkers = computed(() => {
   if (!propertyCenter.value?.lat) return [];
