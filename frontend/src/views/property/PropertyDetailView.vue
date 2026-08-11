@@ -72,18 +72,32 @@
 
       <!-- 내 기준 점수 & 시세 문구 통합 카드 -->
       <div class="score-card">
-        <div class="score-text-group">
-          <p class="score-line">
-            매물에 대한 <strong>{{ profileName }}</strong
-            >님의 주거 가치관 반영 점수는
-            <span class="highlight">{{ p.recommendScore ?? 0 }}점</span>
-            입니다!
-          </p>
-          <p class="score-line sub">
-            비슷한 매물에 대한 매물가 평균은
-            <strong>{{ medianPrice }}만원</strong>입니다.
-          </p>
+        <div class="score-header">
+          <span class="label">주거 가치관 반영 점수</span>
         </div>
+
+        <!-- 게이지 바 & 점수 핀 영역 -->
+        <div class="gauge-container">
+          <div class="gauge-track">
+            <div
+              class="gauge-fill"
+              :style="{ width: `${p.recommendScore}%` }"
+            >
+              <!-- 게이지 끝에 붙는 말풍선 핀 -->
+              <div class="score-tooltip">{{ p.recommendScore }}점</div>
+            </div>
+          </div>
+          <div class="gauge-ticks">
+            <span>0</span>
+            <span>50</span>
+            <span>100</span>
+          </div>
+        </div>
+
+        <p class="sub-text">
+          비슷한 매물에 대한 매물가 평균은
+          <strong>{{ medianPrice }}만원</strong>입니다.
+        </p>
       </div>
 
       <!-- 3. 매물 정보 -->
@@ -638,7 +652,9 @@ async function addToCompare() {
 </script>
 
 <style scoped>
-/* 1. 전체 컨테이너를 flex-column 및 height: 100%로 설정 */
+/* ==========================================================================
+   1. 전체 레이아웃 & 스크롤 영역
+   ========================================================================== */
 .pdetail {
   height: 100%;
   display: flex;
@@ -651,13 +667,551 @@ async function addToCompare() {
   padding-bottom: 16px;
 }
 
-/* 3. 하단 액션 바 고정 (줄어들지 않고 하단 위치) */
-.bottom-actions-wrap {
+/* ==========================================================================
+   2. 포토 슬라이더
+   ========================================================================== */
+.photo-slider {
+  position: relative;
+  height: 220px;
+  background: #f4f1ea;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.photo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.photo-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: #8a8477;
+  font-size: 13px;
+}
+
+.slide-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0, 0, 0, 0.3);
+  color: #fff;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.slide-btn.left {
+  left: 10px;
+}
+
+.slide-btn.right {
+  right: 10px;
+}
+
+.dots {
+  position: absolute;
+  bottom: 12px;
+  display: flex;
+  gap: 6px;
+}
+
+.d {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.d.on {
+  background: #ffbc00;
+  width: 14px;
+  border-radius: 4px;
+}
+
+/* ==========================================================================
+   3. 매물 기본 정보 헤더 (가격 / 주소)
+   ========================================================================== */
+.head {
+  background: #fff;
+  padding: 16px;
+}
+
+.price {
+  font-size: 21px;
+  font-weight: 900;
+}
+
+.addr {
+  margin-top: 6px;
+  font-size: 12.5px;
+  color: #767676;
+}
+
+/* ==========================================================================
+   4. 가치관 점수 카드 & 게이지 바 (말풍선 유지 + 타이트한 여백)
+   ========================================================================== */
+.score-card {
+  margin: 12px 16px 0;
+  padding: 16px 18px 14px;
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid #f0f0f0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+
+.score-header {
+  margin-bottom: 0; /* 타이틀 하단 여백 제거 */
+}
+
+.score-header .label {
+  font-size: 16px;
+  font-weight: 700;
+  color: #333333;
+}
+
+/* 📍 말풍선이 위치할 딱 필요한 높이(26px)만 여백 지정 */
+.gauge-container {
+  margin-top: 26px;
+  margin-bottom: 12px;
+}
+
+.gauge-track {
+  width: 100%;
+  height: 8px;
+  background-color: #f2f4f6;
+  border-radius: 999px;
+  position: relative;
+}
+
+.gauge-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #ffde6a 0%, #ffb800 100%);
+  border-radius: 999px;
+  position: relative;
+  transition: width 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+/* 📍 게이지 바로 위에 컴팩트하게 밀착되는 말풍선 */
+.score-tooltip {
+  position: absolute;
+  right: 0;
+  top: -24px;
+  transform: translateX(50%);
+  background: #333333;
+  color: #ffffff;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 5px;
+  white-space: nowrap;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+/* 말풍선 화살표 */
+.score-tooltip::after {
+  content: '';
+  position: absolute;
+  bottom: -3px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 3px 3px 0;
+  border-style: solid;
+  border-color: #333333 transparent transparent;
+}
+
+.gauge-ticks {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #b0b8c1;
+  margin-top: 4px;
+  padding: 0 2px;
+}
+
+.sub-text {
+  font-size: 12.5px;
+  color: #666666;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.sub-text strong {
+  color: #222222;
+  font-weight: 700;
+}
+
+/* ==========================================================================
+   5. 메인 상세 카드 / 태그 / 상세 정보 리스트
+   ========================================================================== */
+.card {
+  margin: 12px 16px 0;
+  padding: 16px;
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 16px;
+}
+
+.card-head {
+  font-size: 14.5px;
+  font-weight: 800;
+}
+
+.card-sub {
+  margin-top: 4px;
+  font-size: 11.5px;
+  color: #8a8d8f;
+}
+
+.tag-row {
+  display: flex;
+  gap: 8px;
+  margin: 12px 0 4px;
+}
+
+.tag {
+  padding: 4px 10px;
+  border-radius: 100px;
+  border: 1px solid #ddd;
+  font-size: 12px;
+}
+
+.tag.yellow {
+  border-color: #ffbc00;
+  background: #fffdf5;
+  font-weight: 700;
+}
+
+.info-list {
+  margin-top: 8px;
+}
+
+.info-row {
+  display: flex;
+  gap: 12px;
+  padding: 6px 0;
+}
+
+.info-row dt {
+  flex: 0 0 88px;
+  font-size: 13px;
+  color: #8a8d8f;
+}
+
+.info-row dd {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.section-divider {
+  margin: 16px 0 12px;
+  border: none;
+  border-top: 1px dashed #e2e2e2;
+}
+
+.desc-head {
+  font-size: 13px;
+  color: #8a8d8f;
+}
+
+.desc {
+  margin-top: 6px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* ==========================================================================
+   6. 미니 카드 & 인프라/편의시설
+   ========================================================================== */
+.mini-row {
+  display: flex;
+  gap: 10px;
+  margin: 12px 16px 0;
+}
+
+.mini-card {
+  flex: 1;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
+.mini-card.wide {
+  margin: 10px 16px 0;
+}
+
+.mini-card.wide.compact {
+  padding: 10px 12px;
+}
+
+.mini-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: #8a8d8f;
+}
+
+.mini-value {
+  margin-top: 4px;
+  font-size: 13.5px;
+  font-weight: 800;
+}
+
+.mini-value-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.infra-wrapper {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.infra-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.group-badge {
   flex-shrink: 0;
-  background: var(--white);
-  border-top: 1px solid var(--border);
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #666;
+  background-color: #fff6dc;
+  padding: 1px 5px;
+  border-radius: 4px;
+  white-space: nowrap;
+  margin-top: 1px;
+}
+
+.group-badge.amenity {
+  background-color: #e2f0d9;
+  color: #385723;
+}
+
+.inline-list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+  line-height: 1.4;
+}
+
+.item {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+.name {
+  color: #444;
+}
+
+.count {
+  font-weight: 700;
+  color: #e67e22;
+}
+
+.sep {
+  color: #b0b0b0;
+  font-size: 11px;
+  user-select: none;
+}
+
+.compact-divider {
+  border: none;
+  border-top: 1px solid #eee;
+  margin: 2px 0;
+  width: 100%;
+}
+
+.empty-text {
+  font-size: 12px;
+  color: #8a8d8f;
+}
+
+/* ==========================================================================
+   7. 이동 배너 버튼
+   ========================================================================== */
+.banner-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 16px 16px 0;
+}
+
+.simple-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 14px 18px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 800;
+  border: none;
+  cursor: pointer;
+}
+
+.simple-banner.yellow {
+  background: #ffbc00;
+  color: #333;
+}
+
+.simple-banner.green {
+  background: #2f9e69;
+  color: #fff;
+}
+
+/* ==========================================================================
+   8. 중개사 정보 카드
+   ========================================================================== */
+.realtor-card {
+  margin-top: 12px;
+  border: 1px solid #eee;
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.realtor-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.realtor-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #fdf8eb;
+}
+
+.realtor-name {
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.realtor-addr {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: #666;
+}
+
+.realtor-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.rt-btn {
+  flex: 1;
+  height: 38px;
+  border-radius: 100px;
+  font-size: 13px;
+  font-weight: 700;
+  border: 1px solid #ddd;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.rt-btn.yellow {
+  background: #ffbc00;
+  border: none;
+}
+
+.kb-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: #fdf8eb;
+  border-radius: 10px;
+  font-size: 11.5px;
+  color: #666;
+}
+
+/* ==========================================================================
+   9. 혜택 섹션
+   ========================================================================== */
+.benefit-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.benefit-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.benefit-item {
+  padding: 12px;
+  background: #f9f8f6;
+  border-radius: 10px;
+}
+
+.b-texts {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.b-title {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.b-sub {
+  font-size: 11.5px;
+  color: #8a8d8f;
+}
+
+/* ==========================================================================
+   10. 하단 액션 바 (Sticky 고정)
+   ========================================================================== */
+.bottom-actions-wrap {
+  position: sticky;
+  bottom: 0;
+  width: 100%;
+  flex-shrink: 0;
+  background-color: var(--white, #ffffff);
+  border-top: 1px solid var(--border, #f0f0f0);
   padding: 12px 16px;
-  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05); /* 상단 경계 그림자 */
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05);
   z-index: 10;
 }
 
@@ -667,7 +1221,6 @@ async function addToCompare() {
   gap: 10px;
 }
 
-/* 찜 버튼 */
 .fav-btn {
   display: flex;
   align-items: center;
@@ -684,7 +1237,6 @@ async function addToCompare() {
   border-color: var(--kb-yellow);
 }
 
-/* 비교함 담기 버튼 */
 .compare-btn {
   flex: 1;
   height: 48px;
@@ -705,437 +1257,5 @@ async function addToCompare() {
   font-size: 12px;
   color: var(--kb-gray);
   text-align: center;
-}
-
-.photo-slider {
-  position: relative;
-  height: 220px;
-  background: #f4f1ea;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.photo-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-.photo-placeholder {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  color: #8a8477;
-  font-size: 13px;
-}
-.slide-btn {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  background: rgba(0, 0, 0, 0.3);
-  color: #fff;
-  border: none;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.slide-btn.left {
-  left: 10px;
-}
-.slide-btn.right {
-  right: 10px;
-}
-
-.dots {
-  position: absolute;
-  bottom: 12px;
-  display: flex;
-  gap: 6px;
-}
-.d {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.5);
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.d.on {
-  background: #ffbc00;
-  width: 14px;
-  border-radius: 4px;
-}
-
-.head {
-  background: #fff;
-  padding: 16px;
-}
-.price {
-  font-size: 21px;
-  font-weight: 900;
-}
-.addr {
-  margin-top: 6px;
-  font-size: 12.5px;
-  color: #767676;
-}
-
-.score-card {
-  margin: 12px 16px 0;
-  padding: 16px;
-  background: #fff;
-  border: 1px solid #eee;
-  border-radius: 14px;
-}
-.score-text-group {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.score-line {
-  font-size: 14px;
-  color: #333;
-  line-height: 1.5;
-}
-.score-line.sub {
-  font-size: 13px;
-  color: #666;
-}
-.score-line strong {
-  font-weight: 800;
-}
-.score-line .highlight {
-  font-weight: 900;
-  color: #d9a800;
-  font-size: 15px;
-}
-
-.card {
-  margin: 12px 16px 0;
-  padding: 16px;
-  background: #fff;
-  border: 1px solid #eee;
-  border-radius: 16px;
-}
-.card-head {
-  font-size: 14.5px;
-  font-weight: 800;
-}
-.card-sub {
-  margin-top: 4px;
-  font-size: 11.5px;
-  color: #8a8d8f;
-}
-.tag-row {
-  display: flex;
-  gap: 8px;
-  margin: 12px 0 4px;
-}
-.tag {
-  padding: 4px 10px;
-  border-radius: 100px;
-  border: 1px solid #ddd;
-  font-size: 12px;
-}
-.tag.yellow {
-  border-color: #ffbc00;
-  background: #fffdf5;
-  font-weight: 700;
-}
-.info-list {
-  margin-top: 8px;
-}
-.info-row {
-  display: flex;
-  gap: 12px;
-  padding: 6px 0;
-}
-.info-row dt {
-  flex: 0 0 88px;
-  font-size: 13px;
-  color: #8a8d8f;
-}
-.info-row dd {
-  flex: 1;
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.section-divider {
-  margin: 16px 0 12px;
-  border: none;
-  border-top: 1px dashed #e2e2e2;
-}
-
-.desc-head {
-  font-size: 13px;
-  color: #8a8d8f;
-}
-.desc {
-  margin-top: 6px;
-  font-size: 13px;
-  line-height: 1.6;
-}
-
-.mini-row {
-  display: flex;
-  gap: 10px;
-  margin: 12px 16px 0;
-}
-.mini-card {
-  flex: 1;
-  background: #ffffff;
-  border-radius: 12px;
-  padding: 12px 14px;
-}
-.mini-card.wide {
-  margin: 10px 16px 0;
-}
-.mini-label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 11.5px;
-  color: #8a8d8f;
-}
-.mini-value {
-  margin-top: 4px;
-  font-size: 13.5px;
-  font-weight: 800;
-}
-
-/* 인프라 및 편의시설 스타일 추가 */
-.mini-value-container {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin-top: 8px;
-}
-/* 컴팩트 카드 여백 조절 */
-.mini-card.wide.compact {
-  padding: 10px 12px; /* 상하좌우 패딩 축소 */
-}
-
-.infra-wrapper {
-  margin-top: 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.infra-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-}
-
-/* 왼쪽 범주 배지 (크기 축소) */
-.group-badge {
-  flex-shrink: 0;
-  font-size: 10.5px;
-  font-weight: 700;
-  color: #666;
-  background-color: #fff6dc;
-  padding: 1px 5px;
-  border-radius: 4px;
-  white-space: nowrap;
-  margin-top: 1px;
-}
-
-.group-badge.amenity {
-  background-color: #e2f0d9;
-  color: #385723;
-}
-
-/* 오른쪽 텍스트 리스트 (줄바꿈 가능) */
-.inline-list {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px 6px; /* 가로/세로 간격 최소화 */
-  line-height: 1.4;
-}
-
-.item {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  white-space: nowrap; /* 단어 단위 세로 깨짐 방지 */
-  font-size: 12px;
-}
-
-.name {
-  color: #444;
-}
-
-.count {
-  font-weight: 700;
-  color: #e67e22; /* 수량 강하게 표시 */
-}
-
-/* 구분자 스타일 (· 또는 |) */
-.sep {
-  color: #b0b0b0;
-  font-size: 11px;
-  user-select: none;
-}
-
-/* 슬림한 구분선 */
-.compact-divider {
-  border: none;
-  border-top: 1px solid #eee;
-  margin: 2px 0;
-  width: 100%;
-}
-
-.empty-text {
-  font-size: 12px;
-  color: #8a8d8f;
-}
-
-.banner-group {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin: 16px 16px 0;
-}
-.simple-banner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  padding: 14px 18px;
-  border-radius: 12px;
-  font-size: 14px;
-  font-weight: 800;
-  border: none;
-  cursor: pointer;
-}
-.simple-banner.yellow {
-  background: #ffbc00;
-  color: #333;
-}
-.simple-banner.green {
-  background: #2f9e69;
-  color: #fff;
-}
-.realtor-card {
-  margin-top: 12px;
-  border: 1px solid #eee;
-  border-radius: 14px;
-  padding: 14px;
-}
-.realtor-head {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.realtor-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  background: #fdf8eb;
-}
-.realtor-name {
-  font-size: 14px;
-  font-weight: 800;
-}
-.realtor-addr {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  margin-top: 8px;
-  font-size: 12px;
-  color: #666;
-}
-.realtor-actions {
-  display: flex;
-  gap: 8px;
-  margin-top: 12px;
-}
-.rt-btn {
-  flex: 1;
-  height: 38px;
-  border-radius: 100px;
-  font-size: 13px;
-  font-weight: 700;
-  border: 1px solid #ddd;
-  background: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-}
-.rt-btn.yellow {
-  background: #ffbc00;
-  border: none;
-}
-
-.kb-note {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 12px;
-  padding: 10px 12px;
-  background: #fdf8eb;
-  border-radius: 10px;
-  font-size: 11.5px;
-  color: #666;
-}
-
-.benefit-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.benefit-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-top: 12px;
-}
-.benefit-item {
-  padding: 12px;
-  background: #f9f8f6;
-  border-radius: 10px;
-}
-.b-texts {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.b-title {
-  font-size: 13px;
-  font-weight: 700;
-}
-.b-sub {
-  font-size: 11.5px;
-  color: #8a8d8f;
-}
-
-.bottom-actions-wrap {
-  position: sticky;
-  bottom: 0;
-  width: 100%;
-  background-color: #ffffff;
-  border-top: 1px solid #f0f0f0;
-  padding: 12px 16px;
-  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05);
-  z-index: 10;
-}
-.bottom-actions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
 }
 </style>
