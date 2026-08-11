@@ -1,7 +1,16 @@
 <template>
   <div class="cmp">
     <simplebar class="scroll-area">
-      <div v-if="loading" class="state">비교 결과를 불러오는 중이에요.</div>
+      <div v-if="loading" class="loading-state">
+        <div class="loading-spinner" aria-hidden="true"></div>
+        <p class="loading-title">AI 비교 리포트를 생성 중입니다</p>
+        <p class="loading-text">가치관 기준으로 매물을 분석하고 있어요</p>
+        <div class="loading-dots" aria-hidden="true">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </div>
       <div v-else-if="errorMessage" class="state error">
         {{ errorMessage }}
       </div>
@@ -1068,6 +1077,74 @@ function goBack() {
   flex: 1;
   overflow-y: auto;
   padding: 16px 16px 20px;
+}
+.loading-state {
+  display: flex;
+  min-height: calc(100vh - 112px);
+  padding-bottom: 64px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+.loading-spinner {
+  width: 56px;
+  height: 56px;
+  margin-bottom: 24px;
+  border: 5px solid #efefef;
+  border-top-color: var(--kb-yellow);
+  border-right-color: var(--kb-yellow);
+  border-radius: 50%;
+  animation: compare-spin 0.9s linear infinite;
+}
+.loading-title {
+  margin: 0 0 8px;
+  color: #24211d;
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.4;
+}
+.loading-text {
+  margin: 0;
+  color: #a8a29a;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.loading-dots {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  margin-top: 26px;
+}
+.loading-dots span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--kb-yellow);
+  animation: compare-dot 1.2s ease-in-out infinite;
+}
+.loading-dots span:nth-child(2) {
+  animation-delay: 0.16s;
+}
+.loading-dots span:nth-child(3) {
+  animation-delay: 0.32s;
+}
+@keyframes compare-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes compare-dot {
+  0%,
+  80%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.8);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 .state {
   margin-top: 16px;
