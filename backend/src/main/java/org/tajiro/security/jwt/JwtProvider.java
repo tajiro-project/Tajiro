@@ -14,11 +14,11 @@ import java.util.Date;
 @Component
 public class JwtProvider {
 
+    // 비밀값이 아닌 정책값이라 gitignore되는 application.properties 대신 코드에 둔다(팀 전체 공유 목적).
+    private static final long ACCESS_TOKEN_VALIDITY_SECONDS = 36_000; // 10시간
+
     @Value("${jwt.secret}")
     private String secret;
-
-    @Value("${jwt.access-token-validity-seconds}")
-    private long accessTokenValiditySeconds;
 
     private Key key;
 
@@ -31,7 +31,7 @@ public class JwtProvider {
 
     public String createAccessToken(Long userId, String email) {
         Date now = new Date();
-        Date expiry = new Date(now.getTime() + accessTokenValiditySeconds * 1000);
+        Date expiry = new Date(now.getTime() + ACCESS_TOKEN_VALIDITY_SECONDS * 1000);
 
         return Jwts.builder()
                 .setSubject(String.valueOf(userId))
