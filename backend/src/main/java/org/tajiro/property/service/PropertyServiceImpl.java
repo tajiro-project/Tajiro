@@ -85,24 +85,29 @@ public class PropertyServiceImpl implements PropertyService{
     }
 
     private PropertySearchRequest toSearchRequest(Long userId, HousingPreferenceVO preferenceVO) {
+        List<String> tradeTypes = split(preferenceVO.getTradeTypes());
+        boolean searchAllTradeTypes = tradeTypes == null;
+
         return PropertySearchRequest.builder()
                 .userId(userId)
                 .refLat(preferenceVO.getWorkplaceLatitude())
                 .refLng(preferenceVO.getWorkplaceLongitude())
                 .maxWorkplaceDistanceMeters(preferenceVO.getMaxWorkplaceDistanceMeters())
                 .propertyTypes(split(preferenceVO.getHousingTypes()))
-                .tradeTypes(split(preferenceVO.getTradeTypes()))
+                .tradeTypes(tradeTypes)
                 .floorPreference(split(preferenceVO.getFloorPreference()))
-                .minDeposit(preferenceVO.getMinDeposit())
-                .maxDeposit(preferenceVO.getMaxDeposit())
-                .minMonthlyRent(preferenceVO.getMinMonthlyRent())
-                .maxMonthlyRent(preferenceVO.getMaxMonthlyRent())
-                .minSellingPrice(preferenceVO.getMinSellingPrice())
-                .maxSellingPrice(preferenceVO.getMaxSellingPrice())
+                .minDeposit(searchAllTradeTypes ? null : preferenceVO.getMinDeposit())
+                .maxDeposit(searchAllTradeTypes ? null : preferenceVO.getMaxDeposit())
+                .minMonthlyRent(searchAllTradeTypes ? null : preferenceVO.getMinMonthlyRent())
+                .maxMonthlyRent(searchAllTradeTypes ? null : preferenceVO.getMaxMonthlyRent())
+                .minSellingPrice(searchAllTradeTypes ? null : preferenceVO.getMinSellingPrice())
+                .maxSellingPrice(searchAllTradeTypes ? null : preferenceVO.getMaxSellingPrice())
                 .minAreaM2(preferenceVO.getMinArea())
                 .maxAreaM2(preferenceVO.getMaxArea())
                 .desiredInfraCategories(preferenceVO.getDesiredInfraCategories())
                 .desiredAmenityCategories(preferenceVO.getDesiredAmenityCategories())
+                .applyDesiredCategoryFilter(true)
+                .useAllCategoriesWhenEmpty(true)
                 .hasCar(preferenceVO.getHasCar())
                 .build();
     }

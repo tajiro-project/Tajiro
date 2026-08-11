@@ -6,9 +6,11 @@ import org.tajiro.common.api.ErrorCode;
 import org.tajiro.exception.BusinessException;
 import org.tajiro.preference.domain.HousingPreferenceVO;
 import org.tajiro.preference.domain.PreferencePriorityVO;
+import org.tajiro.preference.dto.PropertySearchRequest;
 import org.tajiro.preference.mapper.PreferenceMapper;
 import org.tajiro.property.domain.PropertyVO;
 import org.tajiro.property.domain.PropertyValueAnalysisResultVO;
+import org.tajiro.property.mapper.PropertyMapper;
 import org.tajiro.property.mapper.PropertyScoreMapper;
 
 import java.math.BigDecimal;
@@ -25,14 +27,17 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class PropertyScoreServiceImplTest {
 
     private InMemoryPreferenceMapper preferenceMapper;
+    private InMemoryPropertyMapper propertyMapper;
     private InMemoryPropertyScoreMapper propertyScoreMapper;
     private PropertyScoreService service;
 
     @BeforeEach
     void setUp() {
         preferenceMapper = new InMemoryPreferenceMapper();
+        propertyMapper = new InMemoryPropertyMapper();
         propertyScoreMapper = new InMemoryPropertyScoreMapper();
-        service = new PropertyScoreServiceImpl(preferenceMapper, propertyScoreMapper);
+        service = new PropertyScoreServiceImpl(
+                preferenceMapper, propertyMapper, propertyScoreMapper);
     }
 
     @Test
@@ -65,6 +70,29 @@ class PropertyScoreServiceImplTest {
     }
 
     @Test
+    void givesEveryCriterionEqualWeightWhenNoPriorityIsSelected() {
+        preferenceMapper.preference = preference();
+        preferenceMapper.priorities = Collections.emptyList();
+
+        PropertyVO property = PropertyVO.builder()
+                .id(10L)
+                .tradeType("월세")
+                .deposit(500)
+                .monthlyRent(20)
+                .areaM2(new BigDecimal("30"))
+                .distanceMeters(200)
+                .desiredInfraCount(1)
+                .desiredAmenityCount(0)
+                .build();
+
+        int score = service.saveScores(1L, Collections.singletonList(property))
+                .get(10L).getRecommendScore();
+
+        // (COMMUTE 80 + COST 68 + INFRA 50 + AMENITY 0 + AREA 50) / 5 = 50
+        assertEquals(50, score);
+    }
+
+    @Test
     void givesSameScoreToSamePropertyRegardlessOfBatchComposition() {
         preferenceMapper.preference = preference();
         preferenceMapper.priorities = Collections.singletonList(priority("AREA", 1));
@@ -85,6 +113,28 @@ class PropertyScoreServiceImplTest {
 
         assertEquals(50, singleScore);
         assertEquals(singleScore, batchScore);
+    }
+
+    @Test
+    void usesEveryCategoryForCoverageScoreWhenNoCategoryIsSelected() {
+        preferenceMapper.preference = preference();
+        preferenceMapper.preference.setDesiredInfraCategories("");
+        preferenceMapper.preference.setDesiredAmenityCategories(null);
+        preferenceMapper.priorities = Arrays.asList(
+                priority("INFRA", 1),
+                priority("AMENITY", 2));
+
+        PropertyVO property = PropertyVO.builder()
+                .id(10L)
+                .desiredInfraCount(8)
+                .desiredAmenityCount(9)
+                .build();
+
+        int score = service.saveScores(1L, Collections.singletonList(property))
+                .get(10L).getRecommendScore();
+
+        // INFRA 8/16 = 50 * 2/3 + AMENITY 9/9 = 100 * 1/3 = 67
+        assertEquals(67, score);
     }
 
     @Test
@@ -111,6 +161,25 @@ class PropertyScoreServiceImplTest {
         assertFalse(propertyScoreMapper.upsertCalled);
     }
 
+    @Test
+    void recalculatesEveryPropertyWithoutApplyingPreferenceFilters() {
+        preferenceMapper.preference = preference();
+        preferenceMapper.priorities = Collections.singletonList(priority("AREA", 1));
+        propertyMapper.properties = Collections.singletonList(PropertyVO.builder()
+                .id(10L)
+                .areaM2(new BigDecimal("30"))
+                .distanceMeters(200)
+                .build());
+
+        service.recalculateAllScores(1L);
+
+        assertEquals(1L, propertyMapper.request.getUserId());
+        assertFalse(propertyMapper.request.isApplyDesiredCategoryFilter());
+        assertEquals(true, propertyMapper.request.isUseAllCategoriesWhenEmpty());
+        assertEquals(1, propertyScoreMapper.savedScores.size());
+        assertEquals(10L, propertyScoreMapper.savedScores.get(0).getPropertyId());
+    }
+
     private HousingPreferenceVO preference() {
         return HousingPreferenceVO.builder()
                 .userId(1L)
@@ -123,9 +192,22 @@ class PropertyScoreServiceImplTest {
                 .minArea(new BigDecimal("20"))
                 .maxArea(new BigDecimal("40"))
                 .maxWorkplaceDistanceMeters(1000)
+                .workplaceLatitude(new BigDecimal("37.5663"))
+                .workplaceLongitude(new BigDecimal("126.9779"))
                 .desiredInfraCategories("SUBWAY,HOSPITAL")
                 .desiredAmenityCategories("MART,CAFE")
                 .build();
+    }
+
+    private static class InMemoryPropertyMapper implements PropertyMapper {
+        private PropertySearchRequest request;
+        private List<PropertyVO> properties = Collections.emptyList();
+
+        @Override
+        public List<PropertyVO> getList(PropertySearchRequest request) {
+            this.request = request;
+            return properties;
+        }
     }
 
     private PreferencePriorityVO priority(String criterion, int order) {
@@ -179,9 +261,5 @@ class PropertyScoreServiceImplTest {
             savedScores = new ArrayList<>(scores);
         }
 
-        @Override
-        public int deleteByUserId(Long userId) {
-            return 0;
-        }
     }
 }
