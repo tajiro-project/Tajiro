@@ -1,4 +1,4 @@
-package org.tajiro.finance.service.ai;
+package org.tajiro.ai;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -18,7 +18,7 @@ import org.tajiro.exception.BusinessException;
 
 @Slf4j
 @Component
-public class OpenAiFinanceEmbeddingClient implements FinanceEmbeddingClient{
+public class OpenAiEmbeddingClient implements EmbeddingClient {
     private static final String DEFAULT_MODEL = "${ai.embedding-model}";
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -27,7 +27,7 @@ public class OpenAiFinanceEmbeddingClient implements FinanceEmbeddingClient{
     private final String apiUrl;
 
 
-    public OpenAiFinanceEmbeddingClient(
+    public OpenAiEmbeddingClient(
             RestTemplate restTemplate,
             @Value("${ai.api-key:}")
             String configuredApiKey,
