@@ -6,6 +6,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.tajiro.common.api.ErrorCode;
 import org.tajiro.exception.BusinessException;
 import org.tajiro.property.domain.PropertyDetailVO;
+import org.tajiro.property.domain.PropertyValueAnalysisResultVO;
 import org.tajiro.property.dto.PropertyDetailDTO;
 import org.tajiro.property.mapper.PropertyDetailMapper;
 
@@ -34,16 +35,30 @@ public class PropertyDetailServiceImpl implements PropertyDetailService {
             infraSummary = propertyDetailMapper.selectInfraSummaryByBuildingId(vo.getBuildingId());
         }
 
-        // 로그인 유저인 경우에만 찜 여부 및 추천 점수 조회 (비로그인은 false / null)
+        // 로그인 유저인 경우에만 찜 여부, 추천 점수, 직장 거리 조회 (비로그인은 false / null)
         boolean isFavorite = false;
         Integer recommendScore = null;
+        Integer workplaceDistanceMeters = null;
 
         if (userId != null) {
             isFavorite = propertyDetailMapper.selectIsFavorite(userId, id);
-            recommendScore = propertyDetailMapper.selectRecommendScore(id, userId); // ✨ 추천 점수 추가 조회
+
+            // ✨ 분석 결과 VO 조회 후 추천점수와 직장거리 추출
+            PropertyValueAnalysisResultVO analysisResult = propertyDetailMapper.selectPropertyValueAnalysisResult(id, userId);
+            if (analysisResult != null) {
+                recommendScore = analysisResult.getRecommendScore();
+                workplaceDistanceMeters = analysisResult.getWorkplaceDistanceMeters();
+            }
         }
 
-        // ✨ recommendScore 파라미터 추가 전달
-        return PropertyDetailDTO.of(vo, images, infraSummary, isFavorite, recommendScore);
+        // ✨ workplaceDistanceMeters 파라미터 추가 전달
+        return PropertyDetailDTO.of(
+                vo,
+                images,
+                infraSummary,
+                isFavorite,
+                recommendScore,
+                workplaceDistanceMeters
+        );
     }
 }
