@@ -64,52 +64,6 @@
       <section class="quick-menu">
         <p class="section-title">무엇을 도와드릴까요?</p>
 
-        <button
-          class="search-bar"
-          type="button"
-          @click="goRegionSearch"
-        >
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 18 18"
-            fill="none"
-          >
-            <circle
-              cx="8"
-              cy="8"
-              r="5.5"
-              stroke="#8a8d8f"
-              stroke-width="1.6"
-            />
-            <path
-              d="M12.2 12.2L16 16"
-              stroke="#8a8d8f"
-              stroke-width="1.6"
-              stroke-linecap="round"
-            />
-          </svg>
-          <span class="search-text">{{
-            targetRegion || '가치관 입력 없이 지역만 빠르게 검색'
-          }}</span>
-          <span class="search-submit">
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 16 16"
-              fill="none"
-            >
-              <path
-                d="M4 8h8M8 4l4 4-4 4"
-                stroke="#545045"
-                stroke-width="1.8"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </svg>
-          </span>
-        </button>
-
         <div class="menu-grid">
           <!-- 정책 · 대출 -->
           <button
@@ -325,26 +279,14 @@
         </ul>
       </section>
     </simplebar>
-
-    <KakaoLocation
-      :open="isLocationPickerOpen"
-      @close="isLocationPickerOpen = false"
-      @select="onLocationSelected"
-    />
   </div>
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import client, { withMock } from '@/api/client';
-import { mockDashboard } from '@/api/mockData';
 import simplebar from 'simplebar-vue';
-import KakaoLocation from '@/components/KakaoLocation.vue';
 
 const router = useRouter();
-const targetRegion = ref('');
-const isLocationPickerOpen = ref(false);
 
 const mockBenefitPreview = [
   {
@@ -358,36 +300,6 @@ const mockBenefitPreview = [
     sub: '우대금리 최대 0.3%p',
   },
 ];
-
-onMounted(loadTargetRegion);
-
-async function loadTargetRegion() {
-  try {
-    const data = await withMock(
-      () => client.get('/users/me/dashboard'),
-      mockDashboard,
-    );
-    const payload = data?.data ?? data;
-    targetRegion.value = payload?.targetRegion ?? '';
-  } catch {
-    targetRegion.value = '';
-  }
-}
-
-function goRegionSearch() {
-  isLocationPickerOpen.value = true;
-}
-
-function onLocationSelected(location) {
-  router.push({
-    path: '/properties',
-    query: {
-      region: location.name,
-      centerLat: location.lat,
-      centerLng: location.lng,
-    },
-  });
-}
 </script>
 
 <style scoped>
@@ -445,35 +357,6 @@ function onLocationSelected(location) {
   margin: 6px 0 2px;
   border: none;
   border-top: 1px solid rgba(0, 0, 0, 0.08);
-}
-
-.search-bar {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  padding: 8px 8px 8px 16px;
-  background: var(--white);
-  border-radius: var(--radius-input);
-  box-shadow: var(--shadow-card);
-}
-
-.search-text {
-  flex: 1;
-  text-align: left;
-  font-size: 13px;
-  color: var(--kb-silver);
-}
-
-.search-submit {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  background: var(--kb-yellow);
-  border-radius: 100px;
-  flex-shrink: 0;
 }
 
 .scroll-area {
