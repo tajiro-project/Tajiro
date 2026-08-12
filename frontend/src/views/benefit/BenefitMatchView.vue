@@ -55,6 +55,57 @@
         </div>
       </div>
 
+      <div v-if="tab === 'kb'" class="finance-filter-wrap">
+        <button
+          type="button"
+          class="finance-filter-toggle"
+          :class="{ open: financeFiltersExpanded }"
+          :aria-expanded="financeFiltersExpanded"
+          aria-controls="finance-product-filters"
+          @click="financeFiltersExpanded = !financeFiltersExpanded"
+        >
+          <span class="finance-filter-toggle-title">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <path d="M2 4h12M4 8h8M6 12h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+            </svg>
+            필터
+            <span v-if="activeFinanceFilterCount" class="filter-count">
+              {{ activeFinanceFilterCount }}
+            </span>
+          </span>
+          <span class="finance-filter-chevron" aria-hidden="true">▾</span>
+        </button>
+
+        <section
+          v-show="financeFiltersExpanded"
+          id="finance-product-filters"
+          class="finance-filters"
+          aria-label="금융상품 필터"
+        >
+          <div
+            v-for="group in financeFilterGroups"
+            :key="group.key"
+            class="finance-filter-row"
+          >
+            <span class="finance-filter-label">{{ group.label }}</span>
+            <div class="finance-filter-options">
+              <button
+                v-for="option in group.options"
+                :key="option.value"
+                type="button"
+                class="finance-filter-chip"
+                :class="{ on: selectedFinanceFilters[group.key] === option.value }"
+                :aria-pressed="selectedFinanceFilters[group.key] === option.value"
+                @click="toggleFinanceFilter(group.key, option.value)"
+              >
+                <span class="chip-check" aria-hidden="true">✓</span>
+                {{ option.label }}
+              </button>
+            </div>
+          </div>
+        </section>
+      </div>
+
       <!-- 청년 정책 리스트 -->
       <ul v-if="tab === 'policy'" class="list">
         <!-- <li v-for="p in filteredPolicies" :key="p.id"> -->
@@ -90,6 +141,13 @@
           </button>
         </li>
       </ul>
+      <div v-if="activeItems.length === 0" class="empty-result">
+        <span class="empty-result-icon" aria-hidden="true">⌕</span>
+        <p>선택한 조건에 맞는 상품이 없어요</p>
+        <button v-if="tab === 'kb'" type="button" @click="resetFinanceFilters">
+          필터 초기화
+        </button>
+      </div>
       <nav
         v-if="activeItems.length > 0"
         class="pagination"
@@ -213,6 +271,8 @@ const props = defineProps({
 const tab = ref(props.initialTab);
 const keyword = ref('');
 const selectedTargetCodes = ref([]);
+const selectedFinanceFilters = ref({ transaction: '', product: '' });
+const financeFiltersExpanded = ref(false);
 const filtersExpanded = ref(false);
 const filterDropdownRef = ref(null);
 const filterToggleRef = ref(null);
@@ -223,6 +283,29 @@ const products = ref([]);
 const needProfile = ref(false);
 const currentPage = ref(1);
 const pageSize = 5;
+const financeFilterGroups = [
+  {
+    key: 'transaction',
+    label: '거래 유형',
+    options: [
+      { value: '매매', label: '매매' },
+      { value: '전세', label: '전세' },
+      { value: '월세', label: '월세' },
+    ],
+  },
+  {
+    key: 'product',
+    label: '상품 유형',
+    options: [
+      { value: '보증', label: '보증' },
+      { value: '담보', label: '담보' },
+      { value: '기타', label: '기타' },
+    ],
+  },
+];
+const activeFinanceFilterCount = computed(() =>
+  Object.values(selectedFinanceFilters.value).filter(Boolean).length,
+);
 const targetFilters = [
   { code: '0014001', label: '중소기업' },
   { code: '0014002', label: '여성' },
@@ -272,9 +355,23 @@ const filteredPolicies = computed(() =>
   ),
 );
 const filteredProducts = computed(() =>
-  products.value.filter(
-    (f) => !keyword.value || f.productName.includes(keyword.value),
-  ),
+  products.value
+    .filter((product) => {
+      const matchesKeyword =
+        !keyword.value || product.productName.includes(keyword.value);
+      const matchesTransaction = matchesFinanceFilter(
+        product,
+        'transaction',
+        selectedFinanceFilters.value.transaction,
+      );
+      const matchesProduct = matchesFinanceFilter(
+        product,
+        'product',
+        selectedFinanceFilters.value.product,
+      );
+      return matchesKeyword && matchesTransaction && matchesProduct;
+    })
+    .sort(compareSimilarityDescending),
 );
 
 const activeItems = computed(() =>
@@ -313,6 +410,37 @@ function toggleTargetFilter(code) {
   selectedTargetCodes.value = selectedTargetCodes.value.includes(code)
     ? []
     : [code];
+}
+
+function toggleFinanceFilter(group, value) {
+  selectedFinanceFilters.value[group] =
+    selectedFinanceFilters.value[group] === value ? '' : value;
+}
+
+function resetFinanceFilters() {
+  selectedFinanceFilters.value = { transaction: '', product: '' };
+}
+
+function matchesFinanceFilter(product, group, selected) {
+  if (!selected) return true;
+
+  const explicitValue = group === 'transaction'
+    ? product.tradeType
+    : product.productType;
+
+  return String(explicitValue ?? '').trim() === selected;
+}
+
+function compareSimilarityDescending(a, b) {
+  const aValue = Number(a.categorySimilarity);
+  const bValue = Number(b.categorySimilarity);
+  const aHasValue = Number.isFinite(aValue);
+  const bHasValue = Number.isFinite(bValue);
+
+  if (!aHasValue && !bHasValue) return 0;
+  if (!aHasValue) return 1;
+  if (!bHasValue) return -1;
+  return bValue - aValue;
 }
 
 async function toggleFilterDropdown() {
@@ -371,13 +499,9 @@ function normalizeTargetCode(value) {
     : normalized;
 }
 
-watch(
-  [tab, keyword, selectedTargetCodes],
-  () => {
-    currentPage.value = 1;
-  },
-  { deep: true },
-);
+watch([tab, keyword, selectedTargetCodes, selectedFinanceFilters], () => {
+  currentPage.value = 1;
+}, { deep: true });
 
 watch(totalPages, (total) => {
   if (currentPage.value > total) {
@@ -481,6 +605,123 @@ function shortAmount(v) {
   outline: 2px solid var(--kb-yellow);
   outline-offset: 2px;
 }
+.finance-filter-wrap {
+  margin-top: 10px;
+}
+.finance-filter-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  height: 40px;
+  padding: 0 13px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--white);
+  color: var(--kb-gray);
+  font-size: 12.5px;
+  font-weight: 800;
+}
+.finance-filter-toggle-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.filter-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 19px;
+  height: 19px;
+  padding: 0 6px;
+  border-radius: 99px;
+  border: 1px solid var(--kb-yellow);
+  background: var(--yellow-tint);
+  color: var(--text-primary);
+  font-size: 10.5px;
+}
+.finance-filter-chevron {
+  font-size: 10px;
+  line-height: 1;
+  transition: transform 0.2s ease;
+}
+.finance-filter-toggle.open .finance-filter-chevron {
+  transform: rotate(180deg);
+}
+.finance-filter-toggle:focus-visible {
+  outline: 2px solid var(--kb-yellow);
+  outline-offset: 2px;
+}
+.finance-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 8px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--white);
+  box-shadow: 0 3px 12px rgba(102, 77, 0, 0.06);
+}
+.finance-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.finance-filter-label {
+  width: 58px;
+  flex-shrink: 0;
+  color: var(--kb-gray);
+  font-size: 11.5px;
+  font-weight: 800;
+}
+.finance-filter-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  flex: 1;
+}
+.finance-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-width: 0;
+  height: 34px;
+  padding: 0 8px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #faf9f7;
+  color: var(--kb-silver);
+  font-size: 12px;
+  font-weight: 700;
+  transition: 0.18s ease;
+}
+.finance-filter-chip:hover {
+  border-color: #e4bd45;
+  background: var(--yellow-tint);
+  color: var(--text-primary);
+}
+.finance-filter-chip.on {
+  border-color: var(--kb-yellow);
+  background: var(--yellow-tint);
+  color: var(--text-primary);
+  box-shadow: none;
+}
+.chip-check {
+  width: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: 0.18s ease;
+}
+.finance-filter-chip.on .chip-check {
+  width: 12px;
+  opacity: 1;
+}
+.finance-filter-chip:focus-visible {
+  outline: 2px solid var(--kb-yellow);
+  outline-offset: 2px;
+}
 .target-filters {
   position: fixed;
   z-index: 150;
@@ -566,6 +807,28 @@ function shortAmount(v) {
   color: #6b5300;
   background: var(--yellow-tint);
   border-radius: 999px;
+}
+.empty-result {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 38px 16px;
+  color: var(--kb-silver);
+  font-size: 12.5px;
+}
+.empty-result-icon {
+  font-size: 28px;
+  color: #bbb5aa;
+}
+.empty-result button {
+  margin-top: 3px;
+  padding: 7px 12px;
+  border-radius: 9px;
+  background: var(--yellow-tint);
+  color: #6b5300;
+  font-size: 11.5px;
+  font-weight: 800;
 }
 /* 12-1 모달 */
 .modal-overlay {
