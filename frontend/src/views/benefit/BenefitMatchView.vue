@@ -20,12 +20,19 @@
         <div class="search-box">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
             <circle cx="7" cy="7" r="5" stroke="#8a8d8f" stroke-width="1.5" />
-            <path d="M11 11L14.5 14.5" stroke="#8a8d8f" stroke-width="1.5" stroke-linecap="round" />
+            <path
+              d="M11 11L14.5 14.5"
+              stroke="#8a8d8f"
+              stroke-width="1.5"
+              stroke-linecap="round"
+            />
           </svg>
           <input
             v-model="keyword"
             type="search"
-            :placeholder="tab === 'policy' ? '정책·혜택명 검색' : 'KB 금융 상품명 검색'"
+            :placeholder="
+              tab === 'policy' ? '정책·혜택명 검색' : 'KB 금융 상품명 검색'
+            "
           />
         </div>
 
@@ -232,7 +239,9 @@
             필요해요.<br />지금 입력하시겠어요?
           </p>
           <div class="m-actions">
-            <button class="m-later" @click="needProfile = false">다음에</button>
+            <button class="m-later" @click="$router.push('/home')">
+              다음에
+            </button>
             <button class="m-go" @click="$router.push('/profile-setup')">
               입력하러 가기
             </button>
@@ -244,7 +253,14 @@
 </template>
 
 <script setup>
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import {
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  watch,
+} from 'vue';
 import simplebar from 'simplebar-vue';
 import { financeApi, policyApi, userApi } from '@/api/services';
 
@@ -305,9 +321,11 @@ const selectedTargetSummary = computed(() => {
   const count = selectedTargetCodes.value.length;
   if (!count) return '대상';
   if (count === 1) {
-    return targetFilters.find(
-      (filter) => filter.code === selectedTargetCodes.value[0],
-    )?.label ?? '대상';
+    return (
+      targetFilters.find(
+        (filter) => filter.code === selectedTargetCodes.value[0],
+      )?.label ?? '대상'
+    );
   }
   return `${count}개 선택`;
 });
