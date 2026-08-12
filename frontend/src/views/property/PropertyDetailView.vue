@@ -327,21 +327,116 @@
         </p>
       </section>
 
-      <!-- 혜택/상품 -->
-      <section class="card">
-        <div class="benefit-head">
-          <p class="card-head">이 매물로 받을 수 있는 혜택/상품</p>
-        </div>
-        <div class="benefit-list">
-          <div
-            v-for="b in benefits"
-            :key="b.id"
-            class="benefit-item"
+      <!-- 혜택/상품 카드 (금융 & 정책 분리) -->
+      <section class="card benefit-card">
+        <div class="benefit-card-head">
+          <p class="card-head">이 매물 맞춤 혜택 & 금융</p>
+          <span class="badge"
+            >최대 혜택 {{ financeList.length + policyList.length }}건</span
           >
-            <span class="b-texts">
-              <span class="b-title">{{ b.title }}</span>
-              <span class="b-sub">{{ b.sub }}</span>
-            </span>
+        </div>
+
+        <!-- 1. 금융 상품 영역 (바로 노출) -->
+        <div class="benefit-group">
+          <div class="group-title">
+            <Coins
+              :size="15"
+              color="#a8842c"
+            />
+            <span>매물 맞춤 금융 상품</span>
+          </div>
+
+          <div class="benefit-list">
+            <div
+              v-for="item in financeList"
+              :key="item.id"
+              class="benefit-item"
+              :class="{ clickable: !!item.applicationUrl }"
+              @click="goToFinancialDetail(item.id)"
+            >
+              <div class="item-icon-box">
+                <span class="item-icon">🏦</span>
+              </div>
+
+              <div class="item-content">
+                <div class="item-header">
+                  <span class="item-title">{{ item.productName }}</span>
+                </div>
+
+                <div class="item-info-row">
+                  <span class="rate-badge">{{ formatRateText(item) }}</span>
+                  <span
+                    class="limit-text"
+                    v-if="item.loanLimit"
+                  >
+                    {{ formatLoanLimit(item.loanLimit) }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- 2. 정책 혜택 영역 (미입력 시 잠금 오버레이 노출) -->
+        <div class="benefit-group">
+          <div class="group-title">
+            <Landmark
+              :size="15"
+              color="#a8842c"
+            />
+            <span>청년 · 정부 지원 정책</span>
+          </div>
+
+          <div
+            class="policy-wrapper"
+            :class="{ locked: !isProfileEntered }"
+          >
+            <!-- 잠금 오버레이 (필수 정보 미입력 시 표시) -->
+            <div
+              v-if="!isProfileEntered"
+              class="lock-overlay"
+            >
+              <div class="lock-box">
+                <div class="lock-icon-wrap">
+                  <Lock
+                    :size="18"
+                    color="#222"
+                  />
+                </div>
+                <p class="lock-text">
+                  내 정보 입력 시 <strong>맞춤 정책 혜택</strong> 확인 가능
+                </p>
+                <button
+                  class="btn-input-profile"
+                  @click="router.push('/profile-setup')"
+                >
+                  내 조건 입력하고 확인하기
+                </button>
+              </div>
+            </div>
+
+            <!-- 정책 리스트 -->
+            <div class="benefit-list">
+              <div
+                v-for="item in policyList"
+                :key="item.id"
+                class="benefit-item clickable"
+                @click="goToPolicyDetail(item.id)"
+              >
+                <div class="item-icon-box">
+                  <span class="item-icon">{{ item.icon || '🏛️' }}</span>
+                </div>
+                <div class="item-content">
+                  <span class="item-title">{{
+                    item.title || item.polyBizSjnm
+                  }}</span>
+                  <p class="item-sub">{{ item.sub || item.polyItcnCn }}</p>
+                </div>
+                <ChevronRight
+                  :size="16"
+                  color="#aaa"
+                />
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -382,10 +477,17 @@
 
 <script setup>
 import { inject, computed, onMounted, ref } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import simplebar from 'simplebar-vue';
 import AppTabBar from '@/components/AppTabBar.vue';
-import { propertyApi, favoriteApi, comparisonApi } from '@/api/services';
+import {
+  propertyApi,
+  favoriteApi,
+  comparisonApi,
+  financeApi,
+  policyApi,
+  userApi,
+} from '@/api/services';
 import {
   INFRA_CATEGORIES,
   AMENITY_CATEGORIES,
@@ -403,9 +505,13 @@ import {
   MessageSquare,
   Info,
   Heart,
+  Coins,
+  Landmark,
+  Lock,
 } from 'lucide-vue-next';
 
 const route = useRoute();
+const router = useRouter();
 const compareMsg = ref('');
 const isSubmitting = ref(false); // 버튼 연타 방지용
 
@@ -413,20 +519,134 @@ const market = ref(null);
 const isFavorite = ref(false);
 const profileName = ref('홍길동');
 
+// 사용자 조건 입력 여부
+const isProfileEntered = ref(false);
+// const policyList = ref([]);
+
 const p = inject('propertyDetail');
 const buildingName = inject('buildingName');
 
 const id = route.params.id;
 
+// 1. 금융 상품 API 연동 데이터 및 로직
+const financeList = ref([]);
+const isLoadingFinance = ref(false);
+
+// 금융 상품 목록 조회
+const fetchFinancialRecommendations = async () => {
+  if (!id) return;
+  try {
+    isLoadingFinance.value = true;
+
+    // 서비스 파일 호출 s
+    const res = await financeApi.getRecommendations(id);
+
+    financeList.value = res.data || res || [];
+  } catch (err) {
+    console.error('금융 상품 추천 조회 실패:', err);
+  } finally {
+    isLoadingFinance.value = false;
+  }
+};
+
+// 프로필 정보 확인 및 정책 데이터 로드
+const checkProfileAndFetchPolicies = async () => {
+  try {
+    // 1. 유저 프로필 조회
+    const profile = await userApi.getProfile();
+
+    // 2. 필수 정보(생년월일, 지역) 입력 여부 검증
+    const hasBirthDate = !!profile?.birthDate?.trim();
+    const hasTargetRegion = !!profile?.targetRegion?.trim();
+
+    isProfileEntered.value = hasBirthDate && hasTargetRegion;
+
+    // 3. 필수 정보가 모두 존재하는 경우에만 정책 목록 로드
+    // if (isProfileEntered.value) {
+    //   const policyResponse = await policyApi.list();
+    //   policyList.value = policyResponse?.data || [];
+    // }
+  } catch (error) {
+    console.error('프로필 조회 또는 정책 목록 호출 실패:', error);
+    isProfileEntered.value = false;
+  }
+};
+
+onMounted(() => {
+  fetchFinancialRecommendations();
+  checkProfileAndFetchPolicies();
+});
+
+// 금리 텍스트 가공 헬퍼 (JSON 문자열 예외 처리 추가)
+const formatRateText = (item) => {
+  // 1. minRate와 maxRate가 정상적으로 존재하는 경우
+  if (item.minRate && item.maxRate) {
+    return item.minRate === item.maxRate
+      ? `연 ${item.minRate}%`
+      : `연 ${item.minRate}% ~ ${item.maxRate}%`;
+  }
+  if (item.minRate) return `연 ${item.minRate}% ~`;
+  if (item.maxRate) return `연 ~ ${item.maxRate}%`;
+
+  // 2. min/maxRate가 없어서 rateDescription을 처리해야 하는 경우
+  if (item.rateDescription) {
+    try {
+      // JSON 객체 형태의 문자열인지 확인 후 파싱
+      const parsed =
+        typeof item.rateDescription === 'string' &&
+        item.rateDescription.trim().startsWith('{')
+          ? JSON.parse(item.rateDescription)
+          : item.rateDescription;
+
+      if (typeof parsed === 'object' && parsed !== null) {
+        // details 배열 내 금리 정보가 존재하면 사용
+        if (parsed.details && parsed.details.length > 0) {
+          const rates = parsed.details.map((d) => d.final_rate).filter(Boolean);
+          if (rates.length > 0) return rates.join(' / ');
+        }
+        // base_type이 존재하면 활용
+        if (parsed.base_type) return parsed.base_type;
+      } else if (typeof parsed === 'string') {
+        return parsed;
+      }
+    } catch (e) {
+      // JSON 파싱 실패 시 기본값 처리
+    }
+  }
+
+  return '변동금리 (상세 확인)';
+};
+
+// 한도 텍스트 괄호 '(' 전까지만 자르는 헬퍼 함수
+const formatLoanLimit = (limitStr) => {
+  if (!limitStr) return '';
+  // '(' 기준으로 잘라서 첫 번째 부분만 사용하고 여백 제거
+  return limitStr.split('(')[0].trim();
+};
+
+// 1. 금융 상품 상세 이동
+const goToFinancialDetail = (id) => {
+  if (!id) return;
+  router.push({ name: 'financial-product-detail', params: { id } });
+};
+
+// 2. 정책 상세 이동
+const goToPolicyDetail = (id) => {
+  if (!id) return;
+  router.push({ name: 'policy-detail', params: { id } });
+};
+
 // 이미지 캐러셀 상태
 const currentImgIndex = ref(0);
 let touchStartX = 0;
 
+// 다음 이미지
 function nextImage() {
   if (!p.value?.images?.length) return;
   currentImgIndex.value = (currentImgIndex.value + 1) % p.value.images.length;
 }
 
+// 이전 이미지
 function prevImage() {
   if (!p.value?.images?.length) return;
   currentImgIndex.value =
@@ -591,15 +811,31 @@ const formattedAmenityList = computed(() => {
     }));
 });
 
-const benefits = [
-  { id: 1, title: '청년 월세/전세 지원', sub: '조건 충족 시 지원 혜택 제공' },
-  { id: 2, title: '청년 전입지원금', sub: '1회 지원' },
+// 맞춤 정책 혜택 데이터 (사용자 정보 입력 필요)
+const policyList = ref([
   {
-    id: 3,
-    title: 'KB 청년 전월세보증금 대출',
-    sub: '실질 우대 금리 혜택 적용',
+    id: 'p1',
+    icon: '🎁',
+    title: '창원시 청년월세지원',
+    sub: '조건 충족 시 월 20만원 × 12개월',
   },
-];
+  {
+    id: 'p2',
+    icon: '💵',
+    title: '청년 전입지원금',
+    sub: '최초 전입 시 1회 30만원 지급',
+  },
+  {
+    id: 'p3',
+    icon: '🌱',
+    title: '청년 이사비 지원사업',
+    sub: '이사비 및 중개보수 최대 40만원',
+  },
+]);
+
+const openProfileModal = () => {
+  router.push('/profile-setup');
+};
 
 // 찜 상태 토글
 async function toggleFavorite() {
@@ -773,7 +1009,7 @@ async function addToCompare() {
 }
 
 .score-header {
-  margin-bottom: 0; /* 타이틀 하단 여백 제거 */
+  margin-bottom: 0;
 }
 
 .score-header .label {
@@ -782,7 +1018,6 @@ async function addToCompare() {
   color: #333333;
 }
 
-/* 📍 말풍선이 위치할 딱 필요한 높이(26px)만 여백 지정 */
 .gauge-container {
   margin-top: 26px;
   margin-bottom: 12px;
@@ -804,7 +1039,6 @@ async function addToCompare() {
   transition: width 0.8s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
-/* 📍 게이지 바로 위에 컴팩트하게 밀착되는 말풍선 */
 .score-tooltip {
   position: absolute;
   right: 0;
@@ -820,7 +1054,6 @@ async function addToCompare() {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
 }
 
-/* 말풍선 화살표 */
 .score-tooltip::after {
   content: '';
   position: absolute;
@@ -969,14 +1202,6 @@ async function addToCompare() {
   margin-top: 4px;
   font-size: 13.5px;
   font-weight: 800;
-}
-
-.mini-value-container {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin-top: 8px;
 }
 
 .infra-wrapper {
@@ -1163,41 +1388,226 @@ async function addToCompare() {
 }
 
 /* ==========================================================================
-   9. 혜택 섹션
+   9. 혜택 섹션 (금융 및 정책 레이아웃)
    ========================================================================== */
-.benefit-head {
+.benefit-card {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.benefit-card-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 
-.benefit-list {
+.badge {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #2b6cb0;
+  background: #ebf8ff;
+  padding: 3px 8px;
+  border-radius: 12px;
+}
+
+.benefit-group {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  margin-top: 12px;
+}
+
+.group-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #666666;
+}
+
+.benefit-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px; /* 각 카드 사이 간격 넓힘 */
+  margin-top: 8px;
 }
 
 .benefit-item {
-  padding: 12px;
-  background: #f9f8f6;
-  border-radius: 10px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px; /* 내부 여백 조절 */
+  background: #ffffff; /* 흰색 카드로 구분감 제공 */
+  border-radius: 12px;
+  border: 1px solid #eef0f2; /* 연한 테두리로 카드 분리 */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03); /* 은은한 그림자 */
+  transition: all 0.2s ease;
 }
 
-.b-texts {
+.benefit-item.clickable {
+  cursor: pointer;
+}
+
+.benefit-item.clickable:hover {
+  border-color: #ffbc00;
+  transform: translateY(-1px);
+}
+
+.item-icon-box {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: #fdf8eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.item-content {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 6px;
+  flex-grow: 1;
+  min-width: 0; /* 텍스트 넘침 방지 */
 }
 
-.b-title {
-  font-size: 13px;
+.item-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.item-title {
+  font-size: 13.5px;
   font-weight: 700;
+  color: #222222;
+  line-height: 1.3;
 }
 
-.b-sub {
+/* 금리/한도 배치 영역 */
+.item-info-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  column-gap: 10px; /* 한 줄일 때 (금리 - 한도) 가로 간격 */
+  row-gap: 4px; /* 줄바꿈되었을 때 세로 간격 */
+  font-size: 12px;
+}
+
+.rate-badge {
+  font-weight: 700;
+  color: #d97706; /* 금리 강조 색상 */
+}
+
+.limit-text {
+  color: #666666;
+  position: relative;
+}
+
+/* 금리와 한도 사이 구분점 */
+.limit-text::before {
+  display: none; /* 또는 해당 CSS 블록 전체 삭제 */
+}
+
+.link-icon {
+  display: flex;
+  align-items: center;
+  align-self: center;
+  margin-left: 2px;
+}
+
+.item-sub {
   font-size: 11.5px;
   color: #8a8d8f;
+  margin: 0;
+}
+
+/* 정책 오버레이 & 잠금 스타일 */
+.policy-wrapper {
+  position: relative;
+}
+
+/* 프로필 미입력 시 자식 리스트 블러 처리 */
+.policy-wrapper.locked .benefit-list {
+  filter: blur(4px);
+  pointer-events: none; /* 클릭 방지 */
+  user-select: none;
+}
+
+/* 잠금 오버레이 중앙 정렬 */
+.lock-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.45);
+}
+
+.lock-box {
+  background: #ffffff;
+  padding: 24px 20px;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid #eee;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.btn-input-profile {
+  background-color: #222222;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.lock-icon-wrap {
+  width: 32px;
+  height: 32px;
+  background: #f3f4f6;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lock-text {
+  font-size: 12px;
+  color: #4b5563;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.btn-input-profile {
+  background: #222222;
+  color: #ffffff;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 2px;
+  transition: background 0.2s;
+}
+
+.btn-input-profile:hover {
+  background: #000000;
 }
 
 /* ==========================================================================
@@ -1234,14 +1644,14 @@ async function addToCompare() {
 }
 
 .fav-btn.on {
-  border-color: var(--kb-yellow);
+  border-color: #ffbc00;
 }
 
 .compare-btn {
   flex: 1;
   height: 48px;
   border-radius: var(--radius-input);
-  background: var(--kb-yellow-header);
+  background: #ffbc00;
   color: var(--text-primary);
   font-size: 15px;
   font-weight: 700;
