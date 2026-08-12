@@ -32,8 +32,7 @@ export const financeApi = {
   matches: async (keyword) =>
     (await client.get('/financial-products/matches', { params: { keyword } }))
       .data,
-  detail: async (id) =>
-    (await client.get(`/financial-products/${id}`)).data,
+  detail: async (id) => (await client.get(`/financial-products/${id}`)).data,
 };
 
 // ---------- policy ----------
@@ -42,8 +41,7 @@ export const policyApi = {
     (await client.get('/policies', { params: { regionCode, keyword } })).data,
   matches: async (keyword) =>
     (await client.get('/policies/matches', { params: { keyword } })).data,
-  detail: async (policyId) =>
-    (await client.get(`/policies/${policyId}`)).data,
+  detail: async (policyId) => (await client.get(`/policies/${policyId}`)).data,
 };
 
 // ---------- property ----------
@@ -53,13 +51,8 @@ export const propertyApi = {
   infrastructures: async (id) =>
     (await client.get(`/properties/${id}/infrastructures`)).data,
   safety: async (id) => (await client.get(`/properties/${id}/safety`)).data,
-  getList: async ({ centerLat, centerLng } = {}) => {
-    const params = {};
-    if (centerLat != null && centerLng != null) {
-      params.centerLat = centerLat;
-      params.centerLng = centerLng;
-    }
-    const res = await client.get('/properties', { params });
+  getList: async () => {
+    const res = await client.get('/properties');
     return (res.data.data ?? []).map((p) => ({ ...p, propertyId: p.id }));
   },
 };
