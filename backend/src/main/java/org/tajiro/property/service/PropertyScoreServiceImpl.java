@@ -208,14 +208,9 @@ public class PropertyScoreServiceImpl implements PropertyScoreService {
                         property.getDeposit(),
                         preference.getMinDeposit(),
                         preference.getMaxDeposit());
-                Integer monthlyRent = property.getMonthlyRent();
-                Integer monthlyCost = monthlyRent == null
-                        ? null
-                        : monthlyRent + (property.getMaintenanceFee() == null
-                                ? 0
-                                : property.getMaintenanceFee());
+
                 double rentScore = lowerIsBetter(
-                        monthlyCost,
+                        property.getMonthlyRent(),
                         preference.getMinMonthlyRent(),
                         preference.getMaxMonthlyRent());
                 return depositScore * MONTHLY_DEPOSIT_WEIGHT
