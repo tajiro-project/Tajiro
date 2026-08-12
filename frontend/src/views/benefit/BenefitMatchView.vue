@@ -15,30 +15,6 @@
         </button>
       </div>
 
-      <section v-if="tab === 'kb'" class="finance-filters" aria-label="금융상품 필터">
-        <div
-          v-for="group in financeFilterGroups"
-          :key="group.key"
-          class="finance-filter-row"
-        >
-          <span class="finance-filter-label">{{ group.label }}</span>
-          <div class="finance-filter-options">
-            <button
-              v-for="option in group.options"
-              :key="option.value"
-              type="button"
-              class="finance-filter-chip"
-              :class="{ on: selectedFinanceFilters[group.key] === option.value }"
-              :aria-pressed="selectedFinanceFilters[group.key] === option.value"
-              @click="toggleFinanceFilter(group.key, option.value)"
-            >
-              <span class="chip-check" aria-hidden="true">✓</span>
-              {{ option.label }}
-            </button>
-          </div>
-        </div>
-      </section>
-
       <!-- 검색창 및 대상 필터 -->
       <div class="search-row">
         <div class="search-box">
@@ -70,6 +46,57 @@
             <span class="filter-toggle-arrow" aria-hidden="true">▾</span>
           </button>
         </div>
+      </div>
+
+      <div v-if="tab === 'kb'" class="finance-filter-wrap">
+        <button
+          type="button"
+          class="finance-filter-toggle"
+          :class="{ open: financeFiltersExpanded }"
+          :aria-expanded="financeFiltersExpanded"
+          aria-controls="finance-product-filters"
+          @click="financeFiltersExpanded = !financeFiltersExpanded"
+        >
+          <span class="finance-filter-toggle-title">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <path d="M2 4h12M4 8h8M6 12h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+            </svg>
+            필터
+            <span v-if="activeFinanceFilterCount" class="filter-count">
+              {{ activeFinanceFilterCount }}
+            </span>
+          </span>
+          <span class="finance-filter-chevron" aria-hidden="true">▾</span>
+        </button>
+
+        <section
+          v-show="financeFiltersExpanded"
+          id="finance-product-filters"
+          class="finance-filters"
+          aria-label="금융상품 필터"
+        >
+          <div
+            v-for="group in financeFilterGroups"
+            :key="group.key"
+            class="finance-filter-row"
+          >
+            <span class="finance-filter-label">{{ group.label }}</span>
+            <div class="finance-filter-options">
+              <button
+                v-for="option in group.options"
+                :key="option.value"
+                type="button"
+                class="finance-filter-chip"
+                :class="{ on: selectedFinanceFilters[group.key] === option.value }"
+                :aria-pressed="selectedFinanceFilters[group.key] === option.value"
+                @click="toggleFinanceFilter(group.key, option.value)"
+              >
+                <span class="chip-check" aria-hidden="true">✓</span>
+                {{ option.label }}
+              </button>
+            </div>
+          </div>
+        </section>
       </div>
 
       <!-- 청년 정책 리스트 -->
@@ -229,6 +256,7 @@ const tab = ref(props.initialTab);
 const keyword = ref('');
 const selectedTargetCodes = ref([]);
 const selectedFinanceFilters = ref({ transaction: '', product: '' });
+const financeFiltersExpanded = ref(false);
 const filtersExpanded = ref(false);
 const filterDropdownRef = ref(null);
 const filterToggleRef = ref(null);
@@ -259,6 +287,9 @@ const financeFilterGroups = [
     ],
   },
 ];
+const activeFinanceFilterCount = computed(() =>
+  Object.values(selectedFinanceFilters.value).filter(Boolean).length,
+);
 const targetFilters = [
   { code: '0014001', label: '중소기업' },
   { code: '0014002', label: '여성' },
@@ -556,11 +587,58 @@ function shortAmount(v) {
   outline: 2px solid var(--kb-yellow);
   outline-offset: 2px;
 }
+.finance-filter-wrap {
+  margin-top: 10px;
+}
+.finance-filter-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  height: 40px;
+  padding: 0 13px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--white);
+  color: var(--kb-gray);
+  font-size: 12.5px;
+  font-weight: 800;
+}
+.finance-filter-toggle-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.filter-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 19px;
+  height: 19px;
+  padding: 0 6px;
+  border-radius: 99px;
+  border: 1px solid var(--kb-yellow);
+  background: var(--yellow-tint);
+  color: var(--text-primary);
+  font-size: 10.5px;
+}
+.finance-filter-chevron {
+  font-size: 10px;
+  line-height: 1;
+  transition: transform 0.2s ease;
+}
+.finance-filter-toggle.open .finance-filter-chevron {
+  transform: rotate(180deg);
+}
+.finance-filter-toggle:focus-visible {
+  outline: 2px solid var(--kb-yellow);
+  outline-offset: 2px;
+}
 .finance-filters {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  margin-top: 12px;
+  margin-top: 8px;
   padding: 14px;
   border: 1px solid var(--border);
   border-radius: 16px;
@@ -608,9 +686,9 @@ function shortAmount(v) {
 }
 .finance-filter-chip.on {
   border-color: var(--kb-yellow);
-  background: var(--kb-yellow);
-  color: #332d20;
-  box-shadow: 0 3px 8px rgba(255, 188, 0, 0.22);
+  background: var(--yellow-tint);
+  color: var(--text-primary);
+  box-shadow: none;
 }
 .chip-check {
   width: 0;
