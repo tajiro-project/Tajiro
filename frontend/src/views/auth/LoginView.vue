@@ -78,7 +78,7 @@
 
 <script setup>
 import { ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import client, { withMock } from '@/api/client';
 import logoImg from '@/assets/img/logo.png';
 import simplebar from 'simplebar-vue';
@@ -87,6 +87,7 @@ const MOCK_EMAIL = 'test@tajiro.com';
 const MOCK_PASSWORD = 'test1234';
 
 const router = useRouter();
+const route = useRoute();
 const email = ref('');
 const password = ref('');
 const loading = ref(false);
@@ -107,7 +108,7 @@ async function handleLogin() {
     );
     const payload = data.data ?? data;
     localStorage.setItem('accessToken', payload.accessToken);
-    router.push('/home');
+    router.push(route.query.redirect || '/home');
   } catch {
     errorMessage.value = '이메일 또는 비밀번호가 일치하지 않습니다.';
   } finally {

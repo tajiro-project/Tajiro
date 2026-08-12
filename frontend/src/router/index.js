@@ -155,4 +155,13 @@ const router = createRouter({
   },
 });
 
+const PUBLIC_PATHS = ['/', '/login', '/register'];
+
+router.beforeEach((to) => {
+  const isLoggedIn = !!localStorage.getItem('accessToken');
+  if (!PUBLIC_PATHS.includes(to.path) && !isLoggedIn) {
+    return { path: '/login', query: { redirect: to.fullPath } };
+  }
+});
+
 export default router;
