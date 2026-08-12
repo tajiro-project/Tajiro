@@ -822,21 +822,50 @@ const filter = reactive({
 const SORT_OPTIONS = [
   { key: 'recommend', label: '추천순' },
   { key: 'distance', label: '거리순' },
-  { key: 'price', label: '가격 낮은 순' },
+  { key: 'price', label: '예산 적합순' },
   { key: 'infra', label: '인프라 많은 순' },
   { key: 'amenity', label: '편의시설 많은 순' },
   { key: 'area', label: '면적순' },
 ];
 
-const CONVERSION_RATE = 0.053; // 전월세 전활율(전국)
-function monthlyCost(p) {
-  return p.monthlyRent + (p.deposit * CONVERSION_RATE) / 12 + p.maintenanceFee;
+const MONTHLY_DEPOSIT_WEIGHT = 0.4;
+const MONTHLY_RENT_WEIGHT = 0.6;
+
+function lowerIsBetter(value, min, max) {
+  if (value == null || min == null || max == null || min > max) return 0;
+  if (min === max) return value === min ? 100 : 0;
+
+  const normalized = (value - min) / (max - min);
+  return Math.max(0, Math.min(100, (1 - normalized) * 100));
+}
+
+function costScore(p) {
+  const pref = preference.value;
+  if (!pref || p.tradeType == null || p.deposit == null) return 0;
+
+  const [minDeposit, maxDeposit] = pref.depositJeonseRange;
+  const [minRent, maxRent] = pref.monthlyRentRange;
+  const [minSale, maxSale] = pref.salePriceRange;
+
+  switch (p.tradeType) {
+    case '월세': {
+      const depositScore = lowerIsBetter(p.deposit, minDeposit, maxDeposit);
+      const rentScore = lowerIsBetter(p.monthlyRent, minRent, maxRent)
+      return depositScore * MONTHLY_DEPOSIT_WEIGHT + rentScore * MONTHLY_RENT_WEIGHT;
+    }
+    case '전세':
+      return lowerIsBetter(p.deposit, minDeposit, maxDeposit);
+    case '매매':
+      return lowerIsBetter(p.deposit, minSale, maxSale);
+    default:
+      return 0;
+  }
 }
 
 const SORT_SPECS = {
   recommend: { value: (p) => p.recommendScore, dir: 'desc' },
   distance: { value: (p) => p.distanceMeters, dir: 'asc' },
-  price: { value: monthlyCost, dir: 'asc' },
+  price: { value: costScore, dir: 'desc' },
   infra: { value: (p) => p.desiredInfraCount, dir: 'desc' },
   amenity: { value: (p) => p.desiredAmenityCount, dir: 'desc' },
   area: { value: (p) => p.areaM2, dir: 'desc' },
