@@ -14,7 +14,6 @@ import org.tajiro.property.domain.PropertyValueAnalysisResultVO;
 import org.tajiro.property.dto.PropertyListDTO;
 import org.tajiro.property.mapper.PropertyMapper;
 
-import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -23,35 +22,18 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class PropertyServiceImpl implements PropertyService{
-    private static final int REGION_RADIUS_METERS = 1500;
-
     private final PropertyMapper propertyMapper;
     private final PreferenceMapper preferenceMapper;
     private final PropertyScoreService propertyScoreService;
 
     @Override
-    public List<PropertyListDTO> getList(Long userId, BigDecimal centerLat, BigDecimal centerLng) {
-        List<PropertyVO> properties;
-
-        if(centerLat != null && centerLng != null) {
-            properties = findByRegion(centerLat, centerLng);
-        }
-        else {
-            properties = findMatchingProperties(userId);
-            fillMissingScores(userId, properties);
-        }
+    public List<PropertyListDTO> getList(Long userId) {
+        List<PropertyVO> properties = findMatchingProperties(userId);
+        fillMissingScores(userId, properties);
 
         return properties.stream()
                 .map(PropertyListDTO::of)
                 .collect(Collectors.toList());
-    }
-
-    private List<PropertyVO> findByRegion(BigDecimal centerLat, BigDecimal centerLng) {
-        return propertyMapper.getList(PropertySearchRequest.builder()
-                .refLat(centerLat)
-                .refLng(centerLng)
-                .radiusMeters(REGION_RADIUS_METERS)
-                .build());
     }
 
     private void fillMissingScores(Long userId, List<PropertyVO> properties) {
