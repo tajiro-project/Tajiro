@@ -9,5 +9,5 @@ import java.util.List;
 public interface PropertyService {
     List<PropertyVO> findMatchingProperties(Long userId);
 
-    List<PropertyListDTO> getList(Long userId, BigDecimal centerLat, BigDecimal centerLng);
+    List<PropertyListDTO> getList(Long userId);
 }
