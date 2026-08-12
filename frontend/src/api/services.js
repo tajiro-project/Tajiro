@@ -27,37 +27,23 @@ export const preferenceApi = {
 
 // ---------- finance ----------
 export const financeApi = {
-  list: (keyword) =>
-    withMock(
-      () => client.get('/financial-products', { params: { keyword } }),
-      mock.mockFinancialProducts,
-    ),
-  matches: (keyword) =>
-    withMock(
-      () => client.get('/financial-products/matches', { params: { keyword } }),
-      mock.mockFinancialProducts,
-    ),
-  detail: (id) =>
-    withMock(
-      () => client.get(`/financial-products/${id}`),
-      mock.mockFinancialProductDetail,
-    ),
+  list: async (keyword) =>
+    (await client.get('/financial-products', { params: { keyword } })).data,
+  matches: async (keyword) =>
+    (await client.get('/financial-products/matches', { params: { keyword } }))
+      .data,
+  detail: async (id) =>
+    (await client.get(`/financial-products/${id}`)).data,
 };
 
 // ---------- policy ----------
 export const policyApi = {
-  list: (regionCode, keyword) =>
-    withMock(
-      () => client.get('/policies', { params: { regionCode, keyword } }),
-      mock.mockPolicies,
-    ),
-  matches: (keyword) =>
-    withMock(
-      () => client.get('/policies/matches', { params: { keyword } }),
-      mock.mockPolicies,
-    ),
-  detail: (policyId) =>
-    withMock(() => client.get(`/policies/${policyId}`), mock.mockPolicyDetail),
+  list: async (regionCode, keyword) =>
+    (await client.get('/policies', { params: { regionCode, keyword } })).data,
+  matches: async (keyword) =>
+    (await client.get('/policies/matches', { params: { keyword } })).data,
+  detail: async (policyId) =>
+    (await client.get(`/policies/${policyId}`)).data,
 };
 
 // ---------- property ----------
