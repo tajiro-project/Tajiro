@@ -275,6 +275,15 @@
       <!-- 하단 버튼 -->
       <div class="bottom-bar">
         <button
+          v-if="step === 1"
+          class="btn-quick-setup"
+          type="button"
+          :disabled="isLoading || isSaving || !pref.workplace"
+          @click="openQuickSetupModal"
+        >
+          빠른 이동
+        </button>
+        <button
           v-if="step > 1"
           class="btn-prev"
           :disabled="isSaving"
@@ -308,6 +317,67 @@
       @close="isLocationPickerOpen = false"
       @select="selectWorkplace"
     />
+
+    <Teleport to="body">
+      <div
+        v-if="isQuickSetupModalOpen"
+        class="quick-modal-overlay"
+        @click.self="closeQuickSetupModal"
+      >
+        <div
+          class="quick-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="quick-setup-title"
+          aria-describedby="quick-setup-description"
+        >
+          <div class="quick-modal-head">
+            <div>
+              <p id="quick-setup-title" class="quick-modal-title">
+                어떤 조건으로 찾아볼까요?
+              </p>
+              <p id="quick-setup-description" class="quick-modal-description">
+                선택한 유형에 맞춰 나머지 가치관을 자동으로 설정해드려요.
+              </p>
+            </div>
+            <button
+              class="quick-modal-close"
+              type="button"
+              aria-label="간편 설정 닫기"
+              :disabled="isSaving"
+              @click="closeQuickSetupModal"
+            >
+              ×
+            </button>
+          </div>
+
+          <div class="quick-preset-list">
+            <button
+              v-for="preset in QUICK_SETUP_PRESETS"
+              :key="preset.key"
+              class="quick-preset-card"
+              type="button"
+              :disabled="isSaving"
+              @click="applyQuickSetup(preset.key)"
+            >
+              <span class="quick-preset-texts">
+                <span class="quick-preset-title">{{ preset.title }}</span>
+                <span class="quick-preset-description">
+                  {{ preset.description }}
+                </span>
+              </span>
+              <span class="quick-preset-action" aria-hidden="true">
+                {{ activeQuickPreset === preset.key ? '적용 중' : '›' }}
+              </span>
+            </button>
+          </div>
+
+          <p v-if="quickSetupError" class="quick-modal-error" role="alert">
+            {{ quickSetupError }}
+          </p>
+        </div>
+      </div>
+    </Teleport>
     <!-- </div> -->
   </div>
 </template>
@@ -345,6 +415,24 @@ const PREFERENCE_DRAFT_KEY = 'tajiro-preferences';
 const BASEMENT_UI_VALUE = '지하/반지하';
 const BASEMENT_API_VALUE = '지하/반지하';
 
+const QUICK_SETUP_PRESETS = [
+  {
+    key: 'DEFAULT',
+    title: '기본 조건으로 보기',
+    description: '조건을 넓게 설정해 다양한 매물을 확인해요.',
+  },
+  {
+    key: 'YOUTH',
+    title: '청년 맞춤으로 보기',
+    description: '원룸·오피스텔과 비용 부담이 적은 매물을 우선해요.',
+  },
+  {
+    key: 'WORKER',
+    title: '직장인 맞춤으로 보기',
+    description: '통근 거리와 생활 인프라가 좋은 매물을 우선해요.',
+  },
+];
+
 function createDefaultPreference() {
   return {
     workplace: null,
@@ -381,6 +469,9 @@ const isLoading = ref(false);
 const isSaving = ref(false);
 const hasSavedPreference = ref(false);
 const errorMessage = ref('');
+const isQuickSetupModalOpen = ref(false);
+const activeQuickPreset = ref(null);
+const quickSetupError = ref('');
 
 onMounted(loadPreference);
 
@@ -467,6 +558,71 @@ function selectWorkplace(location) {
   isLocationPickerOpen.value = false;
 }
 
+function openQuickSetupModal() {
+  if (!pref.workplace || isSaving.value) return;
+  quickSetupError.value = '';
+  isQuickSetupModalOpen.value = true;
+}
+
+function closeQuickSetupModal() {
+  if (isSaving.value) return;
+  isQuickSetupModalOpen.value = false;
+  activeQuickPreset.value = null;
+  quickSetupError.value = '';
+}
+
+function createQuickSetupPreference(presetKey) {
+  const workplace = pref.workplace ? { ...pref.workplace } : null;
+  const defaults = createDefaultPreference();
+
+  if (presetKey === 'YOUTH') {
+    return {
+      ...defaults,
+      workplace,
+      maxCommuteDistanceMeters: 5000,
+      housingTypes: ['원룸', '오피스텔'],
+      tradeTypes: ['월세', '전세'],
+      depositJeonseRange: [0, 20000],
+      monthlyRentRange: [0, 100],
+      areaRange: [0, 60],
+      floorPreference: ['1층', '2층 이상'],
+      desiredInfraCategories: ['SUBWAY', 'BUS_TERMINAL'],
+      desiredAmenityCategories: ['CONVENIENCE', 'MART', 'CAFE'],
+      priorities: [
+        { criterion: 'COST', priorityOrder: 1 },
+        { criterion: 'COMMUTE', priorityOrder: 2 },
+        { criterion: 'AMENITY', priorityOrder: 3 },
+      ],
+    };
+  }
+
+  if (presetKey === 'WORKER') {
+    return {
+      ...defaults,
+      workplace,
+      maxCommuteDistanceMeters: 5000,
+      housingTypes: ['아파트', '오피스텔'],
+      tradeTypes: ['월세', '전세', '매매'],
+      areaRange: [20, 120],
+      floorPreference: ['2층 이상'],
+      desiredInfraCategories: [
+        'SUBWAY',
+        'BUS_TERMINAL',
+        'TRAIN',
+        'HOSPITAL',
+      ],
+      desiredAmenityCategories: ['CONVENIENCE', 'MART', 'PARKING'],
+      priorities: [
+        { criterion: 'COMMUTE', priorityOrder: 1 },
+        { criterion: 'INFRA', priorityOrder: 2 },
+        { criterion: 'COST', priorityOrder: 3 },
+      ],
+    };
+  }
+
+  return { ...defaults, workplace };
+}
+
 function copyList(value, fallback) {
   return Array.isArray(value) ? [...value] : [...fallback];
 }
@@ -539,6 +695,42 @@ function toRequestPayload() {
   };
 }
 
+async function savePreference() {
+  const requestPayload = toRequestPayload();
+  const savedPreference = hasSavedPreference.value
+    ? await preferenceApi.update(requestPayload)
+    : await preferenceApi.create(requestPayload);
+
+  applyPreference(savedPreference);
+  hasSavedPreference.value = true;
+  localStorage.removeItem(PREFERENCE_DRAFT_KEY);
+  await router.push('/properties');
+}
+
+async function applyQuickSetup(presetKey) {
+  if (!pref.workplace || isSaving.value) return;
+
+  isSaving.value = true;
+  activeQuickPreset.value = presetKey;
+  quickSetupError.value = '';
+  errorMessage.value = '';
+
+  try {
+    applyPreference(createQuickSetupPreference(presetKey));
+    await savePreference();
+  } catch (error) {
+    const message = getApiErrorMessage(
+      error,
+      '간편 설정을 저장하지 못했습니다. 잠시 후 다시 시도해주세요.',
+    );
+    quickSetupError.value = message;
+    errorMessage.value = message;
+  } finally {
+    isSaving.value = false;
+    activeQuickPreset.value = null;
+  }
+}
+
 function saveDraft() {
   localStorage.setItem(PREFERENCE_DRAFT_KEY, JSON.stringify(pref));
 }
@@ -599,14 +791,7 @@ async function onNext() {
   saveDraft();
 
   try {
-    const requestPayload = toRequestPayload();
-    const savedPreference = hasSavedPreference.value
-      ? await preferenceApi.update(requestPayload)
-      : await preferenceApi.create(requestPayload);
-    applyPreference(savedPreference);
-    hasSavedPreference.value = true;
-    localStorage.removeItem(PREFERENCE_DRAFT_KEY);
-    await router.push('/properties');
+    await savePreference();
   } catch (error) {
     errorMessage.value = getApiErrorMessage(
       error,
@@ -869,6 +1054,7 @@ async function onNext() {
 .fixed-footer {
   flex-shrink: 0;
   width: 100%;
+  border-top: 1px solid var(--border);
   background: var(--white);
 }
 .fixed-footer :deep(.tab-bar) {
@@ -878,8 +1064,20 @@ async function onNext() {
   display: flex;
   gap: 10px;
   padding: 12px 16px 16px;
-  border-top: 1px solid var(--border);
   background: var(--white);
+}
+.bottom-bar .btn-cta {
+  flex: 1;
+  width: auto;
+}
+.btn-quick-setup {
+  flex: 0 0 88px;
+  height: 46px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--white);
+  font-size: 14px;
+  font-weight: 700;
 }
 .btn-prev {
   flex: 0 0 88px;
@@ -891,6 +1089,7 @@ async function onNext() {
   font-weight: 700;
 }
 .btn-prev:disabled,
+.btn-quick-setup:disabled,
 .btn-cta:disabled {
   cursor: not-allowed;
   opacity: 0.55;
@@ -898,5 +1097,109 @@ async function onNext() {
 
 .field-input[readonly] {
   cursor: pointer;
+}
+
+.quick-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 130;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(33, 30, 24, 0.5);
+}
+.quick-modal {
+  width: 100%;
+  max-width: 340px;
+  padding: 22px 18px 18px;
+  border-radius: 20px;
+  background: var(--white);
+}
+.quick-modal-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.quick-modal-title {
+  font-size: 17px;
+  font-weight: 900;
+  color: var(--text-primary);
+}
+.quick-modal-description {
+  margin-top: 6px;
+  color: var(--kb-gray);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+.quick-modal-close {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  margin: -4px -4px 0 auto;
+  border-radius: 50%;
+  background: var(--bg);
+  color: var(--kb-gray);
+  font-size: 22px;
+  line-height: 1;
+}
+.quick-preset-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 20px;
+}
+.quick-preset-card {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 72px;
+  gap: 10px;
+  padding: 13px 14px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--white);
+  text-align: left;
+}
+.quick-preset-card:hover:not(:disabled),
+.quick-preset-card:focus-visible {
+  border-color: var(--kb-yellow);
+  background: var(--yellow-tint);
+}
+.quick-preset-card:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+.quick-preset-texts {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+}
+.quick-preset-title {
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 800;
+}
+.quick-preset-description {
+  color: var(--kb-silver);
+  font-size: 11.5px;
+  line-height: 1.45;
+}
+.quick-preset-action {
+  flex-shrink: 0;
+  color: #a8842c;
+  font-size: 24px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.quick-preset-card:disabled .quick-preset-action {
+  font-size: 11px;
+}
+.quick-modal-error {
+  margin-top: 12px;
+  color: var(--danger);
+  font-size: 12px;
+  line-height: 1.45;
 }
 </style>
