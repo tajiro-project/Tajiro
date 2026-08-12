@@ -9,6 +9,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.tajiro.policy.domain.PolicyVO;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Builder
@@ -31,6 +32,10 @@ public class PolicyDTO {
     private String description;
     private String sumDescription;
     private String sbizCd;
+    //임베딩
+    private String categoryCode;
+    private String categoryName;
+    private BigDecimal categorySimilarity;
 
 
 
@@ -52,6 +57,9 @@ public class PolicyDTO {
                 .description(vo.getDescription())
                 .sumDescription(vo.getSumDescription())
                 .sbizCd(vo.getSbizCd())
+                .categoryCode(vo.getCategoryCode())
+                .categoryName(vo.getCategoryName())
+                .categorySimilarity(vo.getCategorySimilarity())
                 .build();
     }
 }

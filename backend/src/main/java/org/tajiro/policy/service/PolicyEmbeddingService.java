@@ -1,4 +1,7 @@
 package org.tajiro.policy.service;
 
-public class PolicyEmbeddingService {
+import org.tajiro.policy.dto.PolicyEmbeddingResultDTO;
+
+public interface PolicyEmbeddingService {
+    PolicyEmbeddingResultDTO initializeAndClassify(int limit);
 }

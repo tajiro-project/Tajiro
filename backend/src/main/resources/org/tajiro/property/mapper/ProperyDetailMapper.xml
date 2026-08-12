@@ -7,31 +7,33 @@
     <!-- 1. 매물 정보 조회 (property 테이블 1:1 매핑) -->
     <select id="selectPropertyDetail" parameterType="long" resultType="PropertyDetailVO">
         SELECT
-            id,
-            source_listing_id     AS sourceListingId,
-            building_id          AS buildingId,
-            title,
-            property_type        AS propertyType,
-            trade_type           AS tradeType,
-            deposit,
-            monthly_rent         AS monthlyRent,
-            maintenance_fee      AS maintenanceFee,
-            area_m2              AS areaM2,
-            floor_info           AS floorInfo,
-            room_number          AS roomNumber,
-            address,
-            room_num             AS roomNum,
-            bathroom_num         AS bathroomNum,
-            park_availability    AS parkAvailability,
-            transaction_status   AS transactionStatus,
-            property_description AS propertyDescription,
-            available_date       AS availableDate,
-            move_in_date         AS moveInDate,
-            update_date          AS updateDate,
-            discussion_status    AS discussionStatus,
-            dong
-        FROM property
-        WHERE id = #{id}
+            p.id,
+            p.source_listing_id     AS sourceListingId,
+            p.building_id          AS buildingId,
+            b.sigungu_cd           AS sigunguCd,
+            p.title,
+            p.property_type        AS propertyType,
+            p.trade_type           AS tradeType,
+            p.deposit,
+            p.monthly_rent         AS monthlyRent,
+            p.maintenance_fee      AS maintenanceFee,
+            p.area_m2              AS areaM2,
+            p.floor_info           AS floorInfo,
+            p.room_number          AS roomNumber,
+            p.address,
+            p.room_num             AS roomNum,
+            p.bathroom_num         AS bathroomNum,
+            p.park_availability    AS parkAvailability,
+            p.transaction_status   AS transactionStatus,
+            p.property_description AS propertyDescription,
+            p.available_date       AS availableDate,
+            p.move_in_date         AS moveInDate,
+            p.update_date          AS updateDate,
+            p.discussion_status    AS discussionStatus,
+            p.dong
+        FROM property p
+        JOIN building b ON b.id = p.building_id
+        WHERE p.id = #{id}
     </select>
 
     <!-- 2. 사용자별 매물 추천 점수 별도 조회 -->

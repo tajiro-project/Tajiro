@@ -8,6 +8,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
@@ -27,5 +29,11 @@ public class PolicyVO{
     private String sumDescription;
     private String sbizCd;
 
+    //임베딩
+    private Long categoryId;
+    private String categoryCode;
+    private String categoryName;
+    private BigDecimal categorySimilarity;
+    private String embedding;
 }
 

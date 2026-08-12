@@ -21,4 +21,5 @@ public class BuildingVO {
     private String pnu;
     private BigDecimal latitude;  // 매물 위치 기준 위도
     private BigDecimal longitude; // 매물 위치 기준 경도
+    private String sigunguCd;
 }
