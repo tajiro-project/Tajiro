@@ -9,6 +9,7 @@ import org.tajiro.property.domain.PropertyDetailVO;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -34,19 +35,20 @@ public class PropertyDetailDTO {
     private LocalDateTime availableDate;
     private Boolean discussionStatus;
 
-    private Integer recommendScore; // API 응답 데이터
-    private Boolean isFavorite;     // API 응답 데이터
+    private Integer recommendScore;         // API 응답 데이터 (추천 점수)
+    private Integer workplaceDistanceMeters; // ✨ API 응답 데이터 (직장 거리 - 미터)
+    private Boolean isFavorite;             // API 응답 데이터
 
     private List<String> images;
     private List<InfraSummaryDTO> infraSummary;
 
-    // ✨ recommendScore를 파라미터로 추가 수용
     public static PropertyDetailDTO of(
             PropertyDetailVO vo,
             List<String> images,
             List<InfraSummaryDTO> infraSummary,
             Boolean isFavorite,
-            Integer recommendScore
+            Integer recommendScore,
+            Integer workplaceDistanceMeters // ✨ 파라미터 추가
     ) {
         if (vo == null) {
             return null;
@@ -71,7 +73,8 @@ public class PropertyDetailDTO {
                 .moveInDate(vo.getMoveInDate())
                 .availableDate(vo.getAvailableDate())
                 .discussionStatus(vo.getDiscussionStatus())
-                .recommendScore(recommendScore) // ✨ 전달받은 값 바인딩
+                .recommendScore(recommendScore)
+                .workplaceDistanceMeters(workplaceDistanceMeters) // ✨ 바인딩 추가
                 .isFavorite(isFavorite)
                 .images(images)
                 .infraSummary(infraSummary)

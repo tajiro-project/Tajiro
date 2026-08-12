@@ -176,7 +176,9 @@
             />
             통근
           </p>
-          <p class="mini-value">{{ p.commuteTime ?? '정보 없음' }}</p>
+          <p class="mini-value">
+            {{ formatCommuteTime(p.workplaceDistanceMeters) }}
+          </p>
         </div>
       </div>
 
@@ -634,6 +636,24 @@ const goToFinancialDetail = (id) => {
 const goToPolicyDetail = (id) => {
   if (!id) return;
   router.push({ name: 'policy-detail', params: { id } });
+};
+
+const formatCommuteTime = (data) => {
+  // 평균 도보 분속
+  const SPEED_PER_MINUTE = 80;
+
+  // 굴곡도 1.25배 적용
+  const actualDistance = data * 1.25;
+
+  // 값이 null이나 undefined인 경우 예외 처리
+  if (data === null || data === undefined) return '정보 없음';
+
+  // 도보 분속 계산 (올림 처리하여 최소 1분 이상 표시)
+  const minutes = Math.ceil(actualDistance / SPEED_PER_MINUTE);
+
+  if (minutes === 0) return '1분 미만';
+
+  return `약 ${minutes}분`;
 };
 
 // 이미지 캐러셀 상태
