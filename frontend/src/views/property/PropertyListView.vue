@@ -64,7 +64,7 @@
           />
         </svg>
       </button>
-      <div v-if="!isRegionSearch" class="filter-chips" @wheel="onWheelX">
+      <div class="filter-chips" @wheel="onWheelX">
         <button
           class="fchip"
           :class="{ on: commuteChipOn }"
@@ -110,7 +110,7 @@
       </div>
 
       <div
-        v-if="!isRegionSearch && filter.sort === 'recommend'"
+        v-if="filter.sort === 'recommend'"
         class="priority-row"
         @click="openSheet('priority')"
         @wheel="onWheelX"
@@ -510,7 +510,7 @@
     @update:model-value="closeSheet"
   >
     <ul class="sort-list">
-      <li v-for="o in sortOptions" :key="o.key">
+      <li v-for="o in SORT_OPTIONS" :key="o.key">
         <button
           class="sort-item"
           :class="{ on: filter.sort === o.key }"
@@ -657,7 +657,7 @@ async function fetchProperties() {
   items.value = [];
   try {
     const { centerLat, centerLng } = route.query;
-    items.value = await propertyApi.getList({ centerLat, centerLng });
+    items.value = await propertyApi.getList();
   } catch (e) {
     if (e.response?.status === 404) {
       router.replace('/preferences/1');
@@ -681,12 +681,12 @@ onActivated(async () => {
     return;
   }
   
-  filter.sort = isRegionSearch.value ? 'distance' : 'recommend';
+  filter.sort = 'recommend';
   clearSelection();
   closePanel();
   sheetOffset.value = 0;
 
-  if (!isRegionSearch.value) await loadPreference();
+  await loadPreference();
   await fetchProperties();
 });
 
@@ -816,7 +816,7 @@ const filter = reactive({
   maxWorkplaceDistanceMeters: DEFAULT_DISTANCE,
   workplace: null,
   hasCar: false,
-  sort: route.query.centerLat != null ? 'distance' : 'recommend',
+  sort: 'recommend',
 });
 
 const SORT_OPTIONS = [
@@ -843,18 +843,6 @@ const SORT_SPECS = {
 };
 
 const priorityChips = ref([]);
-
-const isRegionSearch = computed(
-  () => route.query.centerLat != null && route.query.centerLng != null,
-);
-
-const REGION_HIDDEN_SORTS = ['recommend', 'infra', 'amenity'];
-
-const sortOptions = computed(() =>
-  isRegionSearch.value
-    ? SORT_OPTIONS.filter((o) => !REGION_HIDDEN_SORTS.includes(o.key))
-    : SORT_OPTIONS,
-);
 
 const criterionLabel = (c) =>
   PRIORITY_OPTIONS.find((o) => o.criterion === c)?.title ?? c;
@@ -1001,22 +989,17 @@ const markers = computed(() => {
     .filter((m) => !selectedBuildingId.value || m.selected);
 });
 
-const ALL_CATEGORY_KEYS = [
-  ...INFRA_CATEGORIES.map((c) => c.key),
-  ...AMENITY_CATEGORIES.map((c) => c.key),
-];
 
-const layerCategories = computed(() =>
-  isRegionSearch.value
-    ? ALL_CATEGORY_KEYS
-    : [...filter.desiredInfraCategories, ...filter.desiredAmenityCategories],
-);
+const layerCategories = computed(() => [
+  ...filter.desiredInfraCategories,
+  ...filter.desiredAmenityCategories
+]);
 const mapLayers = ref([...layerCategories.value]);
 
 watch(
   layerCategories,
   (v) => {
-    mapLayers.value = isRegionSearch.value ? [] : [...v];
+    mapLayers.value = [...v];
   },
   { immediate: true },
 );
