@@ -545,7 +545,7 @@ const mockBenefitPreview = [
 
 .menu-card.primary {
   width: 100%;
-  background: var(--white);
+  background: #fffdf7;
   border-color: var(--border);
   box-shadow: var(--shadow-card);
 }

@@ -52,7 +52,16 @@
 
       <section class="priority-card">
         <p class="section-title">내 가치관 우선순위</p>
-        <div class="priority-chips">
+        <p
+          v-if="sortedPriorities.length === 0"
+          class="priority-empty"
+        >
+          가치관 우선순위를 설정해주세요
+        </p>
+        <div
+          v-else
+          class="priority-chips"
+        >
           <span
             class="priority-chip"
             v-for="priority in sortedPriorities"
@@ -342,6 +351,11 @@ async function handleWithdraw() {
   display: flex;
   gap: 6px;
   flex-wrap: wrap;
+}
+
+.priority-empty {
+  font-size: 12.5px;
+  color: var(--kb-silver);
 }
 
 .priority-chip {
