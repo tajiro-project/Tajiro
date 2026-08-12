@@ -34,9 +34,11 @@
         WHERE id = #{id}
     </select>
 
-    <!-- 2. 사용자별 매물 추천 점수 별도 조회 -->
-    <select id="selectRecommendScore" resultType="integer">
-        SELECT recommend_score
+    <!-- 2. 사용자별 매물 분석 결과(추천 점수 & 직장 거리) 조회 -->
+    <select id="selectPropertyValueAnalysisResult" resultType="PropertyValueAnalysisResultVO">
+        SELECT
+            recommend_score           AS recommendScore,
+            workplace_distance_meters AS workplaceDistanceMeters
         FROM property_value_analysis_result
         WHERE property_id = #{propertyId}
           AND user_id = #{userId}

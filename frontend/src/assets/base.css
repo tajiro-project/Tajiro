@@ -135,7 +135,7 @@ img {
   position: relative;
   width: 100%;
   min-width: 375px;
-  max-width: 600px;
+  max-width: 400px;
   height: 100%;
   margin: 0 auto;
   background: var(--bg);
