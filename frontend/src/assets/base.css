@@ -134,7 +134,8 @@ img {
 .app-frame {
   position: relative;
   width: 100%;
-  max-width: 375px;
+  min-width: 375px;
+  max-width: 600px;
   height: 100%;
   margin: 0 auto;
   background: var(--bg);
