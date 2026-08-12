@@ -2,6 +2,13 @@
   <div class="single-slider">
     <div class="track">
       <div class="fill" :style="fillStyle" />
+      <span
+        v-for="(mark, index) in marks"
+        :key="`tick-${index}`"
+        class="track-mark"
+        :style="markPositionStyle(index)"
+        aria-hidden="true"
+      />
       <input
         type="range"
         :min="min"
@@ -13,7 +20,14 @@
       />
     </div>
     <div v-if="marks.length" class="marks" aria-hidden="true">
-      <span v-for="(mark, index) in marks" :key="index">{{ mark }}</span>
+      <span
+        v-for="(mark, index) in marks"
+        :key="index"
+        class="mark-label"
+        :style="markLabelStyle(index)"
+      >
+        {{ mark }}
+      </span>
     </div>
   </div>
 </template>
@@ -41,6 +55,18 @@ const fillStyle = computed(() => {
 
 function onInput(event) {
   emit('update:modelValue', Number(event.target.value));
+}
+
+function markPositionStyle(index) {
+  const denominator = Math.max(props.marks.length - 1, 1);
+  return { left: `${(index / denominator) * 100}%` };
+}
+
+function markLabelStyle(index) {
+  const style = markPositionStyle(index);
+  const lastIndex = props.marks.length - 1;
+  const translate = index === 0 ? '0' : index === lastIndex ? '-100%' : '-50%';
+  return { ...style, transform: `translateX(${translate})` };
 }
 </script>
 
@@ -74,6 +100,17 @@ function onInput(event) {
   background: var(--kb-yellow);
 }
 
+.track-mark {
+  position: absolute;
+  z-index: 1;
+  width: 2px;
+  height: 9px;
+  border-radius: 1px;
+  background: #c8c3b8;
+  transform: translate(-50%);
+  pointer-events: none;
+}
+
 input[type='range'] {
   position: absolute;
   inset: 0;
@@ -83,6 +120,7 @@ input[type='range'] {
   -webkit-appearance: none;
   background: transparent;
   cursor: pointer;
+  z-index: 2;
 }
 
 input[type='range']::-webkit-slider-runnable-track {
@@ -127,10 +165,16 @@ input[type='range']:focus-visible::-moz-range-thumb {
 }
 
 .marks {
-  display: flex;
-  justify-content: space-between;
+  position: relative;
+  height: 14px;
   margin-top: 6px;
   color: var(--kb-silver);
   font-size: 11px;
+}
+
+.mark-label {
+  position: absolute;
+  top: 0;
+  white-space: nowrap;
 }
 </style>
