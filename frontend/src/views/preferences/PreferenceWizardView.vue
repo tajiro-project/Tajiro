@@ -307,6 +307,7 @@
     </div>
 
     <KakaoLocation
+      v-if="step === 1"
       :open="isLocationPickerOpen"
       :initial-location="pref.workplace"
       @close="isLocationPickerOpen = false"
@@ -378,7 +379,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { getApiErrorMessage } from '@/api/client';
 import { preferenceApi } from '@/api/services';
@@ -469,6 +470,12 @@ const activeQuickPreset = ref(null);
 const quickSetupError = ref('');
 
 onMounted(loadPreference);
+
+watch(step, (currentStep) => {
+  if (currentStep !== 1) {
+    isLocationPickerOpen.value = false;
+  }
+});
 
 const commuteDistanceLabel = computed(() => {
   const kilometers = pref.maxCommuteDistanceMeters / 1000;
