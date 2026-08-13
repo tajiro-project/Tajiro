@@ -20,25 +20,9 @@
           <input
             v-model="keyword"
             type="search"
-            placeholder="예) 백룡로57번길 126, 자양동, 우송에이스빌"
+            placeholder="예) 서울특별시 강남구 테헤란로 152"
           />
-          <button type="submit" aria-label="검색">
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-              <circle
-                cx="8"
-                cy="8"
-                r="5.5"
-                stroke="#8a8d8f"
-                stroke-width="1.6"
-              />
-              <path
-                d="M12.5 12.5L16 16"
-                stroke="#8a8d8f"
-                stroke-width="1.6"
-                stroke-linecap="round"
-              />
-            </svg>
-          </button>
+          <button type="submit">검색</button>
         </form>
 
         <div class="body">
@@ -112,11 +96,6 @@ const tips = [
   { label: '사서함명 + 번호', example: '대전동구우체국사서함 1~100' },
 ];
 
-/*
- * 목데이터. 카카오 주소검색을 붙이기 전까지 사용한다.
- * 좌표는 실제 등록된 건물 좌표라, 이 주소로 등록하면 인프라·안전 정보가
- * 이미 집계된 건물에 연결된다.
- */
 const MOCK_ADDRESSES = [
   {
     roadAddress: '대전광역시 동구 백룡로57번길 126',
@@ -154,7 +133,97 @@ const MOCK_ADDRESSES = [
     buildingName: '자양그린아파트',
     dongName: '자양동',
     isApartment: true,
-    dongs: ['101동', '102동', '103동'],
+    dongs: ['101동', '102동', '103동', '104동', '105동', '106동'],
+    lat: 36.3411405,
+    lng: 127.4507628,
+  },
+  {
+    roadAddress: '대전광역시 동구 자양동 200-13',
+    jibunAddress: '대전광역시 동구 자양동 200-13',
+    buildingName: '자양그린아파트',
+    dongName: '자양동',
+    isApartment: true,
+    dongs: ['101동', '102동', '103동', '104동', '105동', '106동'],
+    lat: 36.3411405,
+    lng: 127.4507628,
+  },
+  {
+    roadAddress: '대전광역시 동구 자양동 200-13',
+    jibunAddress: '대전광역시 동구 자양동 200-13',
+    buildingName: '자양그린아파트',
+    dongName: '자양동',
+    isApartment: true,
+    dongs: ['101동', '102동', '103동', '104동', '105동', '106동'],
+    lat: 36.3411405,
+    lng: 127.4507628,
+  },
+  {
+    roadAddress: '대전광역시 동구 자양동 200-13',
+    jibunAddress: '대전광역시 동구 자양동 200-13',
+    buildingName: '자양그린아파트',
+    dongName: '자양동',
+    isApartment: true,
+    dongs: ['101동', '102동', '103동', '104동', '105동', '106동'],
+    lat: 36.3411405,
+    lng: 127.4507628,
+  },
+  {
+    roadAddress: '대전광역시 동구 자양동 200-13',
+    jibunAddress: '대전광역시 동구 자양동 200-13',
+    buildingName: '자양그린아파트',
+    dongName: '자양동',
+    isApartment: true,
+    dongs: ['101동', '102동', '103동', '104동', '105동', '106동'],
+    lat: 36.3411405,
+    lng: 127.4507628,
+  },
+  {
+    roadAddress: '대전광역시 동구 자양동 200-13',
+    jibunAddress: '대전광역시 동구 자양동 200-13',
+    buildingName: '자양그린아파트',
+    dongName: '자양동',
+    isApartment: true,
+    dongs: ['101동', '102동', '103동', '104동', '105동', '106동'],
+    lat: 36.3411405,
+    lng: 127.4507628,
+  },
+  {
+    roadAddress: '대전광역시 동구 자양동 200-13',
+    jibunAddress: '대전광역시 동구 자양동 200-13',
+    buildingName: '자양그린아파트',
+    dongName: '자양동',
+    isApartment: true,
+    dongs: ['101동', '102동', '103동', '104동', '105동', '106동'],
+    lat: 36.3411405,
+    lng: 127.4507628,
+  },
+  {
+    roadAddress: '대전광역시 동구 자양동 200-13',
+    jibunAddress: '대전광역시 동구 자양동 200-13',
+    buildingName: '자양그린아파트',
+    dongName: '자양동',
+    isApartment: true,
+    dongs: ['101동', '102동', '103동', '104동', '105동', '106동'],
+    lat: 36.3411405,
+    lng: 127.4507628,
+  },
+  {
+    roadAddress: '대전광역시 동구 자양동 200-13',
+    jibunAddress: '대전광역시 동구 자양동 200-13',
+    buildingName: '자양그린아파트',
+    dongName: '자양동',
+    isApartment: true,
+    dongs: ['101동', '102동', '103동', '104동', '105동', '106동'],
+    lat: 36.3411405,
+    lng: 127.4507628,
+  },
+  {
+    roadAddress: '대전광역시 동구 자양동 200-13',
+    jibunAddress: '대전광역시 동구 자양동 200-13',
+    buildingName: '자양그린아파트',
+    dongName: '자양동',
+    isApartment: true,
+    dongs: ['101동', '102동', '103동', '104동', '105동', '106동'],
     lat: 36.3411405,
     lng: 127.4507628,
   },
@@ -191,7 +260,7 @@ function select(addr) {
 }
 .addr-search {
   width: min(100%, 480px);
-  max-height: calc(100dvh - 40px);
+  height: min(560px, calc(100dvh - 40px));
   display: flex;
   flex-direction: column;
   background: var(--white);
@@ -207,7 +276,7 @@ function select(addr) {
   }
   .addr-search {
     width: 100%;
-    max-height: 92dvh;
+    height: 60dvh;
     border-radius: 22px 22px 0 0;
   }
 }
@@ -231,33 +300,39 @@ function select(addr) {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin: 0 16px;
-  padding: 0 4px 0 12px;
-  height: 46px;
-  border: 1px solid #d8d5cf;
-  border-radius: 4px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
 }
 .search-row input {
   flex: 1;
-  border: none;
+  height: 46px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
   font-size: 13.5px;
   color: var(--text-primary);
+  background: var(--white);
 }
 .search-row input::placeholder {
   color: #b6b3ad;
 }
+.search-row input:focus {
+  outline: none;
+  border-color: var(--kb-yellow);
+}
 .search-row button {
-  display: flex;
-  padding: 8px;
-  border: none;
-  background: none;
+  flex: 0 0 60px;
+  height: 46px;
+  border-radius: 12px;
+  background: var(--kb-yellow);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 700;
   cursor: pointer;
 }
 .body {
   flex: 1;
   overflow-y: auto;
-  border-top: 1px solid var(--border);
-  margin-top: 14px;
 }
 .results {
   display: flex;
@@ -272,9 +347,13 @@ function select(addr) {
   padding: 14px 16px;
   text-align: left;
   border: none;
-  border-bottom: 1px solid var(--bg);
+  border-bottom: 1px solid var(--border);
   background: none;
   cursor: pointer;
+  transition: background 0.15s;
+}
+.result:hover {
+  background: var(--yellow-tint);
 }
 .r-road {
   font-size: 13.5px;
@@ -311,5 +390,21 @@ function select(addr) {
   margin-top: 4px;
   font-size: 13px;
   color: #3d6bd6;
+}
+.as-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  color: #8b8b8b;
+}
+.as-footer b {
+  color: #333;
+}
+.as-divider {
+  color: var(--border);
 }
 </style>

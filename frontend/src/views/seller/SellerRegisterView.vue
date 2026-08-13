@@ -21,7 +21,7 @@
           type="text"
           readonly
           :value="form.address?.roadAddress ?? ''"
-          placeholder="예) 대전광역시 동구 백룡로57번길 126"
+          placeholder="예) 서울특별시 강남구 테헤란로 152"
           @click="isAddressOpen = true"
         />
         <div class="pair-row">
@@ -38,9 +38,11 @@
           <input
             v-model="form.roomNumber"
             class="field-input"
-            type="text"
-            placeholder="예) 201호"
+            type="number"
+            min="1"
+            placeholder="예) 101"
           />
+          <span class="unit">호</span>
         </div>
       </div>
 
@@ -68,7 +70,7 @@
             class="field-input"
             type="number"
             min="1"
-            placeholder="예) 3"
+            placeholder="예) 1"
           />
 
           <div v-else-if="form.floorType === '지하'" class="prefix-input">
@@ -77,7 +79,7 @@
               v-model="form.floor"
               type="number"
               min="1"
-              placeholder="예) 2"
+              placeholder="예) 1"
             />
           </div>
           <div v-else class="fixed-input">{{ form.floorType }}</div>
@@ -87,7 +89,7 @@
             class="field-input"
             type="number"
             min="1"
-            placeholder="예) 12"
+            placeholder="예) 10"
           />
           <span class="unit">층</span>
         </div>
@@ -99,7 +101,7 @@
           v-model="form.buildingName"
           class="field-input"
           type="text"
-          placeholder="예) 우송에이스빌"
+          placeholder="예) ○○아파트"
         />
       </div>
 
@@ -121,7 +123,10 @@
 
     <div v-else-if="step === 2" class="content">
       <div class="field">
-        <label class="section-title">면적(m²)<span class="req">*</span></label>
+        <label class="section-title">
+          면적(m²)<span class="req">*</span>
+          <span v-if="pyeong" class="pyeong">≈ {{ pyeong }}평</span>
+        </label>
         <input
           v-model="form.areaM2"
           class="field-input"
@@ -215,14 +220,14 @@
             협의 가능
           </label>
         </div>
-        <input v-model="form.moveInDate" class="field-input" type="date" />
+        <DatePicker v-model="form.moveInDate" title="입주가능일" />
       </div>
 
       <div class="field">
         <label class="section-title"
           >사용승인일<span class="req">*</span></label
         >
-        <input v-model="form.availableDate" class="field-input" type="date" />
+        <DatePicker v-model="form.availableDate" title="사용승인일" />
       </div>
     </div>
 
@@ -363,6 +368,7 @@ import { computed, reactive, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import AddressSearchSheet from '@/components/AddressSearchSheet.vue';
 import AptDongSheet from '@/components/AptDongSheet.vue';
+import DatePicker from '@/components/DatePicker.vue';
 import { sellerApi } from '@/api/services';
 
 const route = useRoute();
@@ -407,6 +413,12 @@ const isAddressOpen = ref(false);
 const isDongOpen = ref(false);
 const dongOptions = ref([]);
 const isSubmitting = ref(false);
+
+const pyeong = computed(() => {
+  const v = parseFloat(form.areaM2);
+  if (!v || v <= 0) return '';
+  return Math.round((v / 3.3058) * 10) / 10;
+});
 
 const canNext = computed(() => {
   if (step.value === 1) {
@@ -576,6 +588,12 @@ async function onNext() {
 .slash-label {
   color: var(--kb-silver);
   font-weight: 400;
+}
+.pyeong {
+  margin-left: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--kb-silver);
 }
 .req {
   color: var(--danger);
