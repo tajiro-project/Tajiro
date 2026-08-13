@@ -122,22 +122,21 @@
         <li v-for="f in paginatedProducts" :key="f.id">
           <!-- <li v-for="f in filteredProducts" :key="f.id"> -->
           <button
-            class="item-card"
+            class="item-card finance-card"
             @click="$router.push(`/financial-products/${f.id}`)"
           >
             <p class="item-title">{{ f.productName }}</p>
-            <!-- <p class="item-amount">
-              한도 {{ f.maxLimitAmount.toLocaleString() }}만원 · 연
-              {{ f.minRate.toFixed(1) }}%
-            </p> -->
-            <div class="item-meta">
-              <!-- <p class="item-sub">무보증 월세 자금 · 만 19~34세</p> -->
-
-              <span class="rate-range">
-                연 {{ Number(f.minRate).toFixed(1) }}% ~
-                {{ Number(f.maxRate).toFixed(1) }}%
+            <p class="finance-summary">
+              <span v-if="formatRateRange(f)" class="rate-range">
+                연 {{ formatRateRange(f) }}
               </span>
-            </div>
+              <span
+                v-if="formatLoanLimit(f.loanLimit)"
+                class="loan-limit"
+              >
+                {{ formatLoanLimit(f.loanLimit) }}
+              </span>
+            </p>
           </button>
         </li>
       </ul>
@@ -441,6 +440,30 @@ function compareSimilarityDescending(a, b) {
   if (!aHasValue) return 1;
   if (!bHasValue) return -1;
   return bValue - aValue;
+}
+
+function formatRate(value) {
+  const rate = Number(value);
+  if (!Number.isFinite(rate) || rate <= 0) return '';
+  return `${rate.toFixed(2).replace(/\.?0+$/, '')}%`;
+}
+
+function formatRateRange(product) {
+  const minRate = formatRate(product.minRate);
+  const maxRate = formatRate(product.maxRate);
+
+  if (!minRate) return maxRate;
+  if (!maxRate || minRate === maxRate) return minRate;
+  return `${minRate} ~ ${maxRate}`;
+}
+
+function formatLoanLimit(value) {
+  const loanLimit = String(value ?? '');
+  const parenthesisIndex = loanLimit.indexOf('(');
+  return (parenthesisIndex === -1
+    ? loanLimit
+    : loanLimit.slice(0, parenthesisIndex)
+  ).trim();
 }
 
 async function toggleFilterDropdown() {
@@ -747,6 +770,33 @@ function shortAmount(v) {
   border: 1px solid var(--border);
   border-radius: 14px;
 }
+.finance-card {
+  gap: 8px;
+  min-height: 88px;
+  padding: 18px 20px;
+  border-radius: 15px;
+  box-shadow: 0 2px 5px rgba(33, 30, 24, 0.04);
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+.finance-card:hover,
+.finance-card:focus-visible {
+  border-color: #efc754;
+  box-shadow: 0 3px 8px rgba(139, 104, 0, 0.08);
+}
+.finance-card:focus-visible {
+  outline: none;
+}
+.finance-summary {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 5px 10px;
+  min-width: 0;
+  font-size: 12.5px;
+  line-height: 1.35;
+}
 .item-title {
   font-size: 14.5px;
   font-weight: 800;
@@ -770,13 +820,15 @@ function shortAmount(v) {
 }
 .rate-range {
   flex-shrink: 0;
-  padding: 4px 8px;
-  font-size: 11px;
-  font-weight: 700;
-  line-height: 1;
-  color: #6b5300;
-  background: var(--yellow-tint);
-  border-radius: 999px;
+  color: #df762d;
+  font-weight: 800;
+}
+.loan-limit {
+  flex: 0 0 auto;
+  max-width: 100%;
+  color: var(--kb-silver);
+  font-weight: 500;
+  overflow-wrap: anywhere;
 }
 .empty-result {
   display: flex;
