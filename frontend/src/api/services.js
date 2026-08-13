@@ -45,8 +45,12 @@ export const financeApi = {
 export const policyApi = {
   list: async (regionCode, keyword) =>
     (await client.get('/policies', { params: { regionCode, keyword } })).data,
-  matches: async (keyword) =>
-    (await client.get('/policies/matches', { params: { keyword } })).data,
+  matches: async (keyword, categoryCode) =>
+    (
+      await client.get('/policies/matches', {
+        params: { keyword, categoryCode },
+      })
+    ).data,
   detail: async (policyId) => (await client.get(`/policies/${policyId}`)).data,
 };
 
