@@ -6,10 +6,10 @@
 <mapper namespace="org.tajiro.policy.mapper.PolicyMapper">
 
     <select id="get" resultType="PolicyVO">
-        SELECT DISTINCT p.*
-        FROM policy p,
+        SELECT DISTINCT p.*,
              pc.code AS categoryCode,
              pc.name AS categoryName
+        FROM policy p
                  JOIN policy_target_region ptr
                       ON p.id = ptr.policy_id
                  LEFT JOIN policy_category pc
