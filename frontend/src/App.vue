@@ -34,7 +34,10 @@ const activeTab = computed(() => {
 });
 
 const showTabBar = computed(() => {
-  return !['/', '/login', '/register'].includes(route.path);
+  return (
+    !['/', '/login', '/register'].includes(route.path) &&
+    !route.path.startsWith('/seller')
+  );
 });
 
 const KEEP_ALIVE_VIEWS = ['PropertyListView'];
