@@ -10,6 +10,9 @@ public class RegisterRequest {
     private String name;
     private String email;
     private String password;
+    private Boolean isSeller;
+    private String phone;
+    private String agencyName;
     private List<AgreementRequest> agreements;
 
     @Data

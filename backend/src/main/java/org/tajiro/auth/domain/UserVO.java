@@ -16,6 +16,9 @@ public class UserVO {
     private String email;
     private String passwordHash;
     private String name;
+    private String role;
+    private String phone;
+    private String agencyName;
     private String provider;
     private String status;
     private LocalDateTime createdAt;
