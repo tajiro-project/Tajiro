@@ -42,6 +42,9 @@ public class PropertyDetailDTO {
     private List<String> images;
     private List<InfraSummaryDTO> infraSummary;
 
+    private String sigunguCd;
+
+    // ✨ recommendScore를 파라미터로 추가 수용
     public static PropertyDetailDTO of(
             PropertyDetailVO vo,
             List<String> images,
@@ -78,6 +81,7 @@ public class PropertyDetailDTO {
                 .isFavorite(isFavorite)
                 .images(images)
                 .infraSummary(infraSummary)
+                .sigunguCd(vo.getSigunguCd())
                 .build();
     }
 

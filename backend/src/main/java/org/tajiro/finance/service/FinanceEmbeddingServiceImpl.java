@@ -9,7 +9,7 @@ import org.tajiro.finance.domain.FinanceCategoryVO;
 import org.tajiro.finance.domain.FinanceVO;
 import org.tajiro.finance.dto.FinanceEmbeddingResultDTO;
 import org.tajiro.finance.mapper.FinanceMapper;
-import org.tajiro.finance.service.ai.FinanceEmbeddingClient;
+import org.tajiro.ai.EmbeddingClient;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -31,7 +31,7 @@ public class FinanceEmbeddingServiceImpl
 
     private final FinanceMapper mapper;
 
-    private final FinanceEmbeddingClient
+    private final EmbeddingClient
             embeddingClient;
 
     private final ObjectMapper objectMapper =

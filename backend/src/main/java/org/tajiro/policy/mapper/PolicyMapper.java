@@ -4,8 +4,10 @@
 package org.tajiro.policy.mapper;
 
 import org.apache.ibatis.annotations.Param;
+import org.tajiro.policy.domain.PolicyCategoryVO;
 import org.tajiro.policy.domain.PolicyVO;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 public interface PolicyMapper{
@@ -15,6 +17,68 @@ public interface PolicyMapper{
 
     List<PolicyVO> getList(@Param("region") String region,
             @Param("age") Integer age,
-            @Param("keyword") String keyword
+            @Param("keyword") String keyword,
+            @Param("categoryCode") String categoryCode
+
+    );
+
+    // 카테고리 Embedding
+
+
+    List<PolicyCategoryVO>
+    getCategoriesWithoutEmbedding();
+
+
+    List<PolicyCategoryVO>
+    getCategoriesWithEmbedding();
+
+
+    int updateCategoryEmbedding(
+            @Param("id") Long id,
+            @Param("embedding") String embedding
+    );
+
+
+    // Policy Embedding
+
+
+    List<PolicyVO>
+    getPoliciesWithoutEmbedding(
+
+            @Param("limit") int limit
+    );
+
+
+    int updatePolicyEmbedding(
+
+            @Param("id") Long id,
+            @Param("embedding") String embedding
+    );
+
+
+    // Policy Classification
+
+
+    List<PolicyVO>
+    getPoliciesToClassify(
+
+            @Param("limit") int limit
+    );
+
+
+    int updatePolicyClassification(
+            @Param("id") Long id,
+            @Param("categoryId") Long categoryId,
+            @Param("categorySimilarity") BigDecimal categorySimilarity
+    );
+
+
+    int countPoliciesWithoutEmbedding();
+
+
+    int countPoliciesWithoutClassification();
+    List<PolicyVO> getHousingRecommendations(
+            @Param("region") String region,
+            @Param("age") Integer age
     );
 }

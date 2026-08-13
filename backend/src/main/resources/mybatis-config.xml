@@ -13,6 +13,7 @@
         <typeAlias alias="UserVO" type="org.tajiro.auth.domain.UserVO"/>
         <typeAlias alias="FinanceVO" type="org.tajiro.finance.domain.FinanceVO"/>
         <typeAlias alias="PolicyVO" type="org.tajiro.policy.domain.PolicyVO"/>
+        <typeAlias alias="PolicyCategoryVO" type="org.tajiro.policy.domain.PolicyCategoryVO"/>
         <typeAlias alias="UserProfileVO" type="org.tajiro.user.domain.UserProfileVO"/>
         <typeAlias alias="FinanceCategoryVO" type="org.tajiro.finance.domain.FinanceCategoryVO"/>
 

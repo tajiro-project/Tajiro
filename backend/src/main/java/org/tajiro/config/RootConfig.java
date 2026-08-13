@@ -44,6 +44,7 @@ import javax.sql.DataSource;
         "org.tajiro.terms.mapper"
 })
 @ComponentScan(basePackages = {
+        "org.tajiro.ai",
         "org.tajiro.auth.service",
         "org.tajiro.security.jwt",
         "org.tajiro.terms.service",

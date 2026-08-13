@@ -7,9 +7,13 @@
 
     <select id="get" resultType="PolicyVO">
         SELECT DISTINCT p.*
-        FROM policy p
+        FROM policy p,
+             pc.code AS categoryCode,
+             pc.name AS categoryName
                  JOIN policy_target_region ptr
                       ON p.id = ptr.policy_id
+                 LEFT JOIN policy_category pc
+                           ON p.category_id = pc.id
         WHERE p.id = #{id}
           AND ptr.sgg_code = #{region}
           AND (
@@ -23,10 +27,16 @@
 
 
     <select id="getList" resultType="PolicyVO">
-        SELECT DISTINCT p.*
+        SELECT DISTINCT p.*,
+        pc.code AS categoryCode,
+        pc.name AS categoryName
+
         FROM policy p
         JOIN policy_target_region ptr
         ON p.id = ptr.policy_id
+        LEFT JOIN policy_category pc
+        ON p.category_id = pc.id
+
         WHERE ptr.sgg_code = #{region}
         AND (
             (p.min_age = 0 AND p.max_age = 0)
@@ -43,8 +53,185 @@
             OR p.required_documents LIKE CONCAT('%', #{keyword}, '%')
             )
         </if>
+        <if test="categoryCode != null and categoryCode != ''">
 
-        ORDER BY p.id DESC
+            AND pc.code = #{categoryCode}
+
+        </if>
+        ORDER BY
+        p.category_similarity DESC,
+        p.category_similarity IS NULL,
+        p.id DESC
+    </select>
+<!--카테고리 임베딩-->
+    <select id="getCategoriesWithoutEmbedding" resultType="PolicyCategoryVO">
+
+        SELECT
+            id,
+            code,
+            name,
+            description,
+            embedding
+
+        FROM policy_category
+
+        WHERE embedding IS NULL
+
+        ORDER BY id
+
+    </select>
+    <select id="getCategoriesWithEmbedding"
+            resultType="PolicyCategoryVO">
+
+        SELECT
+            id,
+            code,
+            name,
+            description,
+            embedding
+
+        FROM policy_category
+
+        WHERE embedding IS NOT NULL
+
+        ORDER BY id
+
+    </select>
+    <update id="updateCategoryEmbedding">
+
+        UPDATE policy_category
+
+        SET embedding = #{embedding}
+
+        WHERE id = #{id}
+
+    </update>
+<!--정책 임베딩-->
+    <select id="getPoliciesWithoutEmbedding"
+            resultType="policyVO">
+
+        SELECT
+            id,
+            title,
+            description,
+            embedding
+
+        FROM policy
+
+        WHERE embedding IS NULL
+
+        ORDER BY id
+
+            LIMIT #{limit}
+
+    </select>
+    <update id="updatePolicyEmbedding">
+
+        UPDATE policy
+
+        SET embedding = #{embedding}
+
+        WHERE id = #{id}
+
+    </update>
+<!--분류대상조회-->
+    <select id="getPoliciesToClassify"
+            resultType="policyVO">
+
+        SELECT
+            id,
+            title,
+            description,
+            embedding,
+            category_id,
+            category_similarity
+
+        FROM policy
+
+        WHERE embedding IS NOT NULL
+
+          AND (
+            category_id IS NULL
+                OR category_similarity IS NULL
+            )
+
+        ORDER BY id
+
+            LIMIT #{limit}
+
+    </select>
+    <update id="updatePolicyClassification">
+
+        UPDATE policy
+
+        SET
+            category_id = #{categoryId},
+            category_similarity = #{categorySimilarity}
+
+        WHERE id = #{id}
+
+    </update>
+    <select id="countPoliciesWithoutEmbedding"
+            resultType="int">
+
+        SELECT COUNT(*)
+
+        FROM policy
+
+        WHERE embedding IS NULL
+
+    </select>
+    <select id="countPoliciesWithoutClassification"
+            resultType="int">
+
+        SELECT COUNT(*)
+
+        FROM policy
+
+        WHERE embedding IS NOT NULL
+
+          AND (
+            category_id IS NULL
+                OR category_similarity IS NULL
+            )
+
     </select>
 
+    <select id="getHousingRecommendations"
+            resultType="PolicyVO">
+
+        SELECT DISTINCT
+            p.*,
+            pc.code AS categoryCode,
+            pc.name AS categoryName
+
+        FROM policy p
+
+                 JOIN policy_target_region ptr
+                      ON p.id = ptr.policy_id
+
+                 JOIN policy_category pc
+                      ON p.category_id = pc.id
+
+        WHERE ptr.sgg_code = #{region}
+
+          AND (
+            (p.min_age = 0 AND p.max_age = 0)
+                OR (
+                p.min_age <![CDATA[ <= ]]> #{age}
+                    AND p.max_age <![CDATA[ >= ]]> #{age}
+                )
+            )
+
+          AND pc.code = 'HOUSING'
+
+          AND p.category_similarity IS NOT NULL
+
+        ORDER BY
+            p.category_similarity DESC,
+            p.id DESC
+
+            LIMIT 3
+
+    </select>
 </mapper>

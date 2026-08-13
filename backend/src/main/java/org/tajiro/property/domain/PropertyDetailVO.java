@@ -18,6 +18,7 @@ public class PropertyDetailVO {
     private Long id;
     private String sourceListingId;
     private Long buildingId;
+    private String sigunguCd;
     private String title;
     private String propertyType;
     private String tradeType;
