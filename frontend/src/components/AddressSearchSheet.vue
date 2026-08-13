@@ -26,17 +26,28 @@
         </form>
 
         <div class="body">
-          <!-- 검색 결과 -->
-          <ul v-if="results.length" class="results">
+          <p v-if="isLoading" class="state">검색 중이에요</p>
+
+          <ul v-else-if="results.length" class="results">
             <li v-for="(r, i) in results" :key="i">
               <button class="result" @click="select(r)">
-                <p class="r-road">{{ r.roadAddress }}</p>
-                <p class="r-jibun">지번 &nbsp;{{ r.jibunAddress }}</p>
+                <p v-if="r.buildingName" class="r-name">{{ r.buildingName }}</p>
+                <p class="r-line">
+                  <span class="r-tag">도로명</span>
+                  <span class="r-text">
+                    {{ r.roadAddress || r.jibunAddress }}
+                  </span>
+                </p>
+                <p class="r-line">
+                  <span class="r-tag">지번</span>
+                  <span class="r-text">{{ r.jibunAddress }}</span>
+                </p>
               </button>
             </li>
           </ul>
 
-          <!-- tip -->
+          <p v-else-if="searched" class="state">검색 결과가 없어요</p>
+
           <div v-else class="tip">
             <p class="tip-head">tip</p>
             <p class="tip-desc">
@@ -55,6 +66,12 @@
 
 <script setup>
 import { ref, watch, onMounted, onUnmounted } from 'vue';
+import { locationApi } from '@/api/services';
+
+const keyword = ref('');
+const results = ref([]);
+const isLoading = ref(false);
+const searched = ref(false);
 
 const props = defineProps({
   open: { type: Boolean, default: false },
@@ -86,14 +103,10 @@ onUnmounted(() => {
   document.body.style.overflow = previousBodyOverflow;
 });
 
-const keyword = ref('');
-const results = ref([]);
-
 const tips = [
   { label: '도로명 + 건물번호', example: '백룡로57번길 126' },
   { label: '지역명(동/리) + 번지', example: '자양동 51-5' },
   { label: '지역명(동/리) + 건물명(아파트명)', example: '자양동 우송에이스빌' },
-  { label: '사서함명 + 번호', example: '대전동구우체국사서함 1~100' },
 ];
 
 const MOCK_ADDRESSES = [
@@ -229,17 +242,20 @@ const MOCK_ADDRESSES = [
   },
 ];
 
-function onSearch() {
+async function onSearch() {
   const k = keyword.value.trim();
-  results.value = k
-    ? MOCK_ADDRESSES.filter(
-        (a) =>
-          a.roadAddress.includes(k) ||
-          a.jibunAddress.includes(k) ||
-          a.buildingName.includes(k),
-      )
-    : [];
-  if (k && !results.value.length) results.value = MOCK_ADDRESSES;
+  if (!k) return;
+
+  isLoading.value = true;
+  searched.value = true;
+  try {
+    const res = await locationApi.searchAddress(k);
+    results.value = res.data ?? [];
+  } catch {
+    results.value = [];
+  } finally {
+    isLoading.value = false;
+  }
 }
 
 function select(addr) {
@@ -324,7 +340,7 @@ function select(addr) {
   flex: 0 0 60px;
   height: 46px;
   border-radius: 12px;
-  background: var(--kb-yellow);
+  background: #ffdd80;
   color: var(--text-primary);
   font-size: 13px;
   font-weight: 700;
@@ -355,14 +371,9 @@ function select(addr) {
 .result:hover {
   background: var(--yellow-tint);
 }
-.r-road {
-  font-size: 13.5px;
-  font-weight: 700;
-}
+
 .r-jibun {
   margin-top: 4px;
-  font-size: 12px;
-  color: var(--kb-silver);
 }
 .tip {
   padding: 24px 20px;
@@ -406,5 +417,55 @@ function select(addr) {
 }
 .as-divider {
   color: var(--border);
+}
+
+.state {
+  padding: 40px 20px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--kb-silver);
+}
+
+.r-name {
+  margin-bottom: 6px;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+.r-line {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 5px;
+}
+.r-tag {
+  flex-shrink: 0;
+  min-width: 42px;
+  padding: 2px 5px;
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--kb-gray);
+  font-size: 11px;
+  font-weight: 600;
+  text-align: center;
+  line-height: 1.5;
+}
+.r-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--text-primary);
+  line-height: 1.5;
+  word-break: keep-all;
+}
+
+.addr-label {
+  flex-shrink: 0;
+  width: 3em;
+  font-size: 13px;
+  color: var(--kb-gray);
+  text-align: center;
+  text-align-last: right;
 }
 </style>

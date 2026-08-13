@@ -150,3 +150,9 @@ export const sellerApi = {
       })
     ).data,
 };
+
+// ---------- location ----------
+export const locationApi = {
+  searchAddress: async (query) =>
+    (await client.get('/locations/addresses', { params: { query } })).data,
+};
