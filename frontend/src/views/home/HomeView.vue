@@ -26,16 +26,16 @@
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
             <path
               d="M10 2c-3 0-5.5 2.4-5.5 5.5 0 4 5.5 10.5 5.5 10.5s5.5-6.5 5.5-10.5C15.5 4.4 13 2 10 2z"
-              stroke="#545045"
-              stroke-width="1.6"
+              stroke="#60584c"
+              stroke-width="1.8"
               stroke-linejoin="round"
             />
             <circle
               cx="10"
               cy="7.5"
               r="1.8"
-              stroke="#545045"
-              stroke-width="1.6"
+              stroke="#60584c"
+              stroke-width="1.8"
             />
           </svg>
         </span>
@@ -305,7 +305,7 @@ const mockBenefitPreview = [
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 18px;
+  font-size: 22px;
   font-weight: 900;
   color: var(--text-primary);
   margin-bottom: 8px;
@@ -315,8 +315,8 @@ const mockBenefitPreview = [
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 22px;
-  height: 22px;
+  width: 26px;
+  height: 26px;
   border-radius: 8px;
   overflow: hidden;
 }
@@ -550,7 +550,7 @@ const mockBenefitPreview = [
 .menu-icon.primary {
   width: 36px;
   height: 36px;
-  background: var(--kb-yellow);
+  background: var(--kb-yellow-header);
 }
 
 .menu-texts {
