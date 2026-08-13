@@ -21,7 +21,7 @@
           type="text"
           readonly
           :value="form.address?.roadAddress ?? ''"
-          placeholder="예) 서울특별시 강남구 테헤란로 152"
+          placeholder="예) 서울 강남구 테헤란로 152"
           @click="isAddressOpen = true"
         />
         <div class="pair-row">

@@ -20,7 +20,7 @@
           <input
             v-model="keyword"
             type="search"
-            placeholder="예) 서울특별시 강남구 테헤란로 152"
+            placeholder="예) 서울 강남구 테헤란로 152"
           />
           <button type="submit">검색</button>
         </form>
