@@ -625,7 +625,10 @@ defineOptions({name:'PropertyListView'})
 
 const router = useRouter();
 const route = useRoute();
-const center = { lat: 36.3366, lng: 127.459 };
+const center = computed(() => ({
+  lat: filter.workplace?.lat ?? 36.3366,
+  lng: filter.workplace?.lng ?? 127.459,
+}));
 
 const scrollArea = ref(null);
 const selectedBuildingId = ref(null);
@@ -728,6 +731,7 @@ function applyPreferenceToFilter(p) {
 
 async function commitFilter() {
   if (!preference.value) return;
+  clearSelection();
 
   const workplace = filter.workplace ?? preference.value.workplace;
 
