@@ -30,6 +30,7 @@ public class LoginResponse {
         private Long id;
         private String name;
         private String email;
+        private String role;
 
         public static UserSummary of(UserVO vo) {
             if (vo == null) {
@@ -39,6 +40,7 @@ public class LoginResponse {
                     .id(vo.getId())
                     .name(vo.getName())
                     .email(vo.getEmail())
+                    .role(vo.getRole())
                     .build();
         }
     }
