@@ -42,7 +42,7 @@ const fetchDetail = async (id) => {
   isLoading.value = true;
   try {
     const res = await propertyApi.getPropertyDetail(id);
-    console.log(res);
+
     propertyDetail.value = res?.data || res;
   } catch (e) {
     console.error('매물 정보 로드 실패:', e);

@@ -33,7 +33,7 @@ export const financeApi = {
     (await client.get('/financial-products/matches', { params: { keyword } }))
       .data,
   detail: async (id) => (await client.get(`/financial-products/${id}`)).data,
-  getRecommendations: async (propertyId) =>
+  getFinanceRecommendations: async (propertyId) =>
     (
       await client.get('/financial-products/recommendations', {
         params: { propertyId },
@@ -52,6 +52,12 @@ export const policyApi = {
       })
     ).data,
   detail: async (policyId) => (await client.get(`/policies/${policyId}`)).data,
+  getPolicyRecommendations: async (propertyId) =>
+    (
+      await client.get('/policies/recommendations', {
+        params: { propertyId },
+      })
+    ).data,
 };
 
 // ---------- property ----------
