@@ -67,7 +67,7 @@
         아직 회원이 아니신가요?
         <button
           type="button"
-          @click="router.push('/register')"
+          @click="goToRegister"
         >
           회원가입
         </button>
@@ -108,12 +108,25 @@ async function handleLogin() {
     );
     const payload = data.data ?? data;
     localStorage.setItem('accessToken', payload.accessToken);
-    router.push(route.query.redirect || '/home');
+
+    const redirect = route.query.redirect;
+    const isSellerRedirect =
+      typeof redirect === 'string' && redirect.startsWith('/seller');
+
+    if (isSellerRedirect && payload.user?.role === 'SELLER') {
+      router.push('/seller/properties');
+    } else {
+      router.push(redirect || '/home');
+    }
   } catch {
     errorMessage.value = '이메일 또는 비밀번호가 일치하지 않습니다.';
   } finally {
     loading.value = false;
   }
+}
+
+function goToRegister() {
+  router.push({ path: '/register', query: route.query });
 }
 
 function mockLogin() {
