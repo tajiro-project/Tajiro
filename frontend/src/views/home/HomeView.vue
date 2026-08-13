@@ -17,12 +17,7 @@
         @click="router.push('/preferences/1')"
       >
         <span class="menu-icon primary">
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 20 20"
-            fill="none"
-          >
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
             <path
               d="M10 2c-3 0-5.5 2.4-5.5 5.5 0 4 5.5 10.5 5.5 10.5s5.5-6.5 5.5-10.5C15.5 4.4 13 2 10 2z"
               stroke="#545045"
@@ -162,12 +157,7 @@
 
       <section class="safety-card">
         <p class="safety-title">
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 16 16"
-            fill="none"
-          >
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
             <path
               d="M8 1.5l5.5 2v3.8c0 3.5-2.3 6.2-5.5 7.2-3.2-1-5.5-3.7-5.5-7.2V3.5L8 1.5z"
               stroke="#545045"
@@ -188,12 +178,7 @@
         <ul class="safety-list">
           <li class="safety-item">
             <span class="safety-icon">
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 18 18"
-                fill="none"
-              >
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                 <rect
                   x="2"
                   y="6"
@@ -218,12 +203,7 @@
           </li>
           <li class="safety-item">
             <span class="safety-icon">
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 18 18"
-                fill="none"
-              >
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                 <circle
                   cx="9"
                   cy="9"
@@ -248,12 +228,7 @@
           </li>
           <li class="safety-item">
             <span class="safety-icon">
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 18 18"
-                fill="none"
-              >
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                 <circle
                   cx="9"
                   cy="5.5"
@@ -545,8 +520,7 @@ const mockBenefitPreview = [
 
 .menu-card.primary {
   width: 100%;
-  background: var(--white);
-  border-color: var(--border);
+  background: var(--yellow-tint);
   box-shadow: var(--shadow-card);
 }
 
