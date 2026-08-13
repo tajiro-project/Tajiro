@@ -35,7 +35,7 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue';
+import { computed, ref, watch, onUnmounted } from 'vue';
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
@@ -49,7 +49,6 @@ let startY = 0;
 let startAt = 0;
 
 const sheetStyle = computed(() => ({
-  maxWidth: '375px',
   transform: dragY.value ? `translateY(${dragY.value}px)` : '',
 }));
 
@@ -68,7 +67,6 @@ function onMove(e) {
 
 function onUp() {
   if (!dragging.value) return;
-  // 짧고 빠르게 튕기면 거리가 짧아도 닫는다
   const flick = Date.now() - startAt < 250 && dragY.value > 30;
   dragging.value = false;
   if (dragY.value > 90 || flick) close();
@@ -79,12 +77,39 @@ function close() {
   emit('update:modelValue', false);
 }
 
+// 뒤로가기로 바텀시트 닫기
+let pushedState = false;
+
+function onPopState() {
+  pushedState = false;
+  window.removeEventListener('popstate', onPopState);
+  emit('update:modelValue', false);
+}
+
 watch(
   () => props.modelValue,
   (v) => {
-    if (!v) dragY.value = 0;
+    if (v) {
+      history.pushState({ sheetOpen: true }, '');
+      pushedState = true;
+      window.addEventListener('popstate', onPopState);
+    } else {
+      dragY.value = 0;
+      if (pushedState) {
+        pushedState = false;
+        window.removeEventListener('popstate', onPopState);
+        history.back();
+      }
+    }
   },
 );
+
+onUnmounted(() => {
+  if (pushedState) {
+    pushedState = false;
+    window.removeEventListener('popstate', onPopState);
+  }
+});
 </script>
 
 <style scoped>
@@ -99,11 +124,14 @@ watch(
 }
 .sheet {
   width: 100%;
+  max-width: 400px;
   background: var(--white);
   border-radius: 20px 20px 0 0;
-  padding: 8px 16px 20px;
+  padding: 8px 0 0;
   max-height: 82dvh;
-  overflow-y: auto;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
   transition: transform 0.22s ease;
 }
 .sheet.dragging {
@@ -113,6 +141,8 @@ watch(
   touch-action: none;
   cursor: grab;
   user-select: none;
+  flex-shrink: 0;
+  padding: 0 16px;
 }
 .sheet-grab:active {
   cursor: grabbing;
@@ -128,7 +158,8 @@ watch(
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-bottom: 12px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #e9e7e2;
 }
 .sheet-title {
   font-size: 15px;
@@ -137,6 +168,12 @@ watch(
 .sheet-close {
   color: var(--kb-silver);
   display: flex;
+}
+.sheet-body {
+  overflow-y: auto;
+  flex: 1;
+  padding: 0 16px 20px;
+  -webkit-overflow-scrolling: touch;
 }
 .sheet-enter-active,
 .sheet-leave-active {
