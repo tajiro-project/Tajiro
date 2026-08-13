@@ -1457,7 +1457,11 @@ function endSheetDrag() {
   if (movedBy < DRAG_THRESHOLD) return;
 
   wasDragged = true;
-  sheetOffset.value = sheetOffset.value > MAP_HEIGHT / 2 ? MAP_HEIGHT : 0;
+  if (dragStartOffset === 0) {
+    sheetOffset.value = sheetOffset.value > 60 ? MAP_HEIGHT : 0;
+  } else {
+    sheetOffset.value = sheetOffset.value > MAP_HEIGHT - 60 ? MAP_HEIGHT : 0;
+  }
 }
 
 function toggleSheet() {
