@@ -87,6 +87,39 @@
           </p>
         </div>
 
+        <template v-if="isSellerIntent">
+          <div class="field">
+            <label
+              class="field-label"
+              for="phone"
+              >연락처</label
+            >
+            <input
+              id="phone"
+              v-model="phone"
+              class="field-input"
+              type="tel"
+              placeholder="010-0000-0000"
+              required
+            />
+          </div>
+          <div class="field">
+            <label
+              class="field-label"
+              for="agencyName"
+              >중개사무소명</label
+            >
+            <input
+              id="agencyName"
+              v-model="agencyName"
+              class="field-input"
+              type="text"
+              placeholder="중개사무소명을 입력해주세요"
+              required
+            />
+          </div>
+        </template>
+
         <div class="terms-box">
           <button
             class="terms-all"
@@ -239,7 +272,7 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import client, { getApiErrorMessage, withMock } from '@/api/client';
 import { mockTerms } from '@/api/mockData';
 import simplebar from 'simplebar-vue';
@@ -256,15 +289,24 @@ const MOCK_TERMS_LIST = [
 const termsList = ref([]);
 
 const router = useRouter();
+const route = useRoute();
 const name = ref('');
 const email = ref('');
 const password = ref('');
 const passwordConfirm = ref('');
+const phone = ref('');
+const agencyName = ref('');
 const loading = ref(false);
 const errorMessage = ref('');
 const agreedIds = ref([]);
 const activeTermId = ref(null);
 const activeTermContent = ref('');
+
+const isSellerIntent = computed(
+  () =>
+    typeof route.query.redirect === 'string' &&
+    route.query.redirect.startsWith('/seller'),
+);
 
 const activeTerm = computed(
   () => termsList.value.find((term) => term.id === activeTermId.value) ?? null,
@@ -299,7 +341,9 @@ const canSubmit = computed(() => {
     EMAIL_PATTERN.test(email.value) &&
     PASSWORD_PATTERN.test(password.value) &&
     password.value === passwordConfirm.value &&
-    requiredAgreed.value
+    requiredAgreed.value &&
+    (!isSellerIntent.value ||
+      (phone.value.trim() !== '' && agencyName.value.trim() !== ''))
   );
 });
 
@@ -369,6 +413,9 @@ async function handleRegister() {
         name: name.value,
         email: email.value,
         password: password.value,
+        isSeller: isSellerIntent.value,
+        phone: isSellerIntent.value ? phone.value : undefined,
+        agencyName: isSellerIntent.value ? agencyName.value : undefined,
         agreements: termsList.value.map((term) => ({
           termsId: term.id,
           agreed: isAgreed(term.id),
@@ -382,7 +429,7 @@ async function handleRegister() {
 
     const payload = data.data ?? data;
     localStorage.setItem('accessToken', payload.accessToken);
-    router.push('/home');
+    router.push(route.query.redirect || '/home');
   } catch (error) {
     errorMessage.value = getApiErrorMessage(
       error,
