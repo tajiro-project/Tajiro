@@ -2,7 +2,9 @@
   <div class="home">
     <header class="home-header">
       <p class="logo">
-        <span class="logo-badge">🏠</span>
+        <span class="logo-badge">
+          <img :src="logoImg" alt="타지로" class="logo-img" />
+        </span>
         타지로
       </p>
       <p class="headline">어디로 이주하세요?</p>
@@ -20,16 +22,16 @@
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
             <path
               d="M10 2c-3 0-5.5 2.4-5.5 5.5 0 4 5.5 10.5 5.5 10.5s5.5-6.5 5.5-10.5C15.5 4.4 13 2 10 2z"
-              stroke="#545045"
-              stroke-width="1.6"
+              stroke="#60584c"
+              stroke-width="1.8"
               stroke-linejoin="round"
             />
             <circle
               cx="10"
               cy="7.5"
               r="1.8"
-              stroke="#545045"
-              stroke-width="1.6"
+              stroke="#60584c"
+              stroke-width="1.8"
             />
           </svg>
         </span>
@@ -260,6 +262,7 @@
 <script setup>
 import { useRouter } from 'vue-router';
 import simplebar from 'simplebar-vue';
+import logoImg from '@/assets/img/logo.png';
 
 const router = useRouter();
 
@@ -297,9 +300,9 @@ const mockBenefitPreview = [
 .logo {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 17px;
-  font-weight: 900;
+  gap: 10px;
+  font-size: 22px;
+  font-weight: 800;
   color: var(--text-primary);
   margin-bottom: 8px;
 }
@@ -308,11 +311,16 @@ const mockBenefitPreview = [
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 22px;
-  height: 22px;
-  font-size: 13px;
-  background: var(--white);
+  width: 40px;
+  height: 40px;
   border-radius: 8px;
+  overflow: hidden;
+}
+
+.logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .headline {
@@ -536,7 +544,9 @@ const mockBenefitPreview = [
 }
 
 .menu-icon.primary {
-  background: var(--kb-yellow);
+  width: 36px;
+  height: 36px;
+  background: var(--kb-yellow-header);
 }
 
 .menu-texts {
