@@ -55,11 +55,11 @@ public class PolicyEmbeddingServiceImpl
 
         if (
                 limit < 1
-                        || limit > 500
+                        || limit > 3000
         ) {
 
             throw new IllegalArgumentException(
-                    "limit은 1~500 사이여야 합니다."
+                    "limit은 1~3000 사이여야 합니다."
             );
         }
 
