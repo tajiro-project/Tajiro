@@ -331,61 +331,67 @@
 
       <!-- 혜택/상품 카드 (금융 & 정책 분리) -->
       <section class="card benefit-card">
-        <div class="benefit-card-head">
-          <p class="card-head">이 매물 맞춤 혜택 & 금융</p>
-          <span class="badge"
-            >최대 혜택 {{ financeList.length + policyList.length }}건</span
-          >
-        </div>
-
         <!-- 1. 금융 상품 영역 (바로 노출) -->
         <div class="benefit-group">
-          <div class="group-title">
-            <Coins
-              :size="15"
-              color="#a8842c"
-            />
-            <span>매물 맞춤 금융 상품</span>
+          <div class="group-header">
+            <div class="group-title">
+              <Banknote
+                :size="19"
+                color="#a8842c"
+              />
+              <span>매물 맞춤 금융 상품</span>
+            </div>
+            <span class="badge">최대 {{ financeList?.length || 0 }}건</span>
           </div>
 
           <div class="benefit-list">
+            <template v-if="financeList.length > 0">
+              <div
+                v-for="item in financeList"
+                :key="item.id"
+                class="benefit-item"
+                :class="{ clickable: !!item.applicationUrl }"
+                @click="goToFinancialDetail(item.id)"
+              >
+                <div class="item-content">
+                  <div class="item-header">
+                    <span class="item-title">{{ item.productName }}</span>
+                  </div>
+
+                  <div class="item-info-row">
+                    <span class="rate-badge">{{ formatRateText(item) }}</span>
+                    <span
+                      v-if="item.loanLimit"
+                      class="limit-text"
+                    >
+                      {{ formatLoanLimit(item.loanLimit) }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </template>
+
+            <!-- 금융 상품이 없을 때 -->
             <div
-              v-for="item in financeList"
-              :key="item.id"
-              class="benefit-item"
-              :class="{ clickable: !!item.applicationUrl }"
-              @click="goToFinancialDetail(item.id)"
+              v-else
+              class="empty-text"
             >
-              <div class="item-icon-box">
-                <span class="item-icon">🏦</span>
-              </div>
-
-              <div class="item-content">
-                <div class="item-header">
-                  <span class="item-title">{{ item.productName }}</span>
-                </div>
-
-                <div class="item-info-row">
-                  <span class="rate-badge">{{ formatRateText(item) }}</span>
-                  <span
-                    class="limit-text"
-                    v-if="item.loanLimit"
-                  >
-                    {{ formatLoanLimit(item.loanLimit) }}
-                  </span>
-                </div>
-              </div>
+              추천 금융 상품이 없습니다.
             </div>
           </div>
         </div>
+
         <!-- 2. 정책 혜택 영역 (미입력 시 잠금 오버레이 노출) -->
         <div class="benefit-group">
-          <div class="group-title">
-            <Landmark
-              :size="15"
-              color="#a8842c"
-            />
-            <span>청년 · 정부 지원 정책</span>
+          <div class="group-header">
+            <div class="group-title">
+              <Landmark
+                :size="19"
+                color="#a8842c"
+              />
+              <span>청년 · 정부 지원 정책</span>
+            </div>
+            <span class="badge">최대 {{ policyList?.length || 0 }}건</span>
           </div>
 
           <div
@@ -400,7 +406,7 @@
               <div class="lock-box">
                 <div class="lock-icon-wrap">
                   <Lock
-                    :size="18"
+                    :size="15"
                     color="#222"
                   />
                 </div>
@@ -418,25 +424,31 @@
 
             <!-- 정책 리스트 -->
             <div class="benefit-list">
+              <template v-if="policyList.length > 0">
+                <div
+                  v-for="item in policyList"
+                  :key="item.id"
+                  class="benefit-item"
+                  :class="{ clickable: isProfileEntered }"
+                  @click="isProfileEntered && goToPolicyDetail(item.id)"
+                >
+                  <div class="item-content">
+                    <span class="item-title">
+                      {{ item.title || item.polyBizSjnm }}
+                    </span>
+                    <p class="item-sub">
+                      {{ item.sumDescription }}
+                    </p>
+                  </div>
+                </div>
+              </template>
+
+              <!-- 정책이 없을 때 -->
               <div
-                v-for="item in policyList"
-                :key="item.id"
-                class="benefit-item clickable"
-                @click="goToPolicyDetail(item.id)"
+                v-else
+                class="empty-text"
               >
-                <div class="item-icon-box">
-                  <span class="item-icon">{{ item.icon || '🏛️' }}</span>
-                </div>
-                <div class="item-content">
-                  <span class="item-title">{{
-                    item.title || item.polyBizSjnm
-                  }}</span>
-                  <p class="item-sub">{{ item.sub || item.polyItcnCn }}</p>
-                </div>
-                <ChevronRight
-                  :size="16"
-                  color="#aaa"
-                />
+                조회된 지원 정책이 없습니다.
               </div>
             </div>
           </div>
@@ -510,6 +522,7 @@ import {
   Coins,
   Landmark,
   Lock,
+  Banknote,
 } from 'lucide-vue-next';
 
 const route = useRoute();
@@ -523,60 +536,74 @@ const profileName = ref('홍길동');
 
 // 사용자 조건 입력 여부
 const isProfileEntered = ref(false);
-// const policyList = ref([]);
+const policyList = ref([]);
+const financeList = ref([]);
+const isLoading = ref(false);
 
 const p = inject('propertyDetail');
 const buildingName = inject('buildingName');
 
 const id = route.params.id;
 
-// 1. 금융 상품 API 연동 데이터 및 로직
-const financeList = ref([]);
-const isLoadingFinance = ref(false);
+// 프로필 미입력 시 블러 배경용 프론트엔드 목업 데이터 (3개)
+const MOCK_POLICIES = [
+  {
+    id: 'mock-1',
+    title: '청년 주거 보증금 이자 지원',
+    sub: '청년 가구 주거비 부담 완화를 위한 보증금 지원 정책',
+  },
+  {
+    id: 'mock-2',
+    title: '신혼부부 버팀목 전세자금 대출',
+    sub: '신혼부부 대상 저금리 주택 구입 및 전세 자금 대출',
+  },
+  {
+    id: 'mock-3',
+    title: '청년 월세 한시 특별지원',
+    sub: '무주택 청년 대상 월 최대 20만 원 월세 지원',
+  },
+];
 
-// 금융 상품 목록 조회
-const fetchFinancialRecommendations = async () => {
+const fetchAllRecommendations = async () => {
   if (!id) return;
+
   try {
-    isLoadingFinance.value = true;
+    isLoading.value = true;
 
-    // 서비스 파일 호출 s
-    const res = await financeApi.getRecommendations(id);
+    // 1. 프로필 정보와 금융 상품 추천을 병렬 요청
+    const [profile, financeRes] = await Promise.all([
+      userApi.getProfile(),
+      financeApi.getFinanceRecommendations(id),
+    ]);
 
-    financeList.value = res.data || res || [];
-  } catch (err) {
-    console.error('금융 상품 추천 조회 실패:', err);
-  } finally {
-    isLoadingFinance.value = false;
-  }
-};
+    // 금융 상품 데이터 할당
+    financeList.value = financeRes.data || financeRes || [];
 
-// 프로필 정보 확인 및 정책 데이터 로드
-const checkProfileAndFetchPolicies = async () => {
-  try {
-    // 1. 유저 프로필 조회
-    const profile = await userApi.getProfile();
-
-    // 2. 필수 정보(생년월일, 지역) 입력 여부 검증
+    // 2. 나이 정보 유무 체크
     const hasBirthDate = !!profile?.birthDate?.trim();
-    const hasTargetRegion = !!profile?.targetRegion?.trim();
+    isProfileEntered.value = hasBirthDate;
 
-    isProfileEntered.value = hasBirthDate && hasTargetRegion;
-
-    // 3. 필수 정보가 모두 존재하는 경우에만 정책 목록 로드
-    // if (isProfileEntered.value) {
-    //   const policyResponse = await policyApi.list();
-    //   policyList.value = policyResponse?.data || [];
-    // }
-  } catch (error) {
-    console.error('프로필 조회 또는 정책 목록 호출 실패:', error);
+    // 3. 나이 정보 유무에 따른 정책 데이터 할당
+    if (isProfileEntered.value) {
+      // 정보가 있으면: 맞춤 정책 API 호출
+      const policyRes = await policyApi.getPolicyRecommendations(id);
+      policyList.value = policyRes.data || policyRes || [];
+    } else {
+      // 정보가 없으면: API 호출 없이 프론트 목업 데이터 배치
+      policyList.value = MOCK_POLICIES;
+    }
+  } catch (err) {
+    console.error('추천 데이터 조회 실패:', err);
     isProfileEntered.value = false;
+    // 에러 발생 시에도 UI 깨짐 방지를 위해 목업 데이터 배치
+    policyList.value = MOCK_POLICIES;
+  } finally {
+    isLoading.value = false;
   }
 };
 
 onMounted(() => {
-  fetchFinancialRecommendations();
-  checkProfileAndFetchPolicies();
+  fetchAllRecommendations();
 });
 
 // 금리 텍스트 가공 헬퍼 (JSON 문자열 예외 처리 추가)
@@ -830,28 +857,6 @@ const formattedAmenityList = computed(() => {
       count: item.count,
     }));
 });
-
-// 맞춤 정책 혜택 데이터 (사용자 정보 입력 필요)
-const policyList = ref([
-  {
-    id: 'p1',
-    icon: '🎁',
-    title: '창원시 청년월세지원',
-    sub: '조건 충족 시 월 20만원 × 12개월',
-  },
-  {
-    id: 'p2',
-    icon: '💵',
-    title: '청년 전입지원금',
-    sub: '최초 전입 시 1회 30만원 지급',
-  },
-  {
-    id: 'p3',
-    icon: '🌱',
-    title: '청년 이사비 지원사업',
-    sub: '이사비 및 중개보수 최대 40만원',
-  },
-]);
 
 const openProfileModal = () => {
   router.push('/profile-setup');
@@ -1416,36 +1421,36 @@ async function addToCompare() {
   gap: 18px;
 }
 
-.benefit-card-head {
+.benefit-group {
+  margin-bottom: 24px;
+}
+
+/* 제목과 건수 배지를 양 끝 정렬 */
+.group-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-}
-
-.badge {
-  font-size: 11.5px;
-  font-weight: 700;
-  color: #2b6cb0;
-  background: #ebf8ff;
-  padding: 3px 8px;
-  border-radius: 12px;
-}
-
-.benefit-group {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  margin-bottom: 12px;
 }
 
 .group-title {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 12.5px;
+  font-size: 16px;
   font-weight: 700;
-  color: #666666;
+  color: #222;
 }
 
+/* 개별 건수 배지 스타일 */
+.badge {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #2b6cb0;
+  background-color: #ebf8ff;
+  padding: 4px 10px;
+  border-radius: 12px;
+}
 .benefit-list {
   display: flex;
   flex-direction: column;
@@ -1454,7 +1459,6 @@ async function addToCompare() {
 }
 
 .benefit-item {
-  display: flex;
   align-items: flex-start;
   gap: 12px;
   padding: 14px 16px; /* 내부 여백 조절 */
