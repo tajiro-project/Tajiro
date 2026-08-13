@@ -16,6 +16,7 @@ import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 import javax.sql.DataSource;
 
@@ -28,6 +29,7 @@ import javax.sql.DataSource;
 @Configuration
 @PropertySource("classpath:application.properties")
 @EnableTransactionManagement
+@EnableScheduling
 @MapperScan(basePackages = {
         "org.tajiro.auth.mapper",
         "org.tajiro.terms.mapper",
