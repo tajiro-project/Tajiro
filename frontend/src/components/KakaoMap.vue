@@ -3,7 +3,7 @@
 </template>
 
 <script setup>
-import { onMounted, onUnmounted, ref, watch, h, render } from 'vue';
+import { onMounted, onUnmounted, onActivated, ref, watch, h, render } from 'vue';
 import { loadKakaoSdk } from '@/utils/kakaoSdk';
 import {
   INFRA_CATEGORIES,
@@ -449,6 +449,12 @@ onMounted(async () => {
   } catch (e) {
     console.warn('[KakaoMap]', e.message);
   }
+});
+
+onActivated(() => {
+  if (!map) return;
+  map.relayout();
+  redraw();
 });
 
 onUnmounted(() => {
