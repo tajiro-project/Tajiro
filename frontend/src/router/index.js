@@ -145,6 +145,12 @@ const routes = [
     component: () => import('@/views/safety/SafetyGuideView.vue'),
     meta: { headerTitle: '안전 거래 가이드' },
   },
+  {
+    path: '/seller/register/:step',
+    name: 'seller-register',
+    component: () => import('@/views/seller/SellerRegisterView.vue'),
+    meta: { headerTitle: '매물 등록' },
+  },
 ];
 
 const router = createRouter({

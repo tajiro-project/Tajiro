@@ -24,7 +24,7 @@
       <button
         class="seller-link"
         type="button"
-        @click="router.push('/seller/properties/new')"
+        @click="router.push('/seller/register/1')"
       >
         집주인이신가요? 내 매물 등록하기
       </button>

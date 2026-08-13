@@ -127,3 +127,16 @@ export const comparisonApi = {
     ).data;
   },
 };
+
+// ---------- seller ----------
+export const sellerApi = {
+  create: async (body) => (await client.post('/seller/properties', body)).data,
+  myProperties: async () => (await client.get('/seller/properties')).data,
+  myProperty: async (id) => (await client.get(`/seller/properties/${id}`)).data,
+  changeStatus: async (id, transactionStatus) =>
+    (
+      await client.patch(`/seller/properties/${id}/status`, {
+        transactionStatus,
+      })
+    ).data,
+};
