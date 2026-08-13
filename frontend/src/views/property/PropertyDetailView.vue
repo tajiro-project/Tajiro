@@ -490,7 +490,7 @@
 </template>
 
 <script setup>
-import { inject, computed, onMounted, ref } from 'vue';
+import { watch, inject, computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import simplebar from 'simplebar-vue';
 import AppTabBar from '@/components/AppTabBar.vue';
@@ -564,6 +564,15 @@ const MOCK_POLICIES = [
   },
 ];
 
+watch(
+  () => p.value?.isFavorite,
+  (newVal) => {
+    isFavorite.value = !!newVal;
+  },
+  { immediate: true },
+);
+
+// 맞춤 정책 / 금융 상품 추천 조회
 const fetchAllRecommendations = async () => {
   if (!id) return;
 
