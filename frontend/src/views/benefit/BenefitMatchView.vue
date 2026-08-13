@@ -194,7 +194,7 @@
         ref="targetFiltersRef"
         class="target-filters"
         :style="filterDropdownStyle"
-        aria-label="정책 대상 필터"
+        aria-label="정책 카테고리 필터"
       >
         <button
           v-for="filter in targetFilters"
@@ -307,24 +307,24 @@ const activeFinanceFilterCount = computed(() =>
   Object.values(selectedFinanceFilters.value).filter(Boolean).length,
 );
 const targetFilters = [
-  { code: '0014001', label: '중소기업' },
-  { code: '0014002', label: '여성' },
-  { code: '0014003', label: '기초생활수급자' },
-  { code: '0014004', label: '한부모가정' },
-  { code: '0014005', label: '장애인' },
-  { code: '0014006', label: '농업인' },
-  { code: '0014007', label: '군인' },
-  { code: '0014008', label: '지역인재' },
-  { code: '0014010', label: '제한없음' },
+  { code: 'HOUSING', label: '주거' },
+  { code: 'EMPLOYMENT', label: '취업·일자리' },
+  { code: 'STARTUP', label: '창업·사업' },
+  { code: 'FINANCE_ASSET', label: '금융·자산' },
+  { code: 'EDUCATION', label: '교육·역량' },
+  { code: 'WELFARE', label: '생활·복지' },
+  { code: 'CULTURE', label: '문화·여가' },
+  { code: 'FAMILY', label: '결혼·가족' },
+  { code: 'AGRI_SETTLEMENT', label: '농업·지역정착' },
 ];
 const selectedTargetSummary = computed(() => {
   const count = selectedTargetCodes.value.length;
-  if (!count) return '대상';
+  if (!count) return '카테고리';
   if (count === 1) {
     return (
       targetFilters.find(
         (filter) => filter.code === selectedTargetCodes.value[0],
-      )?.label ?? '대상'
+      )?.label ?? '카테고리'
     );
   }
   return `${count}개 선택`;
@@ -349,9 +349,7 @@ onBeforeUnmount(() => {
 // 키워드 프론트 필터링 (기능명세 43)
 const filteredPolicies = computed(() =>
   policies.value.filter(
-    (p) =>
-      (!keyword.value || p.title.includes(keyword.value)) &&
-      matchesTargetCodes(p, selectedTargetCodes.value),
+    (p) => !keyword.value || p.title.includes(keyword.value),
   ),
 );
 const filteredProducts = computed(() =>
@@ -406,10 +404,12 @@ function movePage(page) {
   currentPage.value = page;
 }
 
-function toggleTargetFilter(code) {
+async function toggleTargetFilter(code) {
   selectedTargetCodes.value = selectedTargetCodes.value.includes(code)
     ? []
     : [code];
+  policies.value =
+    (await policyApi.matches(undefined, selectedTargetCodes.value[0])) ?? [];
 }
 
 function toggleFinanceFilter(group, value) {
@@ -467,36 +467,6 @@ function closeFilterOnOutsideClick(event) {
   if (!clickedTrigger && !clickedMenu) {
     filtersExpanded.value = false;
   }
-}
-
-function matchesTargetCodes(policy, codes) {
-  if (!codes.length) return true;
-
-  const value =
-    policy.sbizCd ??
-    policy.targetCode ??
-    policy.target_code ??
-    policy.targetCodes ??
-    policy.target_codes ??
-    policy.targetTypeCode ??
-    policy.target_type_code;
-
-  if (Array.isArray(value))
-    return value.some((item) => codes.includes(normalizeTargetCode(item)));
-  if (value == null) return false;
-
-  const policyCodes = String(value)
-    .split(',')
-    .map(normalizeTargetCode)
-    .filter(Boolean);
-  return codes.some((code) => policyCodes.includes(code));
-}
-
-function normalizeTargetCode(value) {
-  const normalized = String(value).trim();
-  return /^\d{1,7}$/.test(normalized)
-    ? normalized.padStart(7, '0')
-    : normalized;
 }
 
 watch([tab, keyword, selectedTargetCodes, selectedFinanceFilters], () => {
