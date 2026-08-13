@@ -3,11 +3,7 @@
     <header class="home-header">
       <p class="logo">
         <span class="logo-badge">
-          <img
-            :src="logoImg"
-            alt="타지로"
-            class="logo-img"
-          />
+          <img :src="logoImg" alt="타지로" class="logo-img" />
         </span>
         타지로
       </p>
@@ -304,9 +300,9 @@ const mockBenefitPreview = [
 .logo {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 10px;
   font-size: 22px;
-  font-weight: 900;
+  font-weight: 800;
   color: var(--text-primary);
   margin-bottom: 8px;
 }
@@ -315,8 +311,8 @@ const mockBenefitPreview = [
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
-  height: 26px;
+  width: 40px;
+  height: 40px;
   border-radius: 8px;
   overflow: hidden;
 }
