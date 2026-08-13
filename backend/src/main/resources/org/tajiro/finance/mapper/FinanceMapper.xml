@@ -56,6 +56,7 @@
         ORDER BY
             fp.category_similarity DESC,
             fp.min_rate ASC
+            LIMIT 3
 
     </select>
 
