@@ -35,7 +35,7 @@
     <simplebar v-if="step === 1" class="content">
       <div class="field">
         <label class="section-title"
-          >선호위치(직장 / 학교 등)<span class="req">*</span></label
+          >선호 위치(직장 / 학교 등)<span class="req">*</span></label
         >
         <input
           class="field-input"
@@ -247,8 +247,7 @@
       <div class="priority-head">
         <p class="section-title big">주거 가치관 우선순위</p>
         <p class="caption">
-          최대 3개까지 선택하세요. 선택하지 않으면 모두 동일하게
-          반영돼요.
+          최대 3개까지 선택하세요. 선택하지 않으면 모두 동일하게 반영돼요.
         </p>
       </div>
       <div class="priority-list">
@@ -293,11 +292,7 @@
         </button>
         <button
           class="btn-cta"
-          :disabled="
-            isLoading ||
-            isSaving ||
-            (step === 1 && !pref.workplace)
-          "
+          :disabled="isLoading || isSaving || (step === 1 && !pref.workplace)"
           @click="onNext"
         >
           {{
@@ -418,7 +413,7 @@ const BASEMENT_API_VALUE = '지하/반지하';
 const QUICK_SETUP_PRESETS = [
   {
     key: 'DEFAULT',
-    title: '기본 조건으로 보기',
+    title: '선호 위치로 바로보기',
     description: '조건을 넓게 설정해 다양한 매물을 확인해요.',
   },
   {
@@ -572,14 +567,17 @@ function closeQuickSetupModal() {
 }
 
 function createQuickSetupPreference(presetKey) {
-  const workplace = pref.workplace ? { ...pref.workplace } : null;
   const defaults = createDefaultPreference();
+  const stepOnePreference = {
+    workplace: pref.workplace ? { ...pref.workplace } : null,
+    hasCar: pref.hasCar,
+    maxCommuteDistanceMeters: pref.maxCommuteDistanceMeters,
+  };
 
   if (presetKey === 'YOUTH') {
     return {
       ...defaults,
-      workplace,
-      maxCommuteDistanceMeters: 5000,
+      ...stepOnePreference,
       housingTypes: ['원룸', '오피스텔'],
       tradeTypes: ['월세', '전세'],
       depositJeonseRange: [0, 20000],
@@ -599,18 +597,12 @@ function createQuickSetupPreference(presetKey) {
   if (presetKey === 'WORKER') {
     return {
       ...defaults,
-      workplace,
-      maxCommuteDistanceMeters: 5000,
+      ...stepOnePreference,
       housingTypes: ['아파트', '오피스텔'],
       tradeTypes: ['월세', '전세', '매매'],
       areaRange: [20, 120],
       floorPreference: ['2층 이상'],
-      desiredInfraCategories: [
-        'SUBWAY',
-        'BUS_TERMINAL',
-        'TRAIN',
-        'HOSPITAL',
-      ],
+      desiredInfraCategories: ['SUBWAY', 'BUS_TERMINAL', 'TRAIN', 'HOSPITAL'],
       desiredAmenityCategories: ['CONVENIENCE', 'MART', 'PARKING'],
       priorities: [
         { criterion: 'COMMUTE', priorityOrder: 1 },
@@ -620,7 +612,7 @@ function createQuickSetupPreference(presetKey) {
     };
   }
 
-  return { ...defaults, workplace };
+  return { ...defaults, ...stepOnePreference };
 }
 
 function copyList(value, fallback) {
@@ -1067,11 +1059,11 @@ async function onNext() {
   background: var(--white);
 }
 .bottom-bar .btn-cta {
-  flex: 1;
+  flex: 3 1 0;
   width: auto;
 }
 .btn-quick-setup {
-  flex: 0 0 88px;
+  flex: 1 1 0;
   height: 46px;
   border: 1px solid var(--border);
   border-radius: 14px;
@@ -1080,7 +1072,7 @@ async function onNext() {
   font-weight: 700;
 }
 .btn-prev {
-  flex: 0 0 88px;
+  flex: 1 1 0;
   height: 46px;
   border-radius: 14px;
   border: 1px solid var(--border);
