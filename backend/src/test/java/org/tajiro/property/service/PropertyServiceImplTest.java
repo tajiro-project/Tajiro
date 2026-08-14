@@ -61,7 +61,7 @@ class PropertyServiceImplTest {
     @DisplayName("지역 검색 경로 - 반경 1.5km, 점수 없음")
     void getListByRegion() {
         List<PropertyListDTO> list = propertyService.getList(
-                1L, new BigDecimal("36.3318"), new BigDecimal("127.4680"));
+                1L);
 
         log.info("반경 1.5km : " + list.size() + "건");
 
@@ -77,7 +77,7 @@ class PropertyServiceImplTest {
     @Test
     @DisplayName("가치관 경로 - 응답 변환 확인")
     void getListByPreference() {
-        List<PropertyListDTO> list = propertyService.getList(2L, null, null);
+        List<PropertyListDTO> list = propertyService.getList(2L);
 
         log.info("user 2 : " + list.size() + "건");
         assertFalse(list.isEmpty());
@@ -110,7 +110,7 @@ class PropertyServiceImplTest {
     @DisplayName("좌표도 가치관도 없으면 PREFERENCE_NOT_FOUND")
     void getListWithoutCoordinatesAndPreference() {
         BusinessException e = assertThrows(BusinessException.class,
-                () -> propertyService.getList(999L, null, null));
+                () -> propertyService.getList(999L));
 
         assertEquals(ErrorCode.PREFERENCE_NOT_FOUND, e.getResponseCode());
     }

@@ -7,19 +7,20 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 
+@Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-@Data
 public class BuildingVO {
+
     private Long id;
-    private String buildingCode;
-    private String roadAddress;
-    private String jibunAddress;
-    private String bldNm;
-    private String dongNm;
-    private String pnu;
-    private BigDecimal latitude;  // 매물 위치 기준 위도
-    private BigDecimal longitude; // 매물 위치 기준 경도
-    private String sigunguCd;
+    private String buildingCode;   // DB: building_code
+    private String roadAddress;    // DB: road_address
+    private String jibunAddress;   // DB: jibun_address
+    private String bldNm;          // DB: bld_nm
+    private String dongNm;         // DB: dong_nm
+    private String pnu;            // DB: pnu (char 19)
+    private BigDecimal latitude;   // DB: latitude (decimal 10,7)
+    private BigDecimal longitude;  // DB: longitude (decimal 10,7)
+    private String infraStatus;    // DB: infra_status
 }
