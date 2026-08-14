@@ -64,7 +64,7 @@
           />
         </svg>
       </button>
-      <div class="filter-chips" @wheel="onWheelX">
+            <div class="filter-chips">
         <button
           class="fchip"
           :class="{ on: commuteChipOn }"
@@ -1091,6 +1091,15 @@ const housingChipOn = computed(
 const housingChipLabel = computed(() => {
   if (!housingChipOn.value) return '주거 조건';
   const parts = [];
+
+  if (filter.propertyTypes.length > 0) {
+    parts.push(
+      filter.propertyTypes.length === 1
+        ? filter.propertyTypes[0]
+        : `${filter.propertyTypes[0]} 외 ${filter.propertyTypes.length - 1}`,
+    );
+  }
+
   if (
     filter.tradeTypes.length > 0 &&
     filter.tradeTypes.length < TRADE_TYPES.length
@@ -1101,23 +1110,34 @@ const housingChipLabel = computed(() => {
         : `${filter.tradeTypes[0]} 외 ${filter.tradeTypes.length - 1}`,
     );
   }
+
   if (filter.maxDepositJeonse != null)
     parts.push(`${moneyLabel(filter.maxDepositJeonse)} 이하`);
   if (filter.maxSalePrice != null)
     parts.push(`매매가 ${moneyLabel(filter.maxSalePrice)} 이하`);
   if (filter.maxMonthlyRent != null)
     parts.push(`월세 ${filter.maxMonthlyRent}만 이하`);
-  if (filter.propertyTypes.length > 0) {
+
+  if (filter.minAreaM2 != null || filter.maxAreaM2 != null) {
+    const lo = filter.minAreaM2 != null
+      ? Math.floor(filter.minAreaM2 / PYEONG)
+      : null;
+    const hi = filter.maxAreaM2 != null
+      ? Math.floor(filter.maxAreaM2 / PYEONG)
+      : null;
+    if (lo != null && hi != null) parts.push(`${lo}~${hi}평`);
+    else if (hi != null) parts.push(`${hi}평 이하`);
+    else parts.push(`${lo}평 이상`);
+  }
+
+  if (filter.floorPreference.length > 0) {
     parts.push(
-      filter.propertyTypes.length === 1
-        ? filter.propertyTypes[0]
-        : `${filter.propertyTypes[0]} 외 ${filter.propertyTypes.length - 1}`,
+      filter.floorPreference.length === 1
+        ? filter.floorPreference[0]
+        : `${filter.floorPreference[0]} 외 ${filter.floorPreference.length - 1}개`,
     );
   }
-  if (filter.minAreaM2 != null || filter.maxAreaM2 != null)
-    parts.push('면적 조건');
-  if (filter.floorPreference.length > 0)
-    parts.push(`층수 ${filter.floorPreference.length}개`);
+
   return parts.slice(0, 2).join(' · ') || '주거 조건';
 });
 
@@ -1805,18 +1825,20 @@ watch(filter, scrollToTop);
   display: flex;
   gap: 8px;
   padding: 0px 16px 0;
-  overflow-x: auto;
 }
 
 .fchip {
-  flex-shrink: 0;
-  padding: 8px 14px;
+  flex: 1;
+  min-width: 0;
+  padding: 4px 6px;
   border: 1.5px solid #e9e7e2;
   border-radius: 100px;
   background: #fff;
   font-size: 12.5px;
   color: #33302a;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   cursor: pointer;
 }
 
@@ -1868,12 +1890,10 @@ watch(filter, scrollToTop);
   height: 42px;
 }
 
-.filter-chips,
 .priority-row {
   scrollbar-width: none;
 }
 
-.filter-chips::-webkit-scrollbar,
 .priority-row::-webkit-scrollbar {
   display: none;
 }
@@ -1934,24 +1954,6 @@ watch(filter, scrollToTop);
   flex: 1;
   height: 1px;
   background: var(--border);
-}
-
-@media (hover: hover) {
-  .filter-chips {
-    scrollbar-width: thin;
-    scrollbar-color: #eceae5 transparent;
-  }
-  .filter-chips::-webkit-scrollbar {
-    display: block;
-    height: 4px;
-  }
-  .filter-chips::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  .filter-chips::-webkit-scrollbar-thumb {
-    background: #eceae5;
-    border-radius: 2px;
-  }
 }
 
 .opt-grid {
