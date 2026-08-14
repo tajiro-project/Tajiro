@@ -1415,7 +1415,14 @@ function priceLabel(p) {
 }
 
 function goDetail(p) {
-  router.push(`/properties/${p.propertyId}`);
+  const query = route.query.returnTo === 'compare-box'
+    ? { returnTo: 'compare-box' }
+    : {};
+
+  router.push({
+    path: `/properties/${p.propertyId}`,
+    query,
+  });
 }
 
 function scrollToTop() {
