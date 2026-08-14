@@ -897,6 +897,11 @@ async function addToCompare() {
     // 백엔드 API 직접 호출
     await comparisonApi.addToBox(p.value.id);
     compareMsg.value = '비교함에 담았어요.';
+
+    if (route.query.returnTo === 'compare-box') {
+      await router.replace('/compare-box');
+      return;
+    }
   } catch (error) {
     console.error('비교함 담기 실패:', error);
 

@@ -42,7 +42,9 @@ public class AuthServiceImpl implements AuthService {
         }
 
         String accessToken = jwtProvider.createAccessToken(user.getId(), user.getEmail());
-        return LoginResponse.of(accessToken, user);
+        boolean hasListings = "SELLER".equals(user.getRole())
+                && authMapper.existsPropertyBySellerId(user.getId());
+        return LoginResponse.of(accessToken, user, hasListings);
     }
 
     @Override

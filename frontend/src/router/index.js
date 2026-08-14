@@ -165,8 +165,16 @@ const PUBLIC_PATHS = ['/', '/login', '/register'];
 
 router.beforeEach((to) => {
   const isLoggedIn = !!localStorage.getItem('accessToken');
+
   if (!PUBLIC_PATHS.includes(to.path) && !isLoggedIn) {
     return { path: '/login', query: { redirect: to.fullPath } };
+  }
+
+  if (to.path.startsWith('/seller') && isLoggedIn) {
+    const role = localStorage.getItem('userRole');
+    if (role !== 'SELLER') {
+      return { path: '/home' };
+    }
   }
 });
 
