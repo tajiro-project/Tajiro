@@ -211,6 +211,7 @@
                     v-for="(score, scoreIndex) in scores"
                     :key="cumulativeScoreSpecs[scoreIndex].key"
                     class="cumulative-segment"
+                    :title="getCumulativeSegmentTitle(score, scoreIndex)"
                     :style="{
                       width: getCumulativeSegmentWidth(score),
                       background: cumulativeScoreSpecs[scoreIndex].color,
@@ -678,6 +679,12 @@ const seriesTotals = computed(() =>
 function getCumulativeSegmentWidth(score) {
   const axisCount = cumulativeScoreSpecs.value.length;
   return axisCount ? `${score / axisCount}%` : '0%';
+}
+
+function getCumulativeSegmentTitle(score, scoreIndex) {
+  const spec = cumulativeScoreSpecs.value[scoreIndex];
+  const label = spec?.label ?? '지표';
+  return `${label} · ${Math.round(score)}점`;
 }
 const topCumulativePropertyIds = computed(() => {
   if (!seriesTotals.value.length) return [];
