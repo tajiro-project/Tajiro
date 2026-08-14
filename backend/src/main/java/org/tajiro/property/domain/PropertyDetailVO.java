@@ -39,5 +39,5 @@ public class PropertyDetailVO {
     private LocalDateTime updateDate;
     private Boolean discussionStatus;
     private String dong;
-    private Integer evaluationScore;
+    private BigDecimal evaluationScore;
 }

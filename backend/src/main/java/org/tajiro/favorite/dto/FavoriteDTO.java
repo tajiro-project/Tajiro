@@ -17,7 +17,7 @@ public class FavoriteDTO {
     private String tradeType;
     private Integer deposit;
     private Integer monthlyRent;
-    private Integer evaluationScore;
+    private BigDecimal evaluationScore;
     private String imageUrl;
     private String propertyType;
     private BigDecimal areaM2;

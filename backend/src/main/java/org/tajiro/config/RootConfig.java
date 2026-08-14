@@ -14,6 +14,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.web.client.RestTemplate;
 
@@ -28,6 +29,7 @@ import javax.sql.DataSource;
 @Configuration
 @PropertySource("classpath:application.properties")
 @EnableTransactionManagement
+@EnableScheduling
 @MapperScan(basePackages = {
         "org.tajiro.auth.mapper",
         "org.tajiro.terms.mapper",
@@ -41,7 +43,8 @@ import javax.sql.DataSource;
         "org.tajiro.seller.mapper",
         "org.tajiro.favorite.mapper",
         "org.tajiro.dashboard.mapper",
-        "org.tajiro.terms.mapper"
+        "org.tajiro.terms.mapper",
+        "org.tajiro.market.mapper"
 })
 @ComponentScan(basePackages = {
         "org.tajiro.ai",
@@ -60,7 +63,8 @@ import javax.sql.DataSource;
         "org.tajiro.location.service",
         "org.tajiro.favorite.service",
         "org.tajiro.dashboard.service",
-        "org.tajiro.terms.service"
+        "org.tajiro.terms.service",
+        "org.tajiro.market"
 })
 public class RootConfig {
 

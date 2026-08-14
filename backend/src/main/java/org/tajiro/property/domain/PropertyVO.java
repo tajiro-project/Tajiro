@@ -36,7 +36,7 @@ public class PropertyVO {
     private LocalDate updateDate;
     private Boolean discussionStatus;
     private String dong;
-    private Integer evaluationScore;
+    private BigDecimal evaluationScore;
 
     private Integer distanceMeters;
     private Integer desiredInfraCount;

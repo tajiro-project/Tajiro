@@ -27,7 +27,12 @@ public class ComparisonMetricDTO {
     private Integer commuteMinutes;
     private Integer infraCount;
     private Integer amenityCount;
-    private Integer evaluationScore;
+    private BigDecimal evaluationScore;
+    private String marketStatus;
+    private BigDecimal marketReferencePrice;
+    private Integer marketTransactionCount;
+    private Integer marketBasisLevel;
+    private LocalDateTime marketCalculatedAt;
     private Integer cctvCountWithin500m;
     private Integer policeNearestDistanceMeters;
     private Integer childrenCountWithin500m;
