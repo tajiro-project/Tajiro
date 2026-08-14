@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="cbox">
     <simplebar class="scroll-area">
       <h1 class="title">비교할 매물을 확인해주세요 (최대 3개)</h1>
@@ -76,7 +76,7 @@
               {{ criterionLabel(priority.criterion) }}
             </span>
           </template>
-          <span v-else class="priority-placeholder">가치관을 선택해주세요</span>
+          <span v-else class="priority-placeholder">가치관 미선택 시 동일 가중치로 비교해요</span>
         </button>
       </section>
 
@@ -202,7 +202,7 @@
             stroke-linecap="round"
           />
         </svg>
-        2~3개를 담으면 AI가 가치관 기준으로 비교 코칭을 해드려요.
+        2~3개를 담으면 선택한 가치관 기준으로 비교 코칭을 해드려요.
       </p>
 
       <button
@@ -261,7 +261,6 @@
         <button
           class="btn-primary"
           type="button"
-          :disabled="draftPriorities.length === 0"
           @click="applyPriorities"
         >
           이 순서로 적용
@@ -355,12 +354,6 @@ async function startCompare() {
   if (!hasDesiredLocation(comparisonWorkplace.value)) {
     locationMessage.value = '직주근접 비교 기준이 될 위치를 선택해주세요.';
     isLocationPickerOpen.value = true;
-    return;
-  }
-
-  if (!comparisonPriorities.value.length) {
-    priorityMessage.value = '비교 기준이 될 가치관을 선택해주세요.';
-    openPrioritySheet();
     return;
   }
 

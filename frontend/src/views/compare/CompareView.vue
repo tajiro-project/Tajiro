@@ -883,7 +883,7 @@ async function loadComparison() {
       return;
     }
 
-    if (!isReportMode.value && (!workplace || !priorities.length)) {
+    if (!isReportMode.value && !workplace) {
       router.replace('/compare-box');
       return;
     }
