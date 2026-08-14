@@ -375,12 +375,14 @@
       </div>
     </div>
 
-    <div class="sheet-actions">
-      <button class="btn-ghost" @click="resetHousing">초기화</button>
-      <button class="btn-primary" @click="applyHousing">
-        이 조건으로 적용
-      </button>
-    </div>
+    <template #footer>
+      <div class="sheet-actions">
+        <button class="btn-ghost" @click="resetHousing">초기화</button>
+        <button class="btn-primary" @click="applyHousing">
+          이 조건으로 적용
+        </button>
+      </div>
+    </template>
   </BottomSheet>
 
   <!-- 이주/통근 정보 -->
@@ -451,12 +453,14 @@
       </div>
     </div>
 
-    <div class="sheet-actions">
-      <button class="btn-ghost" @click="resetCommute">초기화</button>
-      <button class="btn-primary" @click="applyCommute">
-        이 조건으로 적용
-      </button>
-    </div>
+    <template #footer>
+      <div class="sheet-actions">
+        <button class="btn-ghost" @click="resetCommute">초기화</button>
+        <button class="btn-primary" @click="applyCommute">
+          이 조건으로 적용
+        </button>
+      </div>
+    </template>
   </BottomSheet>
 
   <!-- 인프라 · 편의시설 -->
@@ -497,10 +501,12 @@
       </div>
     </div>
 
-    <div class="sheet-actions">
-      <button class="btn-ghost" @click="resetInfra">초기화</button>
-      <button class="btn-primary" @click="applyInfra">이 조건으로 적용</button>
-    </div>
+    <template #footer>
+      <div class="sheet-actions">
+        <button class="btn-ghost" @click="resetInfra">초기화</button>
+        <button class="btn-primary" @click="applyInfra">이 조건으로 적용</button>
+      </div>
+    </template>
   </BottomSheet>
 
   <!-- 정렬 -->
@@ -562,15 +568,14 @@
         </span>
       </button>
     </div>
-    <div class="sheet-actions">
-      <button class="btn-ghost" @click="draft.priorities = []">초기화</button>
-      <button
-        class="btn-primary"
-        @click="applyPriority"
-      >
-        이 순서로 적용
-      </button>
-    </div>
+    <template #footer>
+      <div class="sheet-actions">
+        <button class="btn-ghost" @click="draft.priorities = []">초기화</button>
+        <button class="btn-primary" @click="applyPriority">
+          이 순서로 적용
+        </button>
+      </div>
+    </template>
   </BottomSheet>
 
   <KakaoLocation
@@ -2101,7 +2106,6 @@ watch(filter, scrollToTop);
 .sheet-actions {
   display: flex;
   gap: 8px;
-  padding-top: 18px;
 }
 
 .btn-ghost {

@@ -28,6 +28,9 @@
           <div class="sheet-body">
             <slot />
           </div>
+          <div v-if="$slots.footer" class="sheet-footer">
+            <slot name="footer" />
+          </div>
         </div>
       </div>
     </Transition>
@@ -169,10 +172,18 @@ onUnmounted(() => {
   color: var(--kb-silver);
   display: flex;
 }
+
+.sheet-footer {
+  flex-shrink: 0;
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+  background: var(--white);
+  border-top: 1px solid #e9e7e2;
+}
+
 .sheet-body {
   overflow-y: auto;
   flex: 1;
-  padding: 0 16px 20px;
+  padding: 14px 16px 20px;
   -webkit-overflow-scrolling: touch;
 }
 .sheet-enter-active,
