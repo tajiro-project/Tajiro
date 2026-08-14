@@ -155,4 +155,6 @@ export const sellerApi = {
 export const locationApi = {
   searchAddress: async (query) =>
     (await client.get('/locations/addresses', { params: { query } })).data,
+  searchDongs: async (params) =>
+    (await client.get('/locations/buildings/dongs', { params })).data,
 };

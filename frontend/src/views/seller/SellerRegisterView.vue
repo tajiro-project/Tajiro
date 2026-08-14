@@ -30,9 +30,9 @@
             type="text"
             readonly
             :value="form.aptDong ?? ''"
-            :placeholder="form.address?.isApartment ? '101동' : '동 없음'"
-            :disabled="!form.address?.isApartment"
-            @click="form.address?.isApartment && (isDongOpen = true)"
+            :placeholder="dongOptions.length ? '예) 101동' : '동 없음'"
+            :disabled="!dongOptions.length"
+            @click="dongOptions.length && (isDongOpen = true)"
           />
           <span class="slash">/</span>
           <input
@@ -369,7 +369,7 @@ import { useRoute, useRouter } from 'vue-router';
 import AddressSearchSheet from '@/components/AddressSearchSheet.vue';
 import AptDongSheet from '@/components/AptDongSheet.vue';
 import DatePicker from '@/components/DatePicker.vue';
-import { sellerApi } from '@/api/services';
+import { locationApi, sellerApi } from '@/api/services';
 
 const route = useRoute();
 const router = useRouter();
@@ -446,14 +446,29 @@ function go(n) {
   router.push(`/seller/register/${n}`);
 }
 
-function onAddressSelect(addr) {
+async function onAddressSelect(addr) {
   form.address = addr;
   form.aptDong = null;
   form.buildingName = addr.buildingName ?? '';
   isAddressOpen.value = false;
+  dongOptions.value = [];
 
-  if (addr.isApartment) {
-    dongOptions.value = addr.dongs ?? [];
+  if (!addr.sigunguCd) return;
+
+  try {
+    const res = await locationApi.searchDongs({
+      sigunguCd: addr.sigunguCd,
+      bjdongCd: addr.bjdongCd,
+      platGbCd: addr.platGbCd,
+      bun: addr.bun,
+      ji: addr.ji,
+    });
+    dongOptions.value = res.data ?? [];
+  } catch {
+    dongOptions.value = [];
+  }
+
+  if (dongOptions.value.length > 0) {
     isDongOpen.value = true;
   }
 }
@@ -500,7 +515,7 @@ function buildPayload() {
     moveInDate: form.moveInDate || null,
     availableDate: form.availableDate || null,
     location: {
-      address: form.address?.roadAddress,
+      address: form.address?.roadAddress ?? form.address?.jibunAddress,
       buildingName: form.buildingName,
       lat: form.address?.lat,
       lng: form.address?.lng,
