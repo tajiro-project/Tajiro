@@ -56,16 +56,7 @@ public class ComparisonAiServiceImpl implements ComparisonAiService {
                 .distinct()
                 .sorted()
                 .collect(Collectors.toList());
-        //비교 지표 조회
-        ComparisonMetricsResponseDTO metrics = comparisonService.getComparisonMetrics(
-                userId,
-                propertyIds,
-                request.getWorkplaceLat(),
-                request.getWorkplaceLng(),
-                true);
         List<String> priorities = validatePriorities(request.getPriorities());
-        //비교 대상 매물 중 최신 업데이트 날짜 추출
-        LocalDateTime maxPropertyUpdateDate = getMaxPropertyUpdateDate(metrics.getItems());
 
         String propertyIdsJson = toLongJson(propertyIds);
         LocalDateTime latestMarketSyncAt =
@@ -74,13 +65,23 @@ public class ComparisonAiServiceImpl implements ComparisonAiService {
                 priorities,
                 request.getWorkplaceLat(),
                 request.getWorkplaceLng()));
+
+        // 시세 점수를 새로 계산하지 않고 현재 DB 값만 조회해 기존 리포트 재사용 가능 여부를 먼저 판단한다.
+        ComparisonMetricsResponseDTO metrics = comparisonService.getComparisonMetrics(
+                userId,
+                propertyIds,
+                request.getWorkplaceLat(),
+                request.getWorkplaceLng(),
+                false);
+        LocalDateTime maxPropertyUpdateDate = getMaxPropertyUpdateDate(metrics.getItems());
+
         //재사용 가능한 리포트 조회: 사용자, 비교 대상 매물, 사용자 가치관 우선순위가 동일한 리포트
         ComparisonReportVO reusableReport = comparisonReportMapper.findReusable(
                 userId,
                 propertyIdsJson,
                 propertyIds.size(),
                 prioritiesJson);
-        //재사용 가능한 리포트가 존재하고, 기존 AI 코칭이 성공적이며, 매물 업데이트 이후에 생성되었으면 재사용
+        //재사용 가능한 리포트가 존재하고, 기존 AI 코칭이 성공적이며, 매물/실거래 동기화 이후에 생성되었으면 재사용
         if (isSuccessfulAiCoaching(
                 reusableReport,
                 propertyIds,
@@ -89,7 +90,16 @@ public class ComparisonAiServiceImpl implements ComparisonAiService {
             comparisonReportMapper.updateCreatedAt(reusableReport.getReportId(), userId);
             return toAnalysisResponse(reusableReport);
         }
-        
+
+        // 기존 리포트를 재사용할 수 없을 때만 최신 시세 차이율을 다시 계산한다.
+        metrics = comparisonService.getComparisonMetrics(
+                userId,
+                propertyIds,
+                request.getWorkplaceLat(),
+                request.getWorkplaceLng(),
+                true);
+        maxPropertyUpdateDate = getMaxPropertyUpdateDate(metrics.getItems());
+
         //새 AI 코칭 결과 생성
         ComparisonAnalysisResponseDTO generated = comparisonAiClient.generate(
                 metrics.getItems(),

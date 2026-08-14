@@ -285,6 +285,7 @@ import {
 } from '@/constants/preferenceOptions';
 
 const router = useRouter();
+const COMPARISON_DRAFT_KEY = 'tajiro:compare-box:draft';
 
 const loading = ref(false);
 const deletingId = ref('');
@@ -303,7 +304,8 @@ const hasEditedPriorities = ref(false);
 
 onMounted(() => {
   loadCompareBox();
-  loadDefaultComparisonSettings();
+  const restoredDraft = restoreComparisonDraft();
+  loadDefaultComparisonSettings(restoredDraft);
 });
 
 async function loadCompareBox() {
@@ -361,6 +363,8 @@ async function startCompare() {
   errorMessage.value = '';
 
   try {
+    saveComparisonDraft();
+
     await router.push({
       path: '/compare',
       query: {
@@ -384,17 +388,22 @@ async function startCompare() {
   }
 }
 
-async function loadDefaultComparisonSettings() {
+async function loadDefaultComparisonSettings(restoredDraft = {}) {
   try {
     const preference = await preferenceApi.get();
     if (
+      !restoredDraft.hasWorkplace &&
       !comparisonWorkplace.value &&
       hasDesiredLocation(preference?.workplace)
     ) {
       comparisonWorkplace.value = { ...preference.workplace };
     }
 
-    if (!hasEditedPriorities.value && Array.isArray(preference?.priorities)) {
+    if (
+      !restoredDraft.hasPriorities &&
+      !hasEditedPriorities.value &&
+      Array.isArray(preference?.priorities)
+    ) {
       comparisonPriorities.value = normalizePriorities(preference.priorities);
     }
   } catch (error) {
@@ -423,6 +432,50 @@ function normalizePriorities(priorities) {
       criterion: priority.criterion,
       priorityOrder: index + 1,
     }));
+}
+
+function restoreComparisonDraft() {
+  if (typeof sessionStorage === 'undefined') {
+    return { hasWorkplace: false, hasPriorities: false };
+  }
+
+  try {
+    const rawDraft = sessionStorage.getItem(COMPARISON_DRAFT_KEY);
+    if (!rawDraft) {
+      return { hasWorkplace: false, hasPriorities: false };
+    }
+
+    const draft = JSON.parse(rawDraft);
+    const restored = { hasWorkplace: false, hasPriorities: false };
+
+    if (hasDesiredLocation(draft?.workplace)) {
+      comparisonWorkplace.value = { ...draft.workplace };
+      restored.hasWorkplace = true;
+    }
+
+    if (Array.isArray(draft?.priorities)) {
+      comparisonPriorities.value = normalizePriorities(draft.priorities);
+      hasEditedPriorities.value = true;
+      restored.hasPriorities = true;
+    }
+
+    return restored;
+  } catch (error) {
+    sessionStorage.removeItem(COMPARISON_DRAFT_KEY);
+    return { hasWorkplace: false, hasPriorities: false };
+  }
+}
+
+function saveComparisonDraft() {
+  if (typeof sessionStorage === 'undefined') return;
+
+  sessionStorage.setItem(
+    COMPARISON_DRAFT_KEY,
+    JSON.stringify({
+      workplace: comparisonWorkplace.value,
+      priorities: comparisonPriorities.value,
+    }),
+  );
 }
 
 function criterionLabel(criterion) {
@@ -466,6 +519,7 @@ function applyPriorities() {
   );
   hasEditedPriorities.value = true;
   priorityMessage.value = '';
+  saveComparisonDraft();
   closePrioritySheet();
 }
 
@@ -492,6 +546,7 @@ function openLocationPicker() {
 function selectWorkplace(location) {
   comparisonWorkplace.value = location;
   locationMessage.value = '';
+  saveComparisonDraft();
 }
 
 function goPropertyListForAdd() {
