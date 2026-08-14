@@ -12,6 +12,7 @@ import org.tajiro.comparison.dto.ComparisonMetricDTO;
 import org.tajiro.comparison.dto.ComparisonMetricsResponseDTO;
 import org.tajiro.comparison.mapper.ComparisonMapper;
 import org.tajiro.exception.BusinessException;
+import org.tajiro.market.service.MarketEvaluationService;
 
 import java.util.HashSet;
 import java.util.List;
@@ -24,6 +25,7 @@ public class ComparisonServiceImpl implements ComparisonService {
     private static final int MIN_COMPARISON_PROPERTIES = 2;
 
     private final ComparisonMapper comparisonMapper;
+    private final MarketEvaluationService marketEvaluationService;
 
     @Override
     @Transactional(readOnly = true)
@@ -61,7 +63,7 @@ public class ComparisonServiceImpl implements ComparisonService {
 
     //사용자 ID와 매물 ID 목록을 검증한 다음, DB에서 비교 지표를 조회하여 DTO로 반환
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public ComparisonMetricsResponseDTO getComparisonMetrics(
             Long userId,
             List<Long> propertyIds,
@@ -76,6 +78,9 @@ public class ComparisonServiceImpl implements ComparisonService {
         }
 
         validateWorkplace(workplaceLat, workplaceLng);
+
+        // 외부 API를 호출하지 않고, 이미 수집된 실거래 데이터로 최신 시세 차이율을 계산한다.
+        marketEvaluationService.evaluateProperties(propertyIds);
 
         //Mapper를 통해 DB에서 매물 ID에 해당하는 ComparisonMetricDTO를 조회한다.
         List<ComparisonMetricDTO> items = comparisonMapper.findMetrics(
