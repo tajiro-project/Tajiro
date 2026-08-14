@@ -98,9 +98,11 @@ public class KakaoLocalClient {
             if (lat == null || lng == null) {
                 continue;
             }
-
-            JsonNode address = coordToAddress(lat, lng);
-
+            String jibun = text(doc.path("address_name"));
+            JsonNode address = addressNodeOf(jibun);
+            if(address == null) {
+                address = coordToAddress(lat, lng);
+            }
             results.add(withParcel(AddressResolveResult.base()
                     .roadAddress(text(doc.path("road_address_name")))
                     .jibunAddress(text(doc.path("address_name")))
@@ -110,6 +112,27 @@ public class KakaoLocalClient {
                     .build());
         }
         return results;
+    }
+
+    private JsonNode addressNodeOf(String jibunAddress) {
+        if (!hasText(jibunAddress)) {
+            return null;
+        }
+
+        JsonNode root = call(UriComponentsBuilder.fromHttpUrl(ADDRESS_URL)
+                .queryParam("query", jibunAddress)
+                .queryParam("size", 1)
+                .build()
+                .encode(StandardCharsets.UTF_8)
+                .toUri());
+
+        JsonNode documents = root.path("documents");
+        if (!documents.isArray() || documents.size() == 0) {
+            return null;
+        }
+
+        JsonNode address = documents.get(0).path("address");
+        return hasText(text(address.path("b_code"))) ? address : null;
     }
 
     private AddressResolveResult toResult(JsonNode doc) {
