@@ -497,7 +497,10 @@ function selectWorkplace(location) {
 function goPropertyListForAdd() {
   if (items.value.length >= 3) return;
 
-  router.push('/properties');
+  router.push({
+    path: '/properties',
+    query: { returnTo: 'compare-box' },
+  });
 }
 
 function goBack() {
