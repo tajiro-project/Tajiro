@@ -797,6 +797,7 @@ const safetyRows = computed(() => {
       values: metrics.value.map((m) => m.cctvCountWithin500m ?? 0),
       fmt: (v) => `${v}대`,
       better: 'max',
+      zeroIsLowest: true,
     },
     {
       label: '경찰·지구대',
@@ -809,42 +810,51 @@ const safetyRows = computed(() => {
       values: metrics.value.map((m) => m.safetyLightCountWithin500m ?? 0),
       fmt: (v) => `${v}곳`,
       better: 'max',
+      zeroIsLowest: true,
     },
     {
       label: '안전 비상벨',
       values: metrics.value.map((m) => m.bellCountWithin500m ?? 0),
       fmt: (v) => `${v}개`,
       better: 'max',
+      zeroIsLowest: true,
     },
     {
       label: '아동안전지킴이집',
       values: metrics.value.map((m) => m.childrenCountWithin500m ?? 0),
       fmt: (v) => `${v}곳`,
       better: 'max',
+      zeroIsLowest: true,
     },
   ];
   return rows.map((row) => {
-    const sorted = row.values
-      .filter(Number.isFinite)
-      .sort((a, b) => (row.better === 'max' ? b - a : a - b));
-    const best = sorted[0];
-    const second = sorted[1];
+    const rankedValues = [
+      ...new Set(
+        row.values
+          .filter(Number.isFinite)
+          .filter((value) => !(row.zeroIsLowest && value === 0)),
+      ),
+    ].sort((a, b) => (row.better === 'max' ? b - a : a - b));
+
+    const getTone = (value) => {
+      if (!Number.isFinite(value)) return 'plain';
+      if (row.zeroIsLowest && value === 0) return 'plain';
+
+      const denseRank = rankedValues.indexOf(value) + 1;
+      if (denseRank === 1) return 'best';
+      if (denseRank === 2) return 'mid';
+      return 'plain';
+    };
+
     return {
       label: row.label,
       cells: row.values.map((value) => ({
         text: Number.isFinite(value) ? row.fmt(value) : '정보 없음',
-        tone: !Number.isFinite(value)
-          ? 'plain'
-          : value === best
-            ? 'best'
-            : value === second && row.values.length > 2
-              ? 'mid'
-              : 'plain',
+        tone: getTone(value),
       })),
     };
   });
 });
-
 onMounted(loadComparison);
 
 // 매물 비교 화면에 필요한 데이터를 서버에서 불러오는 함수
