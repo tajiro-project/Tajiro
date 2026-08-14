@@ -68,7 +68,8 @@ public class ComparisonServiceImpl implements ComparisonService {
             Long userId,
             List<Long> propertyIds,
             Double workplaceLat,
-            Double workplaceLng) {
+            Double workplaceLng,
+            boolean refreshMarketScore) {
         if (propertyIds == null
                 || propertyIds.size() < MIN_COMPARISON_PROPERTIES
                 || propertyIds.size() > MAX_COMPARE_PROPERTIES
@@ -80,7 +81,9 @@ public class ComparisonServiceImpl implements ComparisonService {
         validateWorkplace(workplaceLat, workplaceLng);
 
         // 외부 API를 호출하지 않고, 이미 수집된 실거래 데이터로 최신 시세 차이율을 계산한다.
-        marketEvaluationService.evaluateProperties(propertyIds);
+        if (refreshMarketScore) {
+            marketEvaluationService.evaluateProperties(propertyIds);
+        }
 
         //Mapper를 통해 DB에서 매물 ID에 해당하는 ComparisonMetricDTO를 조회한다.
         List<ComparisonMetricDTO> items = comparisonMapper.findMetrics(

@@ -12,6 +12,7 @@ import org.tajiro.market.domain.MarketSyncTarget;
 import org.tajiro.market.domain.MarketTradeType;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface MarketTransactionMapper {
@@ -44,6 +45,8 @@ public interface MarketTransactionMapper {
             @Param("sourceApi") MarketApiSource sourceApi,
             @Param("sggCode") String sggCode,
             @Param("dealYm") String dealYm);
+
+    LocalDateTime findLatestSuccessfulSyncAt();
 
     List<MarketSyncTarget> findSyncTargets();
 

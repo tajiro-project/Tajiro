@@ -4,6 +4,7 @@ import org.apache.ibatis.annotations.Param;
 import org.tajiro.report.domain.ComparisonReportVO;
 import org.tajiro.report.dto.ComparisonReportPropertyDTO;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface ComparisonReportMapper {
@@ -33,6 +34,9 @@ public interface ComparisonReportMapper {
     List<Long> findPropertyIdsByJson(@Param("propertyIdsJson") String propertyIdsJson);
 
     List<ComparisonReportPropertyDTO> findPropertiesByJson(
+            @Param("propertyIdsJson") String propertyIdsJson);
+
+    LocalDateTime findLatestMarketSyncAtByJson(
             @Param("propertyIdsJson") String propertyIdsJson);
 
     int markUnsaved(@Param("reportId") Long reportId,

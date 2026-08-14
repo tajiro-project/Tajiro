@@ -72,10 +72,10 @@
         </div>
 
         <p
-          v-if="hasUpdatedProperty(r)"
+          v-if="hasUpdatedReportData(r)"
           class="update-notice"
         >
-          매물 정보가 저장 이후 업데이트됐어요.
+          매물 또는 시세 정보가 저장 이후 업데이트됐어요.
         </p>
 
         <p class="rc-summary">
@@ -246,6 +246,18 @@ function hasUpdatedProperty(report) {
     return !Number.isNaN(updatedAt.getTime()) && updatedAt > savedAt;
   });
 }
+function hasUpdatedMarketData(report) {
+  const savedAt = new Date(report.createdAt);
+  const syncedAt = new Date(report.latestMarketSyncAt);
+  return (
+    !Number.isNaN(savedAt.getTime()) &&
+    !Number.isNaN(syncedAt.getTime()) &&
+    syncedAt > savedAt
+  );
+}
+function hasUpdatedReportData(report) {
+  return hasUpdatedProperty(report) || hasUpdatedMarketData(report);
+}
 function recommendedOf(r) {
   return r.aiRecommendedPropertyId ?? '';
 }
@@ -281,7 +293,7 @@ async function removeReport(r) {
 function openReport(r) {
   router.push({
     path: '/reports/' + r.reportId,
-    query: hasUpdatedProperty(r) ? { aiRefresh: '1' } : {},
+    query: hasUpdatedReportData(r) ? { aiRefresh: '1' } : {},
   });
 }
 </script>

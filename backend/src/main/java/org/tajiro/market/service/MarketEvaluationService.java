@@ -68,7 +68,7 @@ public class MarketEvaluationService {
                     coverageCache));
         }
     }
-
+    // 
     private MarketEvaluationResult evaluateOne(
             MarketPropertyVO property,
             LocalDate today,
@@ -77,25 +77,25 @@ public class MarketEvaluationService {
         if (property.getSggCode() == null || !property.getSggCode().matches("\\d{5}")) {
             return unavailable(property, MarketEvaluationStatus.REGION_CODE_MISSING, false);
         }
-
+        // 매물 카테고리 결정
         List<MarketPropertyCategory> categories = categoryResolver.resolve(property);
         if (categories.isEmpty()) {
             return unavailable(property, MarketEvaluationStatus.SOURCE_UNMAPPED, false);
         }
-
+        // 거래 유형 결정
         MarketTradeType tradeType;
         try {
             tradeType = MarketTradeType.fromPropertyTradeType(property.getTradeType());
         } catch (IllegalArgumentException e) {
             return unavailable(property, MarketEvaluationStatus.SOURCE_UNMAPPED, false);
         }
-
+        // 단독주택 매물은 시세 평가를 지원하지 않음
         if (tradeType == MarketTradeType.SALE
                 && categories.size() == 1
                 && categories.get(0) == MarketPropertyCategory.SINGLE_HOUSE) {
             return unavailable(property, MarketEvaluationStatus.SOURCE_UNMAPPED, false);
         }
-
+        // 매물 가격 결정 (거래 유형별로 실거래가와 비교 가능한 가격 형태로 변환)
         BigDecimal listingPrice = priceConverter.convert(property);
         if (listingPrice == null || listingPrice.compareTo(BigDecimal.ZERO) <= 0) {
             return unavailable(property, MarketEvaluationStatus.SOURCE_UNMAPPED, false);
@@ -112,6 +112,7 @@ public class MarketEvaluationService {
         }
 
         List<MarketEvaluationResult> calculated = new ArrayList<>();
+        //카테고리별 비교 실거래가 조회
         for (MarketPropertyCategory category : categories) {
             String cacheKey = category + "|" + tradeType + "|" + property.getSggCode();
             List<MarketComparableTransactionVO> transactions = transactionCache.computeIfAbsent(

@@ -13,6 +13,7 @@ import org.tajiro.market.domain.MarketTradeType;
 import org.tajiro.market.mapper.MarketTransactionMapper;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -35,6 +36,10 @@ public class MarketSyncService {
 
     public boolean isApiConfigured() {
         return apiClient.isConfigured();
+    }
+
+    public LocalDateTime getLatestSuccessfulSyncAt() {
+        return mapper.findLatestSuccessfulSyncAt();
     }
 
     public MarketSyncSummary syncRegisteredMarkets(int historyMonths, int refreshMonths) {

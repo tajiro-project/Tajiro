@@ -342,7 +342,7 @@
             AI 코칭 업데이트가 필요해요
           </p>
           <p class="m-text">
-            매물 정보가 저장 이후 변경됐어요.<br />
+            매물 또는 시세 정보가 저장 이후 변경됐어요.<br />
             현재 정보에 맞게 AI 코칭을<br />
             업데이트하시겠어요?
           </p>
@@ -881,7 +881,11 @@ async function loadComparison() {
     activeWorkplace.value = workplace;
     activePriorities.value = priorities;
     selectInitialScore(priorities);
-    const metricsResult = await getMetrics(propertyIds, workplace);
+    const metricsResult = await getMetrics(
+      propertyIds,
+      workplace,
+      !isReportMode.value,
+    );
     let coachingDto = null;
     coachingError.value = '';
 
@@ -951,7 +955,11 @@ function getSavedReportPriorities(report) {
 }
 
 function shouldShowAiRefreshModal(report) {
-  return route.query.aiRefresh === '1' || hasUpdatedReportProperty(report);
+  return route.query.aiRefresh === '1' || hasUpdatedReportData(report);
+}
+
+function hasUpdatedReportData(report) {
+  return hasUpdatedReportProperty(report) || hasUpdatedMarketData(report);
 }
 
 function hasUpdatedReportProperty(report) {
@@ -964,17 +972,36 @@ function hasUpdatedReportProperty(report) {
   });
 }
 
+function hasUpdatedMarketData(report) {
+  const savedAt = new Date(report?.createdAt);
+  const syncedAt = new Date(report?.latestMarketSyncAt);
+  return (
+    !Number.isNaN(savedAt.getTime()) &&
+    !Number.isNaN(syncedAt.getTime()) &&
+    syncedAt > savedAt
+  );
+}
+
 async function refreshAiCoaching() {
   if (!currentPropertyIds.value.length) return;
 
   refreshingCoaching.value = true;
   coachingError.value = '';
   try {
-    coaching.value = await getCoaching(
+    const updatedCoaching = await getCoaching(
       currentPropertyIds.value,
       activeWorkplace.value,
       activePriorities.value,
     );
+    const updatedMetrics = await getMetrics(
+      currentPropertyIds.value,
+      activeWorkplace.value,
+      false,
+    );
+    applyComparisonResult({
+      metrics: updatedMetrics,
+      coaching: updatedCoaching,
+    });
     showAiRefreshModal.value = false;
   } catch (error) {
     coaching.value = null;
@@ -985,9 +1012,15 @@ async function refreshAiCoaching() {
   }
 }
 
-async function getMetrics(propertyIds, workplace) {
+async function getMetrics(propertyIds, workplace, refreshMarketScore = true) {
   try {
-    return unwrapApiData(await comparisonApi.metrics(propertyIds, workplace));
+    return unwrapApiData(
+      await comparisonApi.metrics(
+        propertyIds,
+        workplace,
+        refreshMarketScore,
+      ),
+    );
   } catch (error) {
     throw new Error(
       getApiErrorMessage(

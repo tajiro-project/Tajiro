@@ -63,12 +63,15 @@ public class ComparisonAiServiceImpl implements ComparisonAiService {
                 userId,
                 propertyIds,
                 request.getWorkplaceLat(),
-                request.getWorkplaceLng());
+                request.getWorkplaceLng(),
+                true);
         List<String> priorities = validatePriorities(request.getPriorities());
         //비교 대상 매물 중 최신 업데이트 날짜 추출
         LocalDateTime maxPropertyUpdateDate = getMaxPropertyUpdateDate(metrics.getItems());
 
         String propertyIdsJson = toLongJson(propertyIds);
+        LocalDateTime latestMarketSyncAt =
+                comparisonReportMapper.findLatestMarketSyncAtByJson(propertyIdsJson);
         String prioritiesJson = toStringJson(buildComparisonContext(
                 priorities,
                 request.getWorkplaceLat(),
@@ -80,7 +83,11 @@ public class ComparisonAiServiceImpl implements ComparisonAiService {
                 propertyIds.size(),
                 prioritiesJson);
         //재사용 가능한 리포트가 존재하고, 기존 AI 코칭이 성공적이며, 매물 업데이트 이후에 생성되었으면 재사용
-        if (isSuccessfulAiCoaching(reusableReport, propertyIds, maxPropertyUpdateDate)) {
+        if (isSuccessfulAiCoaching(
+                reusableReport,
+                propertyIds,
+                maxPropertyUpdateDate,
+                latestMarketSyncAt)) {
             comparisonReportMapper.updateCreatedAt(reusableReport.getReportId(), userId);
             return toAnalysisResponse(reusableReport);
         }
@@ -96,7 +103,11 @@ public class ComparisonAiServiceImpl implements ComparisonAiService {
                     userId,
                     propertyIdsJson,
                     propertyIds.size());
-            if (!isSuccessfulAiCoaching(latestReport, propertyIds, maxPropertyUpdateDate)) {
+            if (!isSuccessfulAiCoaching(
+                    latestReport,
+                    propertyIds,
+                    maxPropertyUpdateDate,
+                    latestMarketSyncAt)) {
                 reportToRefresh = latestReport;
             }
         }
@@ -159,7 +170,8 @@ public class ComparisonAiServiceImpl implements ComparisonAiService {
     private boolean isSuccessfulAiCoaching(
             ComparisonReportVO report,
             List<Long> propertyIds,
-            LocalDateTime maxPropertyUpdateDate) {
+            LocalDateTime maxPropertyUpdateDate,
+            LocalDateTime latestMarketSyncAt) {
         if (report == null
                 || !hasText(report.getAiPropertySummaryText())
                 || !hasText(report.getAiSummary())
@@ -172,6 +184,12 @@ public class ComparisonAiServiceImpl implements ComparisonAiService {
         // 기존 리포트 생성일시(createdAt)보다 매물의 최신 수정일(maxPropertyUpdateDate)이 더 뒤라면 리포트 재사용 불가 (갱신 필요)
         if (maxPropertyUpdateDate != null && report.getCreatedAt() != null) {
             if (report.getCreatedAt().isBefore(maxPropertyUpdateDate)) {
+                return false;
+            }
+        }
+
+        if (latestMarketSyncAt != null && report.getCreatedAt() != null) {
+            if (report.getCreatedAt().isBefore(latestMarketSyncAt)) {
                 return false;
             }
         }

@@ -175,6 +175,12 @@
         )
     </select>
 
+    <select id="findLatestSuccessfulSyncAt" resultType="java.time.LocalDateTime">
+        SELECT MAX(last_success_at)
+        FROM market_transaction_sync
+        WHERE last_success_at IS NOT NULL
+    </select>
+
     <select id="findSyncTargets"
             resultType="org.tajiro.market.domain.MarketSyncTarget">
         SELECT DISTINCT
