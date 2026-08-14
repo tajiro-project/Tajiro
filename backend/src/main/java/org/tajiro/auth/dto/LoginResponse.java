@@ -15,10 +15,10 @@ public class LoginResponse {
     private String accessToken;
     private UserSummary user;
 
-    public static LoginResponse of(String accessToken, UserVO vo) {
+    public static LoginResponse of(String accessToken, UserVO vo, boolean hasListings) {
         return LoginResponse.builder()
                 .accessToken(accessToken)
-                .user(UserSummary.of(vo))
+                .user(UserSummary.of(vo, hasListings))
                 .build();
     }
 
@@ -31,8 +31,9 @@ public class LoginResponse {
         private String name;
         private String email;
         private String role;
+        private boolean hasListings;
 
-        public static UserSummary of(UserVO vo) {
+        public static UserSummary of(UserVO vo, boolean hasListings) {
             if (vo == null) {
                 return null;
             }
@@ -41,6 +42,7 @@ public class LoginResponse {
                     .name(vo.getName())
                     .email(vo.getEmail())
                     .role(vo.getRole())
+                    .hasListings(hasListings)
                     .build();
         }
     }

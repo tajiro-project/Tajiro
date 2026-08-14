@@ -8,6 +8,25 @@
         class="register-form"
         @submit.prevent="handleRegister"
       >
+        <div class="account-type-row">
+          <button
+            type="button"
+            class="account-type-btn"
+            :class="{ on: accountType === 'USER' }"
+            @click="accountType = 'USER'"
+          >
+            일반 회원
+          </button>
+          <button
+            type="button"
+            class="account-type-btn"
+            :class="{ on: accountType === 'SELLER' }"
+            @click="accountType = 'SELLER'"
+          >
+            매도자
+          </button>
+        </div>
+
         <div class="field">
           <label
             class="field-label"
@@ -87,7 +106,7 @@
           </p>
         </div>
 
-        <template v-if="isSellerIntent">
+        <template v-if="accountType === 'SELLER'">
           <div class="field">
             <label
               class="field-label"
@@ -96,11 +115,12 @@
             >
             <input
               id="phone"
-              v-model="phone"
+              :value="phone"
               class="field-input"
               type="tel"
               placeholder="010-0000-0000"
               required
+              @input="onPhoneInput"
             />
           </div>
           <div class="field">
@@ -272,7 +292,7 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { useRouter } from 'vue-router';
 import client, { getApiErrorMessage, withMock } from '@/api/client';
 import { mockTerms } from '@/api/mockData';
 import simplebar from 'simplebar-vue';
@@ -289,24 +309,18 @@ const MOCK_TERMS_LIST = [
 const termsList = ref([]);
 
 const router = useRouter();
-const route = useRoute();
 const name = ref('');
 const email = ref('');
 const password = ref('');
 const passwordConfirm = ref('');
 const phone = ref('');
 const agencyName = ref('');
+const accountType = ref('USER'); // 'USER' | 'SELLER'
 const loading = ref(false);
 const errorMessage = ref('');
 const agreedIds = ref([]);
 const activeTermId = ref(null);
 const activeTermContent = ref('');
-
-const isSellerIntent = computed(
-  () =>
-    typeof route.query.redirect === 'string' &&
-    route.query.redirect.startsWith('/seller'),
-);
 
 const activeTerm = computed(
   () => termsList.value.find((term) => term.id === activeTermId.value) ?? null,
@@ -342,7 +356,7 @@ const canSubmit = computed(() => {
     PASSWORD_PATTERN.test(password.value) &&
     password.value === passwordConfirm.value &&
     requiredAgreed.value &&
-    (!isSellerIntent.value ||
+    (accountType.value !== 'SELLER' ||
       (phone.value.trim() !== '' && agencyName.value.trim() !== ''))
   );
 });
@@ -356,6 +370,17 @@ async function loadTerms() {
   );
   const payload = data?.data ?? data;
   termsList.value = payload ?? [];
+}
+
+function onPhoneInput(event) {
+  const digits = event.target.value.replace(/\D/g, '').slice(0, 11);
+  let formatted = digits;
+  if (digits.length > 3) formatted = `${digits.slice(0, 3)}-${digits.slice(3)}`;
+  if (digits.length > 7) {
+    formatted = `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`;
+  }
+  phone.value = formatted;
+  event.target.value = formatted;
 }
 
 function isAgreed(termId) {
@@ -407,29 +432,27 @@ async function handleRegister() {
   loading.value = true;
 
   try {
-    let data;
     try {
-      const res = await client.post('/auth/register', {
+      const isSeller = accountType.value === 'SELLER';
+      await client.post('/auth/register', {
         name: name.value,
         email: email.value,
         password: password.value,
-        isSeller: isSellerIntent.value,
-        phone: isSellerIntent.value ? phone.value : undefined,
-        agencyName: isSellerIntent.value ? agencyName.value : undefined,
+        isSeller,
+        phone: isSeller ? phone.value : undefined,
+        agencyName: isSeller ? agencyName.value : undefined,
         agreements: termsList.value.map((term) => ({
           termsId: term.id,
           agreed: isAgreed(term.id),
         })),
       });
-      data = res.data;
     } catch (error) {
       if (error.response) throw error; // 백엔드가 실제로 응답한 에러는 그대로 던짐(mock으로 감추지 않음)
-      data = { userId: 1, accessToken: 'mock-access-token' }; // 백엔드 자체가 없을 때만 mock으로 대체
+      // 백엔드 자체가 없을 때만 성공한 것으로 간주하고 진행
     }
 
-    const payload = data.data ?? data;
-    localStorage.setItem('accessToken', payload.accessToken);
-    router.push(route.query.redirect || '/home');
+    alert('회원가입이 완료되었습니다! 로그인을 진행해주세요.');
+    router.push('/login');
   } catch (error) {
     errorMessage.value = getApiErrorMessage(
       error,
@@ -467,6 +490,28 @@ async function handleRegister() {
   flex-direction: column;
   gap: 16px;
   margin-top: 24px;
+}
+
+.account-type-row {
+  display: flex;
+  gap: 8px;
+}
+
+.account-type-btn {
+  flex: 1;
+  padding: 12px;
+  border: 1.5px solid #d8d5cf;
+  border-radius: var(--radius-card);
+  background: var(--white);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--kb-gray);
+}
+
+.account-type-btn.on {
+  background: var(--kb-yellow);
+  border-color: var(--kb-yellow);
+  color: var(--text-primary);
 }
 
 .terms-box {

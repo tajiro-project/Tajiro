@@ -108,13 +108,14 @@ async function handleLogin() {
     );
     const payload = data.data ?? data;
     localStorage.setItem('accessToken', payload.accessToken);
+    if (payload.user?.role) {
+      localStorage.setItem('userRole', payload.user.role);
+    }
 
     const redirect = route.query.redirect;
-    const isSellerRedirect =
-      typeof redirect === 'string' && redirect.startsWith('/seller');
 
-    if (isSellerRedirect && payload.user?.role === 'SELLER') {
-      router.push('/seller/properties');
+    if (!redirect && payload.user?.role === 'SELLER') {
+      router.push(payload.user.hasListings ? '/seller/properties' : '/seller/register/1');
     } else {
       router.push(redirect || '/home');
     }
@@ -126,14 +127,14 @@ async function handleLogin() {
 }
 
 function goToRegister() {
-  router.push({ path: '/register', query: route.query });
+  router.push('/register');
 }
 
 function mockLogin() {
   if (email.value === MOCK_EMAIL && password.value === MOCK_PASSWORD) {
     return {
       accessToken: 'mock-access-token',
-      user: { id: 1, name: '김민주', email: email.value },
+      user: { id: 1, name: '김민주', email: email.value, role: 'USER', hasListings: false },
     };
   }
 

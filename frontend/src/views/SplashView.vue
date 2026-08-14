@@ -21,13 +21,6 @@
       <button class="start-btn" type="button" @click="router.push('/login')">
         시작하기
       </button>
-      <button
-        class="seller-link"
-        type="button"
-        @click="router.push('/seller/register/1')"
-      >
-        집주인이신가요? 내 매물 등록하기
-      </button>
     </div>
   </simplebar>
 </template>
@@ -139,9 +132,4 @@ const router = useRouter();
   font-weight: 700;
 }
 
-.seller-link {
-  margin-top: 16px;
-  font-size: 13px;
-  color: var(--kb-gray);
-}
 </style>
