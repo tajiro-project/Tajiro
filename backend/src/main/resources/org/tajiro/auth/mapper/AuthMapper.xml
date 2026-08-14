@@ -11,6 +11,9 @@
             email,
             password_hash AS passwordHash,
             name,
+            role,
+            phone,
+            agency_name   AS agencyName,
             provider,
             status,
             created_at    AS createdAt,
@@ -21,8 +24,8 @@
 
     <!-- 2. 회원 생성 -->
     <insert id="insertUser" parameterType="UserVO" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO users (email, password_hash, name, provider, status, created_at)
-        VALUES (#{email}, #{passwordHash}, #{name}, #{provider}, #{status}, NOW())
+        INSERT INTO users (email, password_hash, name, role, phone, agency_name, provider, status, created_at)
+        VALUES (#{email}, #{passwordHash}, #{name}, #{role}, #{phone}, #{agencyName}, #{provider}, #{status}, NOW())
     </insert>
 
     <!-- 3. 필수 약관 ID 목록 조회 -->

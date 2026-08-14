@@ -78,6 +78,7 @@
 import {
   computed,
   nextTick,
+  onDeactivated,
   onMounted,
   onUnmounted,
   reactive,
@@ -285,6 +286,14 @@ watch(
 );
 
 onMounted(() => document.addEventListener('keydown', handleKeydown));
+
+onDeactivated(() => {
+  if (!props.open) return;
+
+  addressRequestId += 1;
+  document.body.style.overflow = previousBodyOverflow;
+  emit('close');
+});
 
 onUnmounted(() => {
   document.removeEventListener('keydown', handleKeydown);

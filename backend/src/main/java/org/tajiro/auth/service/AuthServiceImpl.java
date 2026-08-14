@@ -61,10 +61,14 @@ public class AuthServiceImpl implements AuthService {
 
         validateRequiredTermsAgreed(request);
 
+        boolean isSeller = Boolean.TRUE.equals(request.getIsSeller());
         UserVO user = UserVO.builder()
                 .email(request.getEmail())
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
                 .name(request.getName())
+                .role(isSeller ? "SELLER" : "USER")
+                .phone(isSeller ? request.getPhone() : null)
+                .agencyName(isSeller ? request.getAgencyName() : null)
                 .provider("LOCAL")
                 .status("ACTIVE")
                 .build();
