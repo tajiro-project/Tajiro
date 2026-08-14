@@ -28,4 +28,7 @@ public interface AuthMapper {
 
     // 6. 탈퇴한 계정의 이메일 반납 (재가입 시 호출)
     void releaseWithdrawnEmail(@Param("userId") Long userId);
+
+    // 7. 매도자가 등록한 매물이 하나라도 있는지 (로그인 후 등록/목록 이동 분기용)
+    boolean existsPropertyBySellerId(@Param("userId") Long userId);
 }
