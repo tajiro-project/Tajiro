@@ -62,13 +62,15 @@ public class ComparisonController {
             @ApiIgnore @AuthenticationPrincipal Long userId,
             @RequestParam List<Long> propertyIds,
             @RequestParam(required = false) Double workplaceLat,
-            @RequestParam(required = false) Double workplaceLng) {
+            @RequestParam(required = false) Double workplaceLng,
+            @RequestParam(defaultValue = "true") boolean refreshMarketScore) {
         return ResponseEntity.ok(
                 comparisonService.getComparisonMetrics(
                         requireUserId(userId),
                         propertyIds,
                         workplaceLat,
-                        workplaceLng));
+                        workplaceLng,
+                        refreshMarketScore));
     }
 
     @PostMapping("/comparisons/analyze")

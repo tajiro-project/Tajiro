@@ -179,6 +179,23 @@
         ORDER BY report_property.sort_order
     </select>
 
+    <select id="findLatestMarketSyncAtByJson" resultType="java.time.LocalDateTime">
+        SELECT MAX(sync.last_success_at)
+        FROM market_transaction_sync sync
+        WHERE sync.last_success_at IS NOT NULL
+          AND sync.sgg_code IN (
+              SELECT DISTINCT b.sigungu_cd
+              FROM JSON_TABLE(
+                  #{propertyIdsJson},
+                  '$[*]' COLUMNS (
+                      property_id BIGINT PATH '$'
+                  )
+              ) report_property
+              JOIN property p ON p.id = report_property.property_id
+              JOIN building b ON b.id = p.building_id
+              WHERE b.sigungu_cd IS NOT NULL
+          )
+    </select>
     <update id="markUnsaved">
         UPDATE comparison_report
         SET saved = 0

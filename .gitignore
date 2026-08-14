@@ -71,6 +71,7 @@ backend/build/
 backend/**/build/
 backend/out/
 backend/target/
+backend/bin/
 
 # Gradle Wrapper는 반드시 포함
 !backend/gradle/wrapper/gradle-wrapper.jar
@@ -155,3 +156,4 @@ mysql_data/
 coverage/
 tmp/
 backend/src/main/resources/application.properties
+backend/src/main/resources/application-market.example.properties

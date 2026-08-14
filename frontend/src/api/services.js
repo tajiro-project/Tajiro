@@ -105,7 +105,7 @@ export const comparisonApi = {
     (await client.post(`/users/me/compare/${propertyId}`)).data,
   removeFromBox: async (propertyId) =>
     (await client.delete(`/users/me/compare/${propertyId}`)).data,
-  metrics: async (propertyIds, workplace) => {
+  metrics: async (propertyIds, workplace, refreshMarketScore = true) => {
     const sortedIds = [...(propertyIds ?? [])]
       .map(Number)
       .sort((a, b) => a - b);
@@ -115,6 +115,7 @@ export const comparisonApi = {
           propertyIds: sortedIds.join(','),
           workplaceLat: workplace?.lat,
           workplaceLng: workplace?.lng,
+          refreshMarketScore,
         },
       })
     ).data;

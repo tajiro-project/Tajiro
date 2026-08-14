@@ -17,5 +17,6 @@ public interface ComparisonService {
             Long userId,
             List<Long> propertyIds,
             Double workplaceLat,
-            Double workplaceLng);
+            Double workplaceLng,
+            boolean refreshMarketScore);
 }

@@ -140,6 +140,15 @@
                 {{ spec.tabLabel }}
               </button>
             </div>
+            <ul
+              v-if="marketStatusItems.length"
+              class="score-notice market-status-notice"
+              aria-live="polite"
+            >
+              <li v-for="item in marketStatusItems" :key="item">
+                {{ item }}
+              </li>
+            </ul>
             <!-- 세로 막대그래프 템플릿 -->
             <div v-if="selectedScoreSpec" class="metric-chart">
               <div class="score-section-head">
@@ -187,10 +196,10 @@
             <div class="cumulative-chart">
               <div class="score-section-head cumulative-head">
                 <strong>5개 지표 누적 점수</strong>
-                <span>총 500점</span>
+                <span>총 {{ cumulativeTotalMax }}점</span>
               </div>
               <div
-                v-for="(scores, propertyIndex) in seriesScores"
+                v-for="(scores, propertyIndex) in cumulativeSeriesScores"
                 :key="items[propertyIndex]?.propertyId ?? propertyIndex"
                 class="cumulative-row"
               >
@@ -200,11 +209,11 @@
                 <div class="cumulative-track">
                   <span
                     v-for="(score, scoreIndex) in scores"
-                    :key="scoreSpecs[scoreIndex].key"
+                    :key="cumulativeScoreSpecs[scoreIndex].key"
                     class="cumulative-segment"
                     :style="{
-                      width: `${score / 5}%`,
-                      background: scoreSpecs[scoreIndex].color,
+                      width: getCumulativeSegmentWidth(score),
+                      background: cumulativeScoreSpecs[scoreIndex].color,
                     }"
                   />
                 </div>
@@ -333,7 +342,7 @@
             AI 코칭 업데이트가 필요해요
           </p>
           <p class="m-text">
-            매물 정보가 저장 이후 변경됐어요.<br />
+            매물 또는 시세 정보가 저장 이후 변경됐어요.<br />
             현재 정보에 맞게 AI 코칭을<br />
             업데이트하시겠어요?
           </p>
@@ -498,6 +507,36 @@ const warningText = computed(() => {
   const direction = score > 0 ? '높아요' : '낮아요';
   return `${letters[index]} 매물은 주변 시세보다 ${pct}% ${direction}. 계약 전 시세와 관리비 항목을 확인하세요.`;
 });
+const MARKET_STATUS_MESSAGES = {
+  DATA_INSUFFICIENT: '최근 비교 가능한 실거래가가 3건 미만이에요.',
+  NOT_SYNCED: '실거래가 수집이 아직 완료되지 않았어요.',
+  SYNC_ERROR:
+    '실거래가 수집 중 오류가 발생했어요. 다음 동기화에서 다시 시도해요.',
+  SOURCE_UNMAPPED: '건물 유형을 확인해야 시세를 계산할 수 있어요.',
+  REGION_CODE_MISSING: '지역 코드가 없어 시세를 계산할 수 없어요.',
+};
+
+const PRESERVED_MARKET_STATUSES = new Set(['NOT_SYNCED', 'SYNC_ERROR']);
+
+const marketStatusItems = computed(() =>
+  metrics.value
+    .map((metric, index) => {
+      const status = metric.marketStatus;
+      const message = MARKET_STATUS_MESSAGES[status];
+      if (message) {
+        const preservedSuffix =
+          hasNumber(metric.evaluationScore) &&
+          PRESERVED_MARKET_STATUSES.has(status)
+            ? ' 기존 계산값을 표시하고 있어요.'
+            : '';
+        return `${letters[index]} 매물: ${message}${preservedSuffix}`;
+      }
+      return hasNumber(metric.evaluationScore)
+        ? ''
+        : `${letters[index]} 매물: 시세 데이터를 확인할 수 없어요.`;
+    })
+    .filter(Boolean),
+);
 
 const allScoreSpecs = computed(() => {
   if (!metrics.value.length) return [];
@@ -540,10 +579,14 @@ const allScoreSpecs = computed(() => {
       tabLabel: '시세',
       label: '시세안정',
       color: '#68b2c7',
-      available: metrics.value.every((m) => hasNumber(m.evaluationScore)),
-      values: metrics.value.map((m) => Math.abs(Number(m.evaluationScore))),
+      available: metrics.value.some((m) => hasNumber(m.evaluationScore)),
+      includeInTotal: metrics.value.every((m) => hasNumber(m.evaluationScore)),
+      values: metrics.value.map((m) =>
+        hasNumber(m.evaluationScore) ? Math.abs(Number(m.evaluationScore)) : null,
+      ),
       invert: true,
-      formatRaw: (value) => `${formatCompactNumber(value)}%`,
+      formatRaw: (value) =>
+        hasNumber(value) ? `${formatCompactNumber(value)}%` : '데이터 부족',
     },
     {
       key: 'AMENITY',
@@ -561,6 +604,12 @@ const allScoreSpecs = computed(() => {
 const scoreSpecs = computed(() =>
   allScoreSpecs.value.filter((spec) => spec.available),
 );
+
+const cumulativeScoreSpecs = computed(() =>
+  scoreSpecs.value.filter((spec) => spec.includeInTotal !== false),
+);
+
+const cumulativeTotalMax = computed(() => cumulativeScoreSpecs.value.length * 100);
 
 // 차트 점수를 정규화하여 35~95점 사이로 변환
 const seriesScores = computed(() => {
@@ -609,11 +658,27 @@ const selectedMetricBars = computed(() => {
     ),
   }));
 });
+const cumulativeSeriesScores = computed(() => {
+  if (!metrics.value.length || !cumulativeScoreSpecs.value.length) return [];
+
+  const normalizedByAxis = cumulativeScoreSpecs.value.map((spec) =>
+    normalize(spec.values, spec.invert),
+  );
+
+  return metrics.value.map((_, propertyIndex) =>
+    normalizedByAxis.map((axisScores) => axisScores[propertyIndex]),
+  );
+});
+
 const seriesTotals = computed(() =>
-  seriesScores.value.map((scores) =>
+  cumulativeSeriesScores.value.map((scores) =>
     scores.reduce((total, score) => total + score, 0),
   ),
 );
+function getCumulativeSegmentWidth(score) {
+  const axisCount = cumulativeScoreSpecs.value.length;
+  return axisCount ? `${score / axisCount}%` : '0%';
+}
 const topCumulativePropertyIds = computed(() => {
   if (!seriesTotals.value.length) return [];
   const highestScore = Math.max(...seriesTotals.value);
@@ -816,7 +881,11 @@ async function loadComparison() {
     activeWorkplace.value = workplace;
     activePriorities.value = priorities;
     selectInitialScore(priorities);
-    const metricsResult = await getMetrics(propertyIds, workplace);
+    const metricsResult = await getMetrics(
+      propertyIds,
+      workplace,
+      !isReportMode.value,
+    );
     let coachingDto = null;
     coachingError.value = '';
 
@@ -886,7 +955,11 @@ function getSavedReportPriorities(report) {
 }
 
 function shouldShowAiRefreshModal(report) {
-  return route.query.aiRefresh === '1' || hasUpdatedReportProperty(report);
+  return route.query.aiRefresh === '1' || hasUpdatedReportData(report);
+}
+
+function hasUpdatedReportData(report) {
+  return hasUpdatedReportProperty(report) || hasUpdatedMarketData(report);
 }
 
 function hasUpdatedReportProperty(report) {
@@ -899,17 +972,36 @@ function hasUpdatedReportProperty(report) {
   });
 }
 
+function hasUpdatedMarketData(report) {
+  const savedAt = new Date(report?.createdAt);
+  const syncedAt = new Date(report?.latestMarketSyncAt);
+  return (
+    !Number.isNaN(savedAt.getTime()) &&
+    !Number.isNaN(syncedAt.getTime()) &&
+    syncedAt > savedAt
+  );
+}
+
 async function refreshAiCoaching() {
   if (!currentPropertyIds.value.length) return;
 
   refreshingCoaching.value = true;
   coachingError.value = '';
   try {
-    coaching.value = await getCoaching(
+    const updatedCoaching = await getCoaching(
       currentPropertyIds.value,
       activeWorkplace.value,
       activePriorities.value,
     );
+    const updatedMetrics = await getMetrics(
+      currentPropertyIds.value,
+      activeWorkplace.value,
+      false,
+    );
+    applyComparisonResult({
+      metrics: updatedMetrics,
+      coaching: updatedCoaching,
+    });
     showAiRefreshModal.value = false;
   } catch (error) {
     coaching.value = null;
@@ -920,9 +1012,15 @@ async function refreshAiCoaching() {
   }
 }
 
-async function getMetrics(propertyIds, workplace) {
+async function getMetrics(propertyIds, workplace, refreshMarketScore = true) {
   try {
-    return unwrapApiData(await comparisonApi.metrics(propertyIds, workplace));
+    return unwrapApiData(
+      await comparisonApi.metrics(
+        propertyIds,
+        workplace,
+        refreshMarketScore,
+      ),
+    );
   } catch (error) {
     throw new Error(
       getApiErrorMessage(
@@ -1017,11 +1115,15 @@ function moneyLabel(value) {
 
 function normalize(values, invert = false) {
   if (!values.length) return [];
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  if (min === max) return values.map(() => 70);
+  const numericValues = values.filter((value) => hasNumber(value)).map(Number);
+  if (!numericValues.length) return values.map(() => 0);
+
+  const min = Math.min(...numericValues);
+  const max = Math.max(...numericValues);
+  if (min === max) return values.map((value) => (hasNumber(value) ? 70 : 0));
   return values.map((value) => {
-    const ratio = (value - min) / (max - min);
+    if (!hasNumber(value)) return 0;
+    const ratio = (Number(value) - min) / (max - min);
     return Math.round(35 + (invert ? 1 - ratio : ratio) * 60);
   });
 }
@@ -1675,5 +1777,13 @@ function goBack() {
 .m-go:disabled {
   opacity: 0.55;
   cursor: default;
+}
+.market-status-notice {
+  margin-top: 10px;
+  padding-left: 18px;
+  background: #f4f2ed;
+}
+.market-status-notice li + li {
+  margin-top: 4px;
 }
 </style>
