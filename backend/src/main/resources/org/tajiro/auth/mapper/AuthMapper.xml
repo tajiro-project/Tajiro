@@ -59,4 +59,11 @@
         WHERE id = #{userId}
     </update>
 
+    <!-- 7. 매도자가 등록한 매물이 하나라도 있는지 -->
+    <select id="existsPropertyBySellerId" resultType="boolean">
+        SELECT EXISTS(
+            SELECT 1 FROM property WHERE seller_id = #{userId}
+        )
+    </select>
+
 </mapper>
