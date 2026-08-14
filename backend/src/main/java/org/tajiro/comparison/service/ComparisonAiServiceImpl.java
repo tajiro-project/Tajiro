@@ -47,9 +47,7 @@ public class ComparisonAiServiceImpl implements ComparisonAiService {
                 || request.getPropertyIds() == null
                 || request.getPropertyIds().isEmpty()
                 || request.getWorkplaceLat() == null
-                || request.getWorkplaceLng() == null
-                || request.getPriorities() == null
-                || request.getPriorities().isEmpty()) {
+                || request.getWorkplaceLng() == null) {
             throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
         }
 
@@ -239,6 +237,10 @@ public class ComparisonAiServiceImpl implements ComparisonAiService {
     }
 
     private List<String> validatePriorities(List<String> priorities) {
+        if (priorities == null || priorities.isEmpty()) {
+            return new ArrayList<>();
+        }
+
         if (priorities.size() > 3) {
             throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
         }
@@ -274,3 +276,4 @@ public class ComparisonAiServiceImpl implements ComparisonAiService {
         return value != null && !value.trim().isEmpty();
     }
 }
+
