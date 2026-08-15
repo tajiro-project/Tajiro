@@ -337,11 +337,17 @@
       </button>
       <button
         class="btn-cta"
-        :disabled="!canNext || isSubmitting"
+        :disabled="!canNext || isSubmitting || (isEditMode && step === 4)"
         @click="onNext"
       >
         {{
-          isSubmitting ? '등록 중...' : step === 4 ? '매물 등록하기' : '다음'
+          isSubmitting
+            ? '등록 중...'
+            : step === 4
+              ? isEditMode
+                ? '수정 기능 준비 중'
+                : '매물 등록하기'
+              : '다음'
         }}
       </button>
     </div>
@@ -364,7 +370,7 @@
 </template>
 
 <script setup>
-import { computed, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import AddressSearchSheet from '@/components/AddressSearchSheet.vue';
 import AptDongSheet from '@/components/AptDongSheet.vue';
@@ -375,6 +381,8 @@ const route = useRoute();
 const router = useRouter();
 
 const step = computed(() => Number(route.params.step) || 1);
+const propertyId = computed(() => route.query.propertyId ?? null);
+const isEditMode = computed(() => Boolean(propertyId.value));
 const stepLabels = ['위치·건물 정보', '상세 스펙', '거래·가격', '사진·설명'];
 
 const PROPERTY_TYPES = ['원룸', '아파트', '주택/빌라', '오피스텔'];
@@ -414,6 +422,8 @@ const isDongOpen = ref(false);
 const dongOptions = ref([]);
 const isSubmitting = ref(false);
 
+onMounted(loadPropertyForEdit);
+
 const pyeong = computed(() => {
   const v = parseFloat(form.areaM2);
   if (!v || v <= 0) return '';
@@ -443,7 +453,64 @@ const canNext = computed(() => {
 });
 
 function go(n) {
-  router.push(`/seller/register/${n}`);
+  router.push({ path: `/seller/register/${n}`, query: route.query });
+}
+
+async function loadPropertyForEdit() {
+  if (!propertyId.value) return;
+
+  try {
+    const data = await sellerApi.myProperty(propertyId.value);
+    const payload = data?.data ?? data;
+    fillForm(payload);
+  } catch (error) {
+    alert(error.response?.data?.message ?? '매물 정보를 불러오지 못했어요.');
+    router.push('/seller/properties');
+  }
+}
+
+function fillForm(item) {
+  form.address = {
+    roadAddress: item.roadAddress || item.address || '',
+    jibunAddress: item.jibunAddress || item.address || '',
+    buildingName: item.buildingName || '',
+    lat: item.lat,
+    lng: item.lng,
+  };
+  form.aptDong = item.dong || null;
+  form.roomNumber = String(item.roomNumber || '').replace(/호$/, '');
+  form.buildingName = item.buildingName || '';
+  form.propertyType = item.propertyType || '원룸';
+  applyFloorInfo(item.floorInfo);
+  form.areaM2 = item.areaM2 ?? '';
+  form.roomNum = item.roomNum ?? '';
+  form.bathroomNum = item.bathroomNum ?? '';
+  form.parkAvailability = Boolean(item.parkAvailability);
+  form.moveInDate = item.moveInDate || '';
+  form.availableDate = item.availableDate || '';
+  form.discussionStatus = Boolean(item.discussionStatus);
+  form.tradeType = item.tradeType || '월세';
+  form.deposit = item.deposit ?? '';
+  form.monthlyRent = item.monthlyRent ?? '';
+  form.maintenanceFee = item.maintenanceFee ?? '';
+  form.photos = [...(item.imageUrls || [])];
+  form.propertyDescription = item.propertyDescription || '';
+}
+
+function applyFloorInfo(floorInfo) {
+  const [floor = '', total = ''] = String(floorInfo || '').split('/');
+  const floorValue = floor.trim();
+  form.totalFloor = total.replace(/층/g, '').trim();
+  if (floorValue === '반지하' || floorValue === '옥탑') {
+    form.floorType = floorValue;
+    form.floor = '';
+  } else if (floorValue.startsWith('지하')) {
+    form.floorType = '지하';
+    form.floor = floorValue.replace('지하', '').trim();
+  } else {
+    form.floorType = '지상';
+    form.floor = floorValue;
+  }
 }
 
 async function onAddressSelect(addr) {
@@ -529,6 +596,7 @@ async function onNext() {
     go(step.value + 1);
     return;
   }
+  if (isEditMode.value) return;
 
   isSubmitting.value = true;
   try {
