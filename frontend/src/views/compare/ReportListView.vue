@@ -6,7 +6,6 @@
         <p class="count">
           저장된 비교 리포트 <b>{{ reports.length }}건</b>
         </p>
-        <span class="sort-label">최신순</span>
       </div>
 
       <p
@@ -319,14 +318,6 @@ function openReport(r) {
 }
 .count b {
   color: var(--kb-silver);
-}
-.sort-label {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 12.5px;
-  font-weight: 700;
-  color: var(--kb-gray);
 }
 .action-error {
   margin-top: 12px;
