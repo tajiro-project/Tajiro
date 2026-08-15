@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.tajiro.seller.mapper.SellerPropertyMapper">
+    <resultMap id="ownedPropertyDetailMap" type="PropertyVO">
+        <id property="id" column="property_id"/>
+        <result property="title" column="title"/>
+        <result property="propertyType" column="property_type"/>
+        <result property="tradeType" column="trade_type"/>
+        <result property="deposit" column="deposit"/>
+        <result property="monthlyRent" column="monthly_rent"/>
+        <result property="maintenanceFee" column="maintenance_fee"/>
+        <result property="areaM2" column="area_m2"/>
+        <result property="floorInfo" column="floor_info"/>
+        <result property="roomNumber" column="room_number"/>
+        <result property="roomNum" column="room_num"/>
+        <result property="bathroomNum" column="bathroom_num"/>
+        <result property="parkAvailability" column="park_availability"/>
+        <result property="discussionStatus" column="discussion_status"/>
+        <result property="dong" column="dong"/>
+        <result property="propertyDescription" column="property_description"/>
+        <result property="moveInDate" column="move_in_date"/>
+        <result property="availableDate" column="available_date"/>
+        <result property="address" column="address"/>
+        <association property="buildingVO" javaType="BuildingVO">
+            <id property="id" column="building_id"/>
+            <result property="roadAddress" column="road_address"/>
+            <result property="jibunAddress" column="jibun_address"/>
+            <result property="bldNm" column="building_name"/>
+            <result property="latitude" column="latitude"/>
+            <result property="longitude" column="longitude"/>
+        </association>
+    </resultMap>
+
+    <select id="findOwnedDetail" resultMap="ownedPropertyDetailMap">
+        SELECT
+            p.id AS property_id,
+            p.building_id,
+            p.title,
+            p.property_type,
+            p.trade_type,
+            p.deposit,
+            p.monthly_rent,
+            p.maintenance_fee,
+            p.area_m2,
+            p.floor_info,
+            p.room_number,
+            p.room_num,
+            p.bathroom_num,
+            p.park_availability,
+            p.discussion_status,
+            p.dong,
+            p.property_description,
+            p.move_in_date,
+            p.available_date,
+            p.address,
+            b.road_address,
+            b.jibun_address,
+            b.bld_nm AS building_name,
+            b.latitude,
+            b.longitude
+        FROM property p
+        LEFT JOIN building b ON b.id = p.building_id
+        WHERE p.id = #{propertyId}
+          AND p.seller_id = #{sellerId}
+    </select>
+
+    <select id="findImageUrls" resultType="string">
+        SELECT image_url
+        FROM property_image
+        WHERE property_id = #{propertyId}
+        ORDER BY sort_order
+    </select>
+
+    <sql id="statusCondition">
+        <choose>
+            <when test="status == 'OPEN'">
+                AND p.transaction_status = 1
+            </when>
+            <when test="status == 'DONE'">
+                AND p.transaction_status = 0
+            </when>
+        </choose>
+    </sql>
+
+    <select id="findPage" resultType="SellerPropertyListVO">
+        SELECT
+            p.id AS propertyId,
+            p.title,
+            p.property_type AS propertyType,
+            b.bld_nm AS buildingName,
+            p.trade_type AS tradeType,
+            p.deposit,
+            p.monthly_rent AS monthlyRent,
+            p.area_m2 AS areaM2,
+            p.floor_info AS floorInfo,
+            COUNT(DISTINCT f.id) AS favoriteCount,
+            p.transaction_status AS transactionStatus,
+            (SELECT pi.image_url
+             FROM property_image pi
+             WHERE pi.property_id = p.id
+             ORDER BY pi.sort_order
+             LIMIT 1) AS imageUrl
+        FROM property p
+        LEFT JOIN building b ON b.id = p.building_id
+        LEFT JOIN favorite_property f ON f.property_id = p.id
+        WHERE p.seller_id = #{sellerId}
+        <include refid="statusCondition"/>
+        GROUP BY p.id, p.title, p.property_type, b.bld_nm, p.trade_type,
+                 p.deposit, p.monthly_rent, p.area_m2, p.floor_info,
+                 p.transaction_status
+        ORDER BY p.id DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countByStatus" resultType="long">
+        SELECT COUNT(*)
+        FROM property p
+        WHERE p.seller_id = #{sellerId}
+        <include refid="statusCondition"/>
+    </select>
+
+    <select id="getCounts" resultType="SellerPropertyCountsVO">
+        SELECT
+            COUNT(DISTINCT p.id) AS `all`,
+            COUNT(DISTINCT CASE WHEN p.transaction_status = 1 THEN p.id END) AS `open`,
+            COUNT(DISTINCT CASE WHEN p.transaction_status = 0 THEN p.id END) AS done,
+            COUNT(DISTINCT f.id) AS favorites
+        FROM property p
+        LEFT JOIN favorite_property f ON f.property_id = p.id
+        WHERE p.seller_id = #{sellerId}
+    </select>
+
+    <update id="updateStatus">
+        UPDATE property
+        SET transaction_status = #{transactionStatus},
+            update_date = CURRENT_DATE
+        WHERE id = #{propertyId}
+          AND seller_id = #{sellerId}
+    </update>
+
+</mapper>
