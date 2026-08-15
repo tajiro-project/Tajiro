@@ -142,7 +142,8 @@ export const comparisonApi = {
 // ---------- seller ----------
 export const sellerApi = {
   create: async (body) => (await client.post('/seller/properties', body)).data,
-  myProperties: async () => (await client.get('/seller/properties')).data,
+  myProperties: async (params = {}) =>
+    (await client.get('/seller/properties', { params })).data,
   myProperty: async (id) => (await client.get(`/seller/properties/${id}`)).data,
   changeStatus: async (id, transactionStatus) =>
     (
