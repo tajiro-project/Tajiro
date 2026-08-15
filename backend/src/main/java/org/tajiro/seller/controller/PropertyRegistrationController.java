@@ -10,11 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import org.tajiro.common.api.ApiResponse;
 import org.tajiro.common.api.ErrorCode;
 import org.tajiro.exception.BusinessException;
-import org.tajiro.seller.dto.PropertyRegistrationRequest;
-import org.tajiro.seller.dto.PropertyRegistrationResponse;
-import org.tajiro.seller.dto.PropertyStatusUpdateRequest;
-import org.tajiro.seller.dto.SellerPropertyPageResponse;
-import org.tajiro.seller.dto.SellerPropertyDetailResponse;
+import org.tajiro.seller.dto.*;
 import org.tajiro.seller.service.PropertyRegistrationService;
 import org.tajiro.seller.service.SellerPropertyService;
 import springfox.documentation.annotations.ApiIgnore;
@@ -22,7 +18,7 @@ import springfox.documentation.annotations.ApiIgnore;
 @RestController
 @RequestMapping("/api/seller/properties")
 @RequiredArgsConstructor
-@Api(tags = "매도자 매물")
+@Api(tags = "판매자 매물")
 public class PropertyRegistrationController {
 
     private final PropertyRegistrationService propertyRegistrationService;
@@ -33,7 +29,9 @@ public class PropertyRegistrationController {
     public ResponseEntity<ApiResponse<SellerPropertyDetailResponse>> getMyProperty(
             @ApiIgnore @AuthenticationPrincipal Long userId,
             @PathVariable Long propertyId) {
-        requireUser(userId);
+        if (userId == null) {
+            throw new BusinessException(ErrorCode.AUTH_REQUIRED);
+        }
         return ResponseEntity.ok(ApiResponse.success(
                 sellerPropertyService.getProperty(userId, propertyId)));
     }
@@ -45,7 +43,9 @@ public class PropertyRegistrationController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "4") int size,
             @RequestParam(defaultValue = "ALL") String status) {
-        requireUser(userId);
+        if (userId == null) {
+            throw new BusinessException(ErrorCode.AUTH_REQUIRED);
+        }
         return ResponseEntity.ok(ApiResponse.success(
                 sellerPropertyService.getProperties(userId, page, size, status)));
     }
@@ -56,7 +56,9 @@ public class PropertyRegistrationController {
             @ApiIgnore @AuthenticationPrincipal Long userId,
             @PathVariable Long propertyId,
             @RequestBody PropertyStatusUpdateRequest request) {
-        requireUser(userId);
+        if (userId == null) {
+            throw new BusinessException(ErrorCode.AUTH_REQUIRED);
+        }
         if (request == null || request.getTransactionStatus() == null) {
             throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
         }
@@ -74,7 +76,9 @@ public class PropertyRegistrationController {
             @ApiIgnore @AuthenticationPrincipal Long userId,
             @RequestBody PropertyRegistrationRequest request
     ) {
-        requireUser(userId);
+        if (userId == null) {
+            throw new BusinessException(ErrorCode.AUTH_REQUIRED);
+        }
 
         PropertyRegistrationResponse response =
                 propertyRegistrationService.register(userId, request);
@@ -82,11 +86,5 @@ public class PropertyRegistrationController {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(ApiResponse.success(response));
-    }
-
-    private void requireUser(Long userId) {
-        if (userId == null) {
-            throw new BusinessException(ErrorCode.AUTH_REQUIRED);
-        }
     }
 }
