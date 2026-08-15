@@ -63,6 +63,7 @@
             stroke-linejoin="round"
           />
         </svg>
+        
       </button>
             <div class="filter-chips">
         <button
@@ -70,21 +71,21 @@
           :class="{ on: commuteChipOn }"
           @click="openSheet('commute')"
         >
-          {{ commuteChipLabel }}
+          이주/통근 정보
         </button>
         <button
           class="fchip"
           :class="{ on: housingChipOn }"
           @click="openSheet('housing')"
         >
-          {{ housingChipLabel }}
+          희망 주거 조건
         </button>
         <button
           class="fchip"
           :class="{ on: infraChipOn }"
           @click="openSheet('infra')"
         >
-          {{ infraChipLabel }}
+          인프라/편의시설
         </button>
       </div>
 
@@ -1060,17 +1061,17 @@ const commuteChipOn = computed(
     filter.maxWorkplaceDistanceMeters !== DEFAULT_DISTANCE,
 );
 
-const commuteChipLabel = computed(() => {
-  if (!commuteChipOn.value) return '이주/통근';
-  const parts = [];
-  const placeName = filter.workplace?.name || filter.workplace?.address;
-  if (placeName) parts.push(placeName);
-  const m = filter.maxWorkplaceDistanceMeters;
-  if (m !== DEFAULT_DISTANCE)
-    parts.push(`${Number((m / 1000).toFixed(1))}km 이내`);
-  if (filter.hasCar) parts.push('자차 O');
-  return parts.slice(0, 2).join(' · ') || '이주/통근';
-});
+// const commuteChipLabel = computed(() => {
+//   if (!commuteChipOn.value) return '이주/통근';
+//   const parts = [];
+//   const placeName = filter.workplace?.name || filter.workplace?.address;
+//   if (placeName) parts.push(placeName);
+//   const m = filter.maxWorkplaceDistanceMeters;
+//   if (m !== DEFAULT_DISTANCE)
+//     parts.push(`${Number((m / 1000).toFixed(1))}km 이내`);
+//   if (filter.hasCar) parts.push('자차 O');
+//   return parts.slice(0, 2).join(' · ') || '이주/통근';
+// });
 
 const housingChipOn = computed(
   () =>
@@ -1088,58 +1089,58 @@ const housingChipOn = computed(
     filter.maxAreaM2 != null,
 );
 
-const housingChipLabel = computed(() => {
-  if (!housingChipOn.value) return '주거 조건';
-  const parts = [];
+// const housingChipLabel = computed(() => {
+//   if (!housingChipOn.value) return '주거 조건';
+//   const parts = [];
 
-  if (filter.propertyTypes.length > 0) {
-    parts.push(
-      filter.propertyTypes.length === 1
-        ? filter.propertyTypes[0]
-        : `${filter.propertyTypes[0]} 외 ${filter.propertyTypes.length - 1}`,
-    );
-  }
+//   if (filter.propertyTypes.length > 0) {
+//     parts.push(
+//       filter.propertyTypes.length === 1
+//         ? filter.propertyTypes[0]
+//         : `${filter.propertyTypes[0]} 외 ${filter.propertyTypes.length - 1}`,
+//     );
+//   }
 
-  if (
-    filter.tradeTypes.length > 0 &&
-    filter.tradeTypes.length < TRADE_TYPES.length
-  ) {
-    parts.push(
-      filter.tradeTypes.length === 1
-        ? filter.tradeTypes[0]
-        : `${filter.tradeTypes[0]} 외 ${filter.tradeTypes.length - 1}`,
-    );
-  }
+//   if (
+//     filter.tradeTypes.length > 0 &&
+//     filter.tradeTypes.length < TRADE_TYPES.length
+//   ) {
+//     parts.push(
+//       filter.tradeTypes.length === 1
+//         ? filter.tradeTypes[0]
+//         : `${filter.tradeTypes[0]} 외 ${filter.tradeTypes.length - 1}`,
+//     );
+//   }
 
-  if (filter.maxDepositJeonse != null)
-    parts.push(`${moneyLabel(filter.maxDepositJeonse)} 이하`);
-  if (filter.maxSalePrice != null)
-    parts.push(`매매가 ${moneyLabel(filter.maxSalePrice)} 이하`);
-  if (filter.maxMonthlyRent != null)
-    parts.push(`월세 ${filter.maxMonthlyRent}만 이하`);
+//   if (filter.maxDepositJeonse != null)
+//     parts.push(`${moneyLabel(filter.maxDepositJeonse)} 이하`);
+//   if (filter.maxSalePrice != null)
+//     parts.push(`매매가 ${moneyLabel(filter.maxSalePrice)} 이하`);
+//   if (filter.maxMonthlyRent != null)
+//     parts.push(`월세 ${filter.maxMonthlyRent}만 이하`);
 
-  if (filter.minAreaM2 != null || filter.maxAreaM2 != null) {
-    const lo = filter.minAreaM2 != null
-      ? Math.floor(filter.minAreaM2 / PYEONG)
-      : null;
-    const hi = filter.maxAreaM2 != null
-      ? Math.floor(filter.maxAreaM2 / PYEONG)
-      : null;
-    if (lo != null && hi != null) parts.push(`${lo}~${hi}평`);
-    else if (hi != null) parts.push(`${hi}평 이하`);
-    else parts.push(`${lo}평 이상`);
-  }
+//   if (filter.minAreaM2 != null || filter.maxAreaM2 != null) {
+//     const lo = filter.minAreaM2 != null
+//       ? Math.floor(filter.minAreaM2 / PYEONG)
+//       : null;
+//     const hi = filter.maxAreaM2 != null
+//       ? Math.floor(filter.maxAreaM2 / PYEONG)
+//       : null;
+//     if (lo != null && hi != null) parts.push(`${lo}~${hi}평`);
+//     else if (hi != null) parts.push(`${hi}평 이하`);
+//     else parts.push(`${lo}평 이상`);
+//   }
 
-  if (filter.floorPreference.length > 0) {
-    parts.push(
-      filter.floorPreference.length === 1
-        ? filter.floorPreference[0]
-        : `${filter.floorPreference[0]} 외 ${filter.floorPreference.length - 1}개`,
-    );
-  }
+//   if (filter.floorPreference.length > 0) {
+//     parts.push(
+//       filter.floorPreference.length === 1
+//         ? filter.floorPreference[0]
+//         : `${filter.floorPreference[0]} 외 ${filter.floorPreference.length - 1}개`,
+//     );
+//   }
 
-  return parts.slice(0, 2).join(' · ') || '주거 조건';
-});
+//   return parts.slice(0, 2).join(' · ') || '주거 조건';
+// });
 
 const selectedTrades = computed(() =>
   TRADE_TYPES.filter((t) => draft.tradeTypes.includes(t)),
@@ -1184,20 +1185,20 @@ const infraChipOn = computed(
     filter.desiredAmenityCategories.length > 0,
 );
 
-const infraChipLabel = computed(() => {
-  if (!infraChipOn.value) return '인프라/편의';
-  const allLabels = [
-    ...filter.desiredInfraCategories.map(
-      (k) => INFRA_CATEGORIES.find((c) => c.key === k)?.label ?? k,
-    ),
-    ...filter.desiredAmenityCategories.map(
-      (k) => AMENITY_CATEGORIES.find((c) => c.key === k)?.label ?? k,
-    ),
-  ];
-  return allLabels.length === 1
-    ? allLabels[0]
-    : `${allLabels[0]} 외 ${allLabels.length - 1}개`;
-});
+// const infraChipLabel = computed(() => {
+//   if (!infraChipOn.value) return '인프라/편의';
+//   const allLabels = [
+//     ...filter.desiredInfraCategories.map(
+//       (k) => INFRA_CATEGORIES.find((c) => c.key === k)?.label ?? k,
+//     ),
+//     ...filter.desiredAmenityCategories.map(
+//       (k) => AMENITY_CATEGORIES.find((c) => c.key === k)?.label ?? k,
+//     ),
+//   ];
+//   return allLabels.length === 1
+//     ? allLabels[0]
+//     : `${allLabels[0]} 외 ${allLabels.length - 1}개`;
+// });
 
 const sortLabel = computed(
   () => SORT_OPTIONS.find((o) => o.key === filter.sort)?.label ?? '추천순',
