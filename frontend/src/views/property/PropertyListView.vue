@@ -63,28 +63,29 @@
             stroke-linejoin="round"
           />
         </svg>
+        
       </button>
-      <div class="filter-chips" @wheel="onWheelX">
+            <div class="filter-chips">
         <button
           class="fchip"
           :class="{ on: commuteChipOn }"
           @click="openSheet('commute')"
         >
-          {{ commuteChipLabel }}
+          이주/통근 정보
         </button>
         <button
           class="fchip"
           :class="{ on: housingChipOn }"
           @click="openSheet('housing')"
         >
-          {{ housingChipLabel }}
+          희망 주거 조건
         </button>
         <button
           class="fchip"
           :class="{ on: infraChipOn }"
           @click="openSheet('infra')"
         >
-          {{ infraChipLabel }}
+          인프라/편의시설
         </button>
       </div>
 
@@ -375,12 +376,14 @@
       </div>
     </div>
 
-    <div class="sheet-actions">
-      <button class="btn-ghost" @click="resetHousing">초기화</button>
-      <button class="btn-primary" @click="applyHousing">
-        이 조건으로 적용
-      </button>
-    </div>
+    <template #footer>
+      <div class="sheet-actions">
+        <button class="btn-ghost" @click="resetHousing">초기화</button>
+        <button class="btn-primary" @click="applyHousing">
+          이 조건으로 적용
+        </button>
+      </div>
+    </template>
   </BottomSheet>
 
   <!-- 이주/통근 정보 -->
@@ -451,12 +454,14 @@
       </div>
     </div>
 
-    <div class="sheet-actions">
-      <button class="btn-ghost" @click="resetCommute">초기화</button>
-      <button class="btn-primary" @click="applyCommute">
-        이 조건으로 적용
-      </button>
-    </div>
+    <template #footer>
+      <div class="sheet-actions">
+        <button class="btn-ghost" @click="resetCommute">초기화</button>
+        <button class="btn-primary" @click="applyCommute">
+          이 조건으로 적용
+        </button>
+      </div>
+    </template>
   </BottomSheet>
 
   <!-- 인프라 · 편의시설 -->
@@ -497,10 +502,12 @@
       </div>
     </div>
 
-    <div class="sheet-actions">
-      <button class="btn-ghost" @click="resetInfra">초기화</button>
-      <button class="btn-primary" @click="applyInfra">이 조건으로 적용</button>
-    </div>
+    <template #footer>
+      <div class="sheet-actions">
+        <button class="btn-ghost" @click="resetInfra">초기화</button>
+        <button class="btn-primary" @click="applyInfra">이 조건으로 적용</button>
+      </div>
+    </template>
   </BottomSheet>
 
   <!-- 정렬 -->
@@ -562,15 +569,14 @@
         </span>
       </button>
     </div>
-    <div class="sheet-actions">
-      <button class="btn-ghost" @click="draft.priorities = []">초기화</button>
-      <button
-        class="btn-primary"
-        @click="applyPriority"
-      >
-        이 순서로 적용
-      </button>
-    </div>
+    <template #footer>
+      <div class="sheet-actions">
+        <button class="btn-ghost" @click="draft.priorities = []">초기화</button>
+        <button class="btn-primary" @click="applyPriority">
+          이 순서로 적용
+        </button>
+      </div>
+    </template>
   </BottomSheet>
 
   <KakaoLocation
@@ -1055,18 +1061,6 @@ const commuteChipOn = computed(
     filter.maxWorkplaceDistanceMeters !== DEFAULT_DISTANCE,
 );
 
-const commuteChipLabel = computed(() => {
-  if (!commuteChipOn.value) return '이주/통근';
-  const parts = [];
-  const placeName = filter.workplace?.name || filter.workplace?.address;
-  if (placeName) parts.push(placeName);
-  const m = filter.maxWorkplaceDistanceMeters;
-  if (m !== DEFAULT_DISTANCE)
-    parts.push(`${Number((m / 1000).toFixed(1))}km 이내`);
-  if (filter.hasCar) parts.push('자차 O');
-  return parts.slice(0, 2).join(' · ') || '이주/통근';
-});
-
 const housingChipOn = computed(
   () =>
     (filter.tradeTypes.length > 0 &&
@@ -1083,38 +1077,6 @@ const housingChipOn = computed(
     filter.maxAreaM2 != null,
 );
 
-const housingChipLabel = computed(() => {
-  if (!housingChipOn.value) return '주거 조건';
-  const parts = [];
-  if (
-    filter.tradeTypes.length > 0 &&
-    filter.tradeTypes.length < TRADE_TYPES.length
-  ) {
-    parts.push(
-      filter.tradeTypes.length === 1
-        ? filter.tradeTypes[0]
-        : `${filter.tradeTypes[0]} 외 ${filter.tradeTypes.length - 1}`,
-    );
-  }
-  if (filter.maxDepositJeonse != null)
-    parts.push(`${moneyLabel(filter.maxDepositJeonse)} 이하`);
-  if (filter.maxSalePrice != null)
-    parts.push(`매매가 ${moneyLabel(filter.maxSalePrice)} 이하`);
-  if (filter.maxMonthlyRent != null)
-    parts.push(`월세 ${filter.maxMonthlyRent}만 이하`);
-  if (filter.propertyTypes.length > 0) {
-    parts.push(
-      filter.propertyTypes.length === 1
-        ? filter.propertyTypes[0]
-        : `${filter.propertyTypes[0]} 외 ${filter.propertyTypes.length - 1}`,
-    );
-  }
-  if (filter.minAreaM2 != null || filter.maxAreaM2 != null)
-    parts.push('면적 조건');
-  if (filter.floorPreference.length > 0)
-    parts.push(`층수 ${filter.floorPreference.length}개`);
-  return parts.slice(0, 2).join(' · ') || '주거 조건';
-});
 
 const selectedTrades = computed(() =>
   TRADE_TYPES.filter((t) => draft.tradeTypes.includes(t)),
@@ -1158,21 +1120,6 @@ const infraChipOn = computed(
     filter.desiredInfraCategories.length > 0 ||
     filter.desiredAmenityCategories.length > 0,
 );
-
-const infraChipLabel = computed(() => {
-  if (!infraChipOn.value) return '인프라/편의';
-  const allLabels = [
-    ...filter.desiredInfraCategories.map(
-      (k) => INFRA_CATEGORIES.find((c) => c.key === k)?.label ?? k,
-    ),
-    ...filter.desiredAmenityCategories.map(
-      (k) => AMENITY_CATEGORIES.find((c) => c.key === k)?.label ?? k,
-    ),
-  ];
-  return allLabels.length === 1
-    ? allLabels[0]
-    : `${allLabels[0]} 외 ${allLabels.length - 1}개`;
-});
 
 const sortLabel = computed(
   () => SORT_OPTIONS.find((o) => o.key === filter.sort)?.label ?? '추천순',
@@ -1807,18 +1754,20 @@ watch(filter, scrollToTop);
   display: flex;
   gap: 8px;
   padding: 0px 16px 0;
-  overflow-x: auto;
 }
 
 .fchip {
-  flex-shrink: 0;
-  padding: 8px 14px;
+  flex: 1;
+  min-width: 0;
+  padding: 4px 6px;
   border: 1.5px solid #e9e7e2;
   border-radius: 100px;
   background: #fff;
   font-size: 12.5px;
   color: #33302a;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   cursor: pointer;
 }
 
@@ -1870,12 +1819,10 @@ watch(filter, scrollToTop);
   height: 42px;
 }
 
-.filter-chips,
 .priority-row {
   scrollbar-width: none;
 }
 
-.filter-chips::-webkit-scrollbar,
 .priority-row::-webkit-scrollbar {
   display: none;
 }
@@ -1936,24 +1883,6 @@ watch(filter, scrollToTop);
   flex: 1;
   height: 1px;
   background: var(--border);
-}
-
-@media (hover: hover) {
-  .filter-chips {
-    scrollbar-width: thin;
-    scrollbar-color: #eceae5 transparent;
-  }
-  .filter-chips::-webkit-scrollbar {
-    display: block;
-    height: 4px;
-  }
-  .filter-chips::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  .filter-chips::-webkit-scrollbar-thumb {
-    background: #eceae5;
-    border-radius: 2px;
-  }
 }
 
 .opt-grid {
@@ -2108,7 +2037,6 @@ watch(filter, scrollToTop);
 .sheet-actions {
   display: flex;
   gap: 8px;
-  padding-top: 18px;
 }
 
 .btn-ghost {
