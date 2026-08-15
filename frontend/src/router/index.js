@@ -146,6 +146,24 @@ const routes = [
     meta: { headerTitle: '안전 거래 가이드' },
   },
   {
+    path: '/seller/home',
+    name: 'seller-home',
+    component: () => import('@/views/seller/SellerHomeView.vue'),
+    meta: { headerTitle: '홈' },
+  },
+  {
+    path: '/seller/properties',
+    name: 'seller-properties',
+    component: () => import('@/views/seller/SellerPropertyListView.vue'),
+    meta: { headerTitle: '내 매물 관리', headerBackTo: '/seller/home' },
+  },
+  {
+    path: '/seller/profile',
+    name: 'seller-profile',
+    component: () => import('@/views/seller/SellerProfileEditView.vue'),
+    meta: { headerTitle: '내 정보 수정', headerBackTo: '/seller/home' },
+  },
+  {
     path: '/seller/register/:step',
     name: 'seller-register',
     component: () => import('@/views/seller/SellerRegisterView.vue'),

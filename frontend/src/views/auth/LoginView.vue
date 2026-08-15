@@ -2,26 +2,15 @@
   <simplebar class="login">
     <div class="login-body">
       <div class="logo-badge">
-        <img
-          :src="logoImg"
-          alt="타지로"
-          class="logo-img"
-        />
+        <img :src="logoImg" alt="타지로" class="logo-img" />
       </div>
 
       <h1 class="headline">다시 만나서 반가워요!</h1>
       <p class="headline-sub">타지로와 함께 정착을 이어가요</p>
 
-      <form
-        class="login-form"
-        @submit.prevent="handleLogin"
-      >
+      <form class="login-form" @submit.prevent="handleLogin">
         <div class="field">
-          <label
-            class="field-label"
-            for="email"
-            >이메일</label
-          >
+          <label class="field-label" for="email">이메일</label>
           <input
             id="email"
             v-model="email"
@@ -32,11 +21,7 @@
           />
         </div>
         <div class="field">
-          <label
-            class="field-label"
-            for="password"
-            >비밀번호</label
-          >
+          <label class="field-label" for="password">비밀번호</label>
           <input
             id="password"
             v-model="password"
@@ -47,30 +32,18 @@
           />
         </div>
 
-        <p
-          v-if="errorMessage"
-          class="error-message"
-        >
+        <p v-if="errorMessage" class="error-message">
           {{ errorMessage }}
         </p>
 
-        <button
-          class="btn-cta login-btn"
-          type="submit"
-          :disabled="loading"
-        >
+        <button class="btn-cta login-btn" type="submit" :disabled="loading">
           로그인
         </button>
       </form>
 
       <p class="signup-link">
         아직 회원이 아니신가요?
-        <button
-          type="button"
-          @click="goToRegister"
-        >
-          회원가입
-        </button>
+        <button type="button" @click="goToRegister">회원가입</button>
       </p>
     </div>
   </simplebar>
@@ -115,7 +88,7 @@ async function handleLogin() {
     const redirect = route.query.redirect;
 
     if (!redirect && payload.user?.role === 'SELLER') {
-      router.push(payload.user.hasListings ? '/seller/properties' : '/seller/register/1');
+      router.push('/seller/home');
     } else {
       router.push(redirect || '/home');
     }
@@ -134,7 +107,13 @@ function mockLogin() {
   if (email.value === MOCK_EMAIL && password.value === MOCK_PASSWORD) {
     return {
       accessToken: 'mock-access-token',
-      user: { id: 1, name: '김민주', email: email.value, role: 'USER', hasListings: false },
+      user: {
+        id: 1,
+        name: '김민주',
+        email: email.value,
+        role: 'USER',
+        hasListings: false,
+      },
     };
   }
 
