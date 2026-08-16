@@ -462,11 +462,19 @@
   <!-- 인프라 · 편의시설 -->
   <BottomSheet
     :model-value="openedSheet === 'infra'"
-    title="인프라 · 편의시설"
+    title="인프라/편의시설"
     @update:model-value="closeSheet"
   >
     <div class="field">
-      <p class="field-name">희망 인프라</p>
+      <div class="field-head field-head--selection">
+        <p class="field-name">희망 인프라</p>
+        <button
+          class="select-all-btn"
+          @click="toggleAllDraft(draft.infra, INFRA_CATEGORIES)"
+        >
+          {{ allInfraSelected ? '전체 해제' : '전체 선택' }}
+        </button>
+      </div>
       <p class="field-caption">반경 2km 이내만 표시</p>
       <div class="opt-grid">
         <button
@@ -482,7 +490,15 @@
     </div>
 
     <div class="field">
-      <p class="field-name">희망 편의시설</p>
+      <div class="field-head field-head--selection">
+        <p class="field-name">희망 편의시설</p>
+        <button
+          class="select-all-btn"
+          @click="toggleAllDraft(draft.amenity, AMENITY_CATEGORIES)"
+        >
+          {{ allAmenitySelected ? '전체 해제' : '전체 선택' }}
+        </button>
+      </div>
       <p class="field-caption">반경 2km 이내만 표시</p>
       <div class="opt-grid">
         <button
@@ -934,6 +950,13 @@ const draft = reactive({
   priorities: [],
 });
 
+const allInfraSelected = computed(() =>
+  INFRA_CATEGORIES.every(({ key }) => draft.infra.includes(key)),
+);
+const allAmenitySelected = computed(() =>
+  AMENITY_CATEGORIES.every(({ key }) => draft.amenity.includes(key)),
+);
+
 function keyOf(dot) {
   return dot ? `${dot.lat},${dot.lng}` : null;
 }
@@ -1359,6 +1382,12 @@ async function applyInfra() {
   filter.desiredAmenityCategories = [...draft.amenity];
   closeSheet();
   await commitFilter({ preserveSelection: true });
+}
+
+function toggleAllDraft(list, categories) {
+  const keys = categories.map(({ key }) => key);
+  const allSelected = keys.every((key) => list.includes(key));
+  list.splice(0, list.length, ...(allSelected ? [] : keys));
 }
 
 function applySort(key) {
@@ -2046,6 +2075,26 @@ watch(filter, scrollToTop);
 
 .field-head .field-name {
   margin-bottom: 0;
+}
+
+.field-head--selection {
+  align-items: center;
+}
+
+.select-all-btn {
+  padding: 4px 8px;
+  border: 1px solid #f0dfaa;
+  border-radius: 999px;
+  background: #fffaf0;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #6b6251;
+  cursor: pointer;
+}
+
+.select-all-btn:hover {
+  border-color: #ffbc00;
+  background: #fff6dc;
 }
 
 .range-card {
