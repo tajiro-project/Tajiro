@@ -603,6 +603,7 @@ import { SlidersHorizontal } from 'lucide-vue-next';
 import {
   computed,
   inject,
+  nextTick,
   ref,
   reactive,
   watch,
@@ -679,14 +680,27 @@ async function fetchProperties() {
 }
 
 let skipReload = false;
+let savedScrollTop = 0;
 
 onBeforeRouteLeave((to) => {
-  skipReload = /^\/properties\/\d+/.test(to.path);
+  const isPropertyDetail = /^\/properties\/\d+/.test(to.path);
+  skipReload = isPropertyDetail;
+
+  if (isPropertyDetail) {
+    savedScrollTop = getScrollElement()?.scrollTop ?? 0;
+  } else {
+    savedScrollTop = 0;
+  }
 });
 
 onActivated(async () => {
   if (skipReload) {
     skipReload = false;
+    await nextTick();
+    getScrollElement()?.scrollTo({
+      top: savedScrollTop,
+      behavior: 'auto',
+    });
     return;
   }
   
@@ -1460,8 +1474,11 @@ function goDetail(p) {
 }
 
 function scrollToTop() {
-  const el = scrollArea.value?.scrollElement ?? scrollArea.value?.$el;
-  el?.scrollTo?.({ top: 0 });
+  getScrollElement()?.scrollTo({ top: 0 });
+}
+
+function getScrollElement() {
+  return scrollArea.value?.scrollElement ?? scrollArea.value?.$el ?? null;
 }
 
 const MAP_HEIGHT = 250;
