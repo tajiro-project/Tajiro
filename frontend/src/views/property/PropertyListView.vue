@@ -581,9 +581,11 @@
 
   <KakaoLocation
     :open="isLocationPickerOpen"
-    :initial-location="draft.workplace"
-    @close="isLocationPickerOpen = false"
-    @select="selectWorkplace"
+    :initial-location="
+      locationPickerMode === 'header' ? filter.workplace : draft.workplace
+    "
+    @close="closeLocationPicker"
+    @select="handleLocationSelect"
   />
 </template>
 
@@ -604,6 +606,7 @@ import medalBronzeRound from '@/assets/img/medals/medal_bronze_round.svg';
 
 import {
   computed,
+  inject,
   ref,
   reactive,
   watch,
@@ -631,6 +634,7 @@ defineOptions({name:'PropertyListView'})
 
 const router = useRouter();
 const route = useRoute();
+const propertyListHeader = inject('propertyListHeader');
 const center = computed(() => ({
   lat: filter.workplace?.lat ?? 36.3366,
   lng: filter.workplace?.lng ?? 127.459,
@@ -888,6 +892,7 @@ const criterionLabel = (c) =>
 
 const openedSheet = ref(null);
 const isLocationPickerOpen = ref(false);
+const locationPickerMode = ref('filter');
 
 const draft = reactive({
   tradeTypes: [],
@@ -1125,6 +1130,31 @@ const sortLabel = computed(
   () => SORT_OPTIONS.find((o) => o.key === filter.sort)?.label ?? '추천순',
 );
 
+const currentLocationLabel = computed(() => {
+  const workplace = filter.workplace;
+
+  if (!workplace) return '매물 검색 결과';
+
+  const label = workplace.name || workplace.address || '';
+
+  const isCoordinate = /^-?\d+(\.\d+)?\s*,\s*-?\d+(\.\d+)?$/.test(label);
+
+  return isCoordinate ? '현재 선택 위치' : label || '매물 검색 결과';
+});
+
+watch(
+  currentLocationLabel,
+  (label) => propertyListHeader.setLocationLabel(label),
+  { immediate: true },
+);
+
+watch(
+  () => propertyListHeader.locationPickerRequestId,
+  () => {
+    if (route.name === 'property-list') openHeaderLocationPicker();
+  },
+);
+
 function openSheet(name) {
   if (name === 'commute') {
     draft.distance = filter.maxWorkplaceDistanceMeters ?? DEFAULT_DISTANCE;
@@ -1190,12 +1220,64 @@ function resetCommute() {
 }
 
 function goLocationSelect() {
+  locationPickerMode.value = 'filter';
   isLocationPickerOpen.value = true;
 }
 
 function selectWorkplace(location) {
   draft.workplace = location;
   isLocationPickerOpen.value = false;
+}
+
+function openHeaderLocationPicker() {
+  locationPickerMode.value = 'header';
+  isLocationPickerOpen.value = true;
+}
+
+function closeLocationPicker() {
+  isLocationPickerOpen.value = false;
+  locationPickerMode.value = 'filter';
+}
+
+async function handleLocationSelect(location) {
+  if (locationPickerMode.value === 'filter') {
+    selectWorkplace(location);
+    return;
+  }
+
+  await updateWorkplace(location);
+}
+
+async function updateWorkplace(location) {
+  if (!preference.value) return;
+
+  const workplace = {
+    name: location.name,
+    address: location.address,
+    lat: location.lat,
+    lng: location.lng,
+  };
+
+  isLoading.value = true;
+  loadError.value = '';
+
+  try {
+    const res = await client.put('/users/me/preferences', {
+      ...preference.value,
+      workplace,
+    });
+
+    preference.value = res.data.data ?? res.data;
+    filter.workplace = preference.value.workplace ?? workplace;
+    draft.workplace = { ...filter.workplace };
+
+    closeLocationPicker();
+    await fetchProperties();
+  } catch (e) {
+    loadError.value = getApiErrorMessage(e);
+  } finally {
+    isLoading.value = false;
+  }
 }
 
 async function applyHousing() {
@@ -2199,4 +2281,5 @@ watch(filter, scrollToTop);
   object-fit: cover;
   border-radius: 10px;
 }
+
 </style>
