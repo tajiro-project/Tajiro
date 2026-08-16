@@ -6,16 +6,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.tajiro.common.api.ApiResponse;
 import org.tajiro.common.api.ErrorCode;
 import org.tajiro.exception.BusinessException;
-import org.tajiro.seller.dto.PropertyRegistrationRequest;
-import org.tajiro.seller.dto.PropertyRegistrationResponse;
+import org.tajiro.seller.dto.*;
 import org.tajiro.seller.service.PropertyRegistrationService;
+import org.tajiro.seller.service.SellerPropertyService;
 import springfox.documentation.annotations.ApiIgnore;
 
 @RestController
@@ -25,6 +22,50 @@ import springfox.documentation.annotations.ApiIgnore;
 public class PropertyRegistrationController {
 
     private final PropertyRegistrationService propertyRegistrationService;
+    private final SellerPropertyService sellerPropertyService;
+
+    @GetMapping("/{propertyId}")
+    @ApiOperation(value = "수정 화면용 내 매물 단건 조회")
+    public ResponseEntity<ApiResponse<SellerPropertyDetailResponse>> getMyProperty(
+            @ApiIgnore @AuthenticationPrincipal Long userId,
+            @PathVariable Long propertyId) {
+        if (userId == null) {
+            throw new BusinessException(ErrorCode.AUTH_REQUIRED);
+        }
+        return ResponseEntity.ok(ApiResponse.success(
+                sellerPropertyService.getProperty(userId, propertyId)));
+    }
+
+    @GetMapping
+    @ApiOperation(value = "내 매물 목록 조회")
+    public ResponseEntity<ApiResponse<SellerPropertyPageResponse>> getMyProperties(
+            @ApiIgnore @AuthenticationPrincipal Long userId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "4") int size,
+            @RequestParam(defaultValue = "ALL") String status) {
+        if (userId == null) {
+            throw new BusinessException(ErrorCode.AUTH_REQUIRED);
+        }
+        return ResponseEntity.ok(ApiResponse.success(
+                sellerPropertyService.getProperties(userId, page, size, status)));
+    }
+
+    @PatchMapping("/{propertyId}/status")
+    @ApiOperation(value = "매물 게시 상태 변경")
+    public ResponseEntity<Void> changeStatus(
+            @ApiIgnore @AuthenticationPrincipal Long userId,
+            @PathVariable Long propertyId,
+            @RequestBody PropertyStatusUpdateRequest request) {
+        if (userId == null) {
+            throw new BusinessException(ErrorCode.AUTH_REQUIRED);
+        }
+        if (request == null || request.getTransactionStatus() == null) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
+        }
+        sellerPropertyService.changeStatus(
+                userId, propertyId, request.getTransactionStatus());
+        return ResponseEntity.noContent().build();
+    }
 
     @PostMapping
     @ApiOperation(
