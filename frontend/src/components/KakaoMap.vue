@@ -28,6 +28,7 @@ const props = defineProps({
     validator: (val) => ['list', 'infra', 'safety'].includes(val),
   },
   markers: { type: Array, default: () => [] },
+  referenceLocation: { type: Object, default: null },
   dots: { type: Array, default: () => [] },
   polygons: { type: Array, default: () => [] },
   center: { type: Object, default: () => ({ lat: 37.5563, lng: 126.9723 }) },
@@ -48,6 +49,7 @@ let map = null;
 let overlays = [];
 let polygonOverlays = [];
 let dotElements = new Map();
+let hasFittedListView = false;
 
 // --- 카테고리 매핑 ---
 const ALL_CATEGORIES = [
@@ -115,6 +117,22 @@ function createPinElement(marker) {
     e.stopPropagation();
     emit('marker-click', marker);
   });
+  return element;
+}
+
+function createReferenceLocationElement() {
+  const element = document.createElement('div');
+  element.className = 'reference-location-marker';
+  element.setAttribute('aria-hidden', 'true');
+
+  const pole = document.createElement('span');
+  pole.className = 'reference-location-pole';
+
+  const flag = document.createElement('span');
+  flag.className = 'reference-location-flag';
+
+  element.append(pole, flag);
+
   return element;
 }
 
@@ -190,6 +208,20 @@ function fitAllElements() {
     }
   });
 
+  if (
+    props.mode === 'list' &&
+    props.referenceLocation?.lat != null &&
+    props.referenceLocation?.lng != null
+  ) {
+    bounds.extend(
+      new window.kakao.maps.LatLng(
+        Number(props.referenceLocation.lat),
+        Number(props.referenceLocation.lng),
+      ),
+    );
+    hasValidCoords = true;
+  }
+
   props.dots.forEach((d) => {
     if (d.lat != null && d.lng != null) {
       bounds.extend(new window.kakao.maps.LatLng(d.lat, d.lng));
@@ -229,7 +261,29 @@ function fitAllElements() {
     return;
   }
 
+  if (!hasFittedListView) {
+    map.setBounds(bounds, 40, 40, 40, 40);
+    hasFittedListView = true;
+    return;
+  }
+
+  const previousCenter = map.getCenter();
+  const previousLevel = map.getLevel();
+
   map.setBounds(bounds, 40, 40, 40, 40);
+
+  const targetCenter = map.getCenter();
+  const targetLevel = map.getLevel();
+  const centerChanged =
+    Math.abs(previousCenter.getLat() - targetCenter.getLat()) > 0.000001 ||
+    Math.abs(previousCenter.getLng() - targetCenter.getLng()) > 0.000001;
+
+  if (!centerChanged && previousLevel === targetLevel) return;
+
+  map.jump(previousCenter, previousLevel);
+  map.jump(targetCenter, targetLevel, {
+    animate: { duration: 180 },
+  });
 }
 
 // 2. [Mode: infra & safety] 매물 정중앙 고정 + 가독성 극대화 스마트 줌
@@ -360,6 +414,25 @@ function redraw() {
     overlays.push(overlay);
   });
 
+  if (
+    props.mode === 'list' &&
+    props.referenceLocation?.lat != null &&
+    props.referenceLocation?.lng != null
+  ) {
+    const position = new window.kakao.maps.LatLng(
+      Number(props.referenceLocation.lat),
+      Number(props.referenceLocation.lng),
+    );
+    const overlay = new window.kakao.maps.CustomOverlay({
+      position,
+      content: createReferenceLocationElement(),
+      yAnchor: 1,
+      zIndex: 20,
+    });
+    overlay.setMap(map);
+    overlays.push(overlay);
+  }
+
   // 인프라/안전 도트
   props.dots.forEach((dot) => {
     if (dot.lat == null || dot.lng == null) return;
@@ -451,6 +524,7 @@ function handleIdle() {
 watch(
   () => [
     props.markers,
+    props.referenceLocation,
     props.dots,
     props.polygons,
     props.center,
@@ -521,6 +595,37 @@ onUnmounted(() => {
 
 :deep(.property-pin svg) {
   display: block;
+}
+
+:deep(.reference-location-marker) {
+  position: relative;
+  width: 24px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  filter: drop-shadow(0 1px 1px rgba(51, 48, 42, 0.2));
+  pointer-events: none;
+}
+
+:deep(.reference-location-pole) {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 2px;
+  height: 32px;
+  transform: translateX(-50%);
+  background: #161616;
+}
+
+:deep(.reference-location-flag) {
+  position: absolute;
+  top: 3px;
+  left: 50%;
+  width: 18px;
+  height: 12px;
+  background: #e91608;
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
 }
 
 :deep(.pin-medal) {

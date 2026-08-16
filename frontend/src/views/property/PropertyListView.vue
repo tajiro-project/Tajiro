@@ -5,6 +5,7 @@
         :markers="markers"
         :dots="dots"
         :center="center"
+        :reference-location="filter.workplace"
         :active-dot-key="activeDotKey"
         @marker-click="onMarkerClick"
         @dot-click="onDotClick"
@@ -793,7 +794,11 @@ async function commitFilter() {
   }
 }
 
+let infraRequestId = 0;
+
 watch(selectedBuildingId, async (id) => {
+  const requestId = ++infraRequestId;
+
   if (!id) {
     infraItems.value = [];
     return;
@@ -801,8 +806,10 @@ watch(selectedBuildingId, async (id) => {
 
   try {
     const res = await buildingApi.infraPoints(id);
+    if (requestId !== infraRequestId || selectedBuildingId.value !== id) return;
     infraItems.value = res?.data ?? [];
   } catch {
+    if (requestId !== infraRequestId) return;
     infraItems.value = [];
   }
 });
@@ -1271,6 +1278,9 @@ async function updateWorkplace(location) {
     filter.workplace = preference.value.workplace ?? workplace;
     draft.workplace = { ...filter.workplace };
 
+    clearSelection();
+    closePanel();
+    infraItems.value = [];
     closeLocationPicker();
     await fetchProperties();
   } catch (e) {
