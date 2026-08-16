@@ -749,9 +749,9 @@ function applyPreferenceToFilter(p) {
   );
 }
 
-async function commitFilter() {
+async function commitFilter({ preserveSelection = false } = {}) {
   if (!preference.value) return;
-  clearSelection();
+  if (!preserveSelection) clearSelection();
 
   const workplace = filter.workplace ?? preference.value.workplace;
 
@@ -796,6 +796,14 @@ async function commitFilter() {
     const res = await client.put('/users/me/preferences', body);
     preference.value = res.data.data ?? res.data;
     await fetchProperties();
+
+    if (
+      preserveSelection &&
+      selectedBuildingId.value != null &&
+      !items.value.some((item) => item.buildingId === selectedBuildingId.value)
+    ) {
+      clearSelection();
+    }
   } catch (e) {
     loadError.value = getApiErrorMessage(e);
   } finally {
@@ -1350,7 +1358,7 @@ async function applyInfra() {
   filter.desiredInfraCategories = [...draft.infra];
   filter.desiredAmenityCategories = [...draft.amenity];
   closeSheet();
-  await commitFilter();
+  await commitFilter({ preserveSelection: true });
 }
 
 function applySort(key) {
