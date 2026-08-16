@@ -3,7 +3,16 @@
 </template>
 
 <script setup>
-import { onMounted, onUnmounted, onActivated, nextTick, ref, watch, h, render } from 'vue';
+import {
+  onMounted,
+  onUnmounted,
+  onActivated,
+  nextTick,
+  ref,
+  watch,
+  h,
+  render,
+} from 'vue';
 import { loadKakaoSdk } from '@/utils/kakaoSdk';
 import {
   INFRA_CATEGORIES,
@@ -59,16 +68,36 @@ ALL_CATEGORIES.forEach((cat) => {
 });
 
 function pinSvg(count, hasMedal) {
-  const label =
-    props.mode === 'list' && count != null && !hasMedal
-      ? `<text x="13" y="16" text-anchor="middle" font-size="10" font-weight="700" fill="#33302a">${count}</text>`
-      : '';
+  const showCount = props.mode === 'list' && count > 1 && !hasMedal;
+
+  const label = showCount
+    ? `
+      <text
+        x="9"
+        y="16"
+        text-anchor="middle"
+        font-size="7"
+        font-weight="500"
+        fill="#8a8477"
+      >+</text>
+      <text
+        x="15"
+        y="16"
+        text-anchor="middle"
+        font-size="10"
+        font-weight="700"
+        fill="#545045"
+      >${count}</text>
+    `
+    : '';
 
   const fill = hasMedal ? '#fe7b00' : '#ffbc00';
 
   return `<svg width="30" height="37" viewBox="0 0 26 32" fill="none">
-    <path d="M13 0C5.8 0 0 5.7 0 12.8 0 22.4 13 32 13 32s13-9.6 13-19.2C26 5.7 20.2 0 13 0z"
-          fill="${fill}"/>
+    <path
+      d="M13 0C5.8 0 0 5.7 0 12.8C0 22.4 13 32 13 32s13-9.6 13-19.2C26 5.7 20.2 0 13 0z"
+      fill="${fill}"
+    />
     <circle cx="13" cy="12.5" r="7" fill="#fff"/>
     ${label}
   </svg>`;
