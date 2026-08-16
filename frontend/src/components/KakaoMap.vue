@@ -50,6 +50,9 @@ let overlays = [];
 let polygonOverlays = [];
 let dotElements = new Map();
 let hasFittedListView = false;
+let previousListDotCount = 0;
+
+const LIST_INITIAL_MIN_LEVEL = 4;
 
 // --- 카테고리 매핑 ---
 const ALL_CATEGORIES = [
@@ -196,15 +199,17 @@ function convertPathToKakao(path) {
 }
 
 // 1. [Mode: list] 영역에 맞춘 자동 시점 계산
-function fitAllElements() {
+function fitAllElements(animate = false) {
   if (!map) return;
   const bounds = new window.kakao.maps.LatLngBounds();
   let hasValidCoords = false;
+  let hasPropertyMarkers = false;
 
   props.markers.forEach((m) => {
     if (m.lat != null && m.lng != null) {
       bounds.extend(new window.kakao.maps.LatLng(m.lat, m.lng));
       hasValidCoords = true;
+      hasPropertyMarkers = true;
     }
   });
 
@@ -263,7 +268,15 @@ function fitAllElements() {
 
   if (!hasFittedListView) {
     map.setBounds(bounds, 40, 40, 40, 40);
-    hasFittedListView = true;
+    if (map.getLevel() < LIST_INITIAL_MIN_LEVEL) {
+      map.setLevel(LIST_INITIAL_MIN_LEVEL);
+    }
+    hasFittedListView = hasPropertyMarkers;
+    return;
+  }
+
+  if (!animate) {
+    map.setBounds(bounds, 40, 40, 40, 40);
     return;
   }
 
@@ -378,11 +391,11 @@ function fitCenterWithAllElements() {
   }
 }
 
-function applyViewMode() {
+function applyViewMode(animateList = false) {
   if (props.mode === 'infra' || props.mode === 'safety') {
     fitCenterWithAllElements();
   } else {
-    fitAllElements();
+    fitAllElements(animateList);
   }
 }
 
@@ -495,7 +508,13 @@ function redraw() {
     }
   });
 
-  applyViewMode();
+  const animateList =
+    props.mode === 'list' &&
+    previousListDotCount === 0 &&
+    props.dots.length > 0;
+
+  previousListDotCount = props.mode === 'list' ? props.dots.length : 0;
+  applyViewMode(animateList);
 }
 
 function updateActiveDot(newKey, oldKey) {

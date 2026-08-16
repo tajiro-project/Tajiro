@@ -64,9 +64,13 @@
             stroke-linejoin="round"
           />
         </svg>
-        
       </button>
-            <div class="filter-chips">
+      <div class="filter-chips">
+        <SlidersHorizontal
+          class="filter-icon"
+          :size="16"
+          :stroke-width="1.8"
+        />
         <button
           class="fchip"
           :class="{ on: commuteChipOn }"
@@ -121,29 +125,19 @@
           class="prow-icon"
           width="18"
           height="18"
-          viewBox="0 0 18 18"
+          viewBox="0 0 24 24"
           fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
         >
+          <path d="M12 6V2h-1" />
           <path
-            d="M2 5.5h3M8.5 5.5H16M2 12.5h7.5M13 12.5H16"
-            stroke="#33302a"
-            stroke-width="1.6"
-            stroke-linecap="round"
+            d="M9 15a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1"
           />
-          <circle
-            cx="6.75"
-            cy="5.5"
-            r="1.9"
-            stroke="#33302a"
-            stroke-width="1.6"
-          />
-          <circle
-            cx="11.25"
-            cy="12.5"
-            r="1.9"
-            stroke="#33302a"
-            stroke-width="1.6"
-          />
+          <path d="M9 21V11a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v10" />
         </svg>
 
         <span v-for="p in priorityChips" :key="p.criterion" class="pchip">
@@ -604,6 +598,7 @@ import medalBronze from '@/assets/img/medals/medal_bronze_ribbon.svg';
 import medalGoldRound from '@/assets/img/medals/medal_gold_round.svg';
 import medalSilverRound from '@/assets/img/medals/medal_silver_round.svg';
 import medalBronzeRound from '@/assets/img/medals/medal_bronze_round.svg';
+import { SlidersHorizontal } from 'lucide-vue-next';
 
 import {
   computed,
@@ -631,7 +626,7 @@ import {
   PREFERENCE_SLIDER_CONFIG,
 } from '@/constants/preferenceOptions';
 
-defineOptions({name:'PropertyListView'})
+defineOptions({ name: 'PropertyListView' });
 
 const router = useRouter();
 const route = useRoute();
@@ -1844,8 +1839,14 @@ watch(filter, scrollToTop);
 
 .filter-chips {
   display: flex;
+  align-items: center;
   gap: 8px;
-  padding: 0px 16px 0;
+  padding: 0 16px;
+}
+
+.filter-icon {
+  flex-shrink: 0;
+  color: #545045;
 }
 
 .fchip {
@@ -1921,6 +1922,7 @@ watch(filter, scrollToTop);
 
 .prow-icon {
   flex-shrink: 0;
+  color: #545045;
 }
 
 .pchip {
