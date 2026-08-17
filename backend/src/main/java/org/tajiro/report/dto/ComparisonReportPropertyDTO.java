@@ -6,7 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Data
 @Builder
@@ -22,5 +22,5 @@ public class ComparisonReportPropertyDTO {
     private Integer maintenanceFee;
     private BigDecimal areaM2;
     private String floorInfo;
-    private LocalDate updatedDate;
+    private LocalDateTime updatedDate;
 }

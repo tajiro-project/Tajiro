@@ -140,7 +140,7 @@
     <update id="updateStatus">
         UPDATE property
         SET transaction_status = #{transactionStatus},
-            update_date = CURRENT_DATE
+            update_date = NOW()
         WHERE id = #{propertyId}
           AND seller_id = #{sellerId}
     </update>
