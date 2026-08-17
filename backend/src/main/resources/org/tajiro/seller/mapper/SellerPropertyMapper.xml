@@ -65,6 +65,7 @@
         LEFT JOIN building b ON b.id = p.building_id
         WHERE p.id = #{propertyId}
           AND p.seller_id = #{sellerId}
+          AND p.deleted_at IS NULL
     </select>
 
     <select id="findImageUrls" resultType="string">
@@ -107,6 +108,7 @@
         LEFT JOIN building b ON b.id = p.building_id
         LEFT JOIN favorite_property f ON f.property_id = p.id
         WHERE p.seller_id = #{sellerId}
+            AND p.deleted_at IS NULL
         <include refid="statusCondition"/>
         GROUP BY p.id, p.title, p.property_type, b.bld_nm, p.trade_type,
                  p.deposit, p.monthly_rent, p.area_m2, p.floor_info,
@@ -119,6 +121,7 @@
         SELECT COUNT(*)
         FROM property p
         WHERE p.seller_id = #{sellerId}
+            AND p.deleted_at IS NULL
         <include refid="statusCondition"/>
     </select>
 
@@ -131,6 +134,7 @@
         FROM property p
         LEFT JOIN favorite_property f ON f.property_id = p.id
         WHERE p.seller_id = #{sellerId}
+          AND p.deleted_at IS NULL
     </select>
 
     <update id="updateStatus">
@@ -139,6 +143,15 @@
             update_date = CURRENT_DATE
         WHERE id = #{propertyId}
           AND seller_id = #{sellerId}
+    </update>
+
+    <update id="deleteProperty">
+        UPDATE property
+        SET deleted_at = NOW(),
+            update_date = NOW()
+        WHERE id = #{propertyId}
+          AND seller_id = #{sellerId}
+          AND deleted_at IS NULL
     </update>
 
 </mapper>

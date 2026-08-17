@@ -129,6 +129,7 @@
         ON r.property_id = p.id AND r.user_id = #{userId}
 
         <where>
+            p.deleted_at IS NULL
             <if test="effectiveRadiusMeters != null">
                 AND <include refid="boundingBox"/>
             </if>

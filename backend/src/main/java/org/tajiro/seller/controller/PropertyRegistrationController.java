@@ -67,6 +67,19 @@ public class PropertyRegistrationController {
         return ResponseEntity.noContent().build();
     }
 
+    @DeleteMapping("/{propertyId}")
+    @ApiOperation(value="매물 삭제", notes = "실제로 지우지 않고, deleted_at에 날짜만 남깁니다.")
+    public ResponseEntity<Void> deleteProperty(
+            @ApiIgnore @AuthenticationPrincipal Long userId,
+            @PathVariable Long propertyId
+    ) {
+        if(userId == null) {
+            throw new BusinessException(ErrorCode.AUTH_REQUIRED);
+        }
+        sellerPropertyService.deleteProperty(userId, propertyId);
+        return ResponseEntity.noContent().build();
+    }
+
     @PostMapping
     @ApiOperation(
             value = "매물 등록",

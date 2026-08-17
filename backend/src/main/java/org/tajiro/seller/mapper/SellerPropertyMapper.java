@@ -33,4 +33,6 @@ public interface SellerPropertyMapper {
             @Param("propertyId") Long propertyId,
             @Param("transactionStatus") boolean transactionStatus);
 
+    int deleteProperty(@Param("sellerId") Long sellerId, @Param("propertyId") Long propertyId);
+
 }
