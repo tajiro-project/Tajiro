@@ -162,11 +162,14 @@
         <li v-for="p in listItems" :key="p.propertyId">
           <div
             class="card"
-            :class="{ selected: p.selected }"
+            :class="{ selected: p.selected, sold: p.transactionStatus === false }"
             @click="onCardClick(p)"
           >
             <span class="thumb">
               <img v-if="p.rank" :src="MEDALS[p.rank]" :alt="`추천 ${p.rank}위`"" class="medal"/>
+              <span v-if="p.transactionStatus === false" class="sold-overlay">
+                거래 완료
+              </span>
               <img
                 v-if="p.thumbnailUrl && !p.thumbFailed"
                 :src="p.thumbnailUrl"
@@ -972,7 +975,11 @@ const activeDotColor = computed(() => {
 
 const sortedItems = computed(() => {
   const spec = SORT_SPECS[filter.sort];
-  if (!spec) return [...items.value];
+
+  const byStatus = (a, b) =>
+    Number(a.transactionStatus === false) - Number(b.transactionStatus === false);
+
+  if (!spec) return [...items.value].sort(byStatus);
 
   const missing = spec.dir === 'asc' ? Infinity : -Infinity;
 
@@ -981,13 +988,12 @@ const sortedItems = computed(() => {
       const v = spec.value(item);
       return { item, index, v: Number.isFinite(v) ? v : missing };
     })
-    .sort((a, b) =>
-      a.v === b.v
-        ? a.index - b.index
-        : spec.dir === 'asc'
-          ? a.v - b.v
-          : b.v - a.v,
-    )
+    .sort((a, b) => {
+      const status = byStatus(a.item, b.item);
+      if (status !== 0) return status;
+      if (a.v === b.v) return a.index - b.index;
+      return spec.dir === 'asc' ? a.v - b.v : b.v - a.v;
+    })
     .map((e) => e.item);
 });
 
@@ -995,7 +1001,7 @@ const rankByPropertyId = computed(() => {
   if (filter.sort !== 'recommend') return {};
 
   const scored = items.value
-    .filter((p) => p.recommendScore != null)
+    .filter((p) => p.recommendScore != null && p.transactionStatus !== false)
     .sort((a, b) => b.recommendScore - a.recommendScore);
 
   const map = {};
@@ -1049,6 +1055,7 @@ const markers = computed(() => {
   const grouped = new Map();
 
   for (const p of items.value) {
+    if (p.transactionStatus === false) continue;
     if (p.latitude == null || p.longitude == null) continue;
 
     if (!grouped.has(p.buildingId)) {
@@ -1716,6 +1723,21 @@ watch(filter, scrollToTop);
   padding: 11px;
 }
 
+.card.sold {
+  background: #f2f1ee;
+  border-color: #e2e0da;
+}
+
+.card.sold .card-title,
+.card.sold .card-price {
+  color: #8a8477;
+}
+
+.card.sold .card-meta,
+.card.sold .card-address {
+  color: #a8a49b;
+}
+
 .thumb {
   position: relative;
   display: flex;
@@ -2366,6 +2388,20 @@ watch(filter, scrollToTop);
   height: 100%;
   object-fit: cover;
   border-radius: 10px;
+}
+
+.sold-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(33, 30, 24, 0.55);
+  border-radius: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
 }
 
 </style>
