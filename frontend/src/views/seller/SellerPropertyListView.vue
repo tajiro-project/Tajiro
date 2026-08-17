@@ -16,10 +16,7 @@
     <simplebar class="content">
       <ul v-if="items.length" class="cards">
         <li v-for="item in items" :key="item.propertyId" class="card">
-          <div
-            class="card-body"
-            :class="{ dimmed: !item.transactionStatus }"
-          >
+          <div class="card-body" :class="{ dimmed: !item.transactionStatus }">
             <span class="thumb">
               <img
                 v-if="item.imageUrl"
@@ -82,7 +79,8 @@
             <button
               class="card-action danger"
               type="button"
-              aria-disabled="true"
+              :disabled="busyId === item.propertyId"
+              @click="removeProperty(item)"
             >
               삭제
             </button>
@@ -241,6 +239,19 @@ async function toggleStatus(item) {
   }
 }
 
+async function removeProperty(item) {
+  if (!confirm('이 매물을 삭제할까요? 삭제하면 목록에서 사라집니다.')) return;
+
+  busyId.value = item.propertyId;
+  try {
+    await sellerApi.remove(item.propertyId);
+    await loadProperties();
+  } catch (error) {
+    alert(getApiErrorMessage(error, '매물을 삭제하지 못했어요.'));
+  } finally {
+    busyId.value = null;
+  }
+}
 </script>
 
 <style scoped>
