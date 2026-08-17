@@ -3,7 +3,16 @@
 </template>
 
 <script setup>
-import { onMounted, onUnmounted, onActivated, nextTick, ref, watch, h, render } from 'vue';
+import {
+  onMounted,
+  onUnmounted,
+  onActivated,
+  nextTick,
+  ref,
+  watch,
+  h,
+  render,
+} from 'vue';
 import { loadKakaoSdk } from '@/utils/kakaoSdk';
 import {
   INFRA_CATEGORIES,
@@ -19,6 +28,7 @@ const props = defineProps({
     validator: (val) => ['list', 'infra', 'safety'].includes(val),
   },
   markers: { type: Array, default: () => [] },
+  referenceLocation: { type: Object, default: null },
   dots: { type: Array, default: () => [] },
   polygons: { type: Array, default: () => [] },
   center: { type: Object, default: () => ({ lat: 37.5563, lng: 126.9723 }) },
@@ -39,6 +49,10 @@ let map = null;
 let overlays = [];
 let polygonOverlays = [];
 let dotElements = new Map();
+let hasFittedListView = false;
+let previousListDotCount = 0;
+
+const LIST_INITIAL_MIN_LEVEL = 4;
 
 // --- 카테고리 매핑 ---
 const ALL_CATEGORIES = [
@@ -59,16 +73,36 @@ ALL_CATEGORIES.forEach((cat) => {
 });
 
 function pinSvg(count, hasMedal) {
-  const label =
-    props.mode === 'list' && count != null && !hasMedal
-      ? `<text x="13" y="16" text-anchor="middle" font-size="10" font-weight="700" fill="#33302a">${count}</text>`
-      : '';
+  const showCount = props.mode === 'list' && count > 1 && !hasMedal;
+
+  const label = showCount
+    ? `
+      <text
+        x="9"
+        y="16"
+        text-anchor="middle"
+        font-size="7"
+        font-weight="500"
+        fill="#8a8477"
+      >+</text>
+      <text
+        x="15"
+        y="16"
+        text-anchor="middle"
+        font-size="10"
+        font-weight="700"
+        fill="#545045"
+      >${count}</text>
+    `
+    : '';
 
   const fill = hasMedal ? '#fe7b00' : '#ffbc00';
 
   return `<svg width="30" height="37" viewBox="0 0 26 32" fill="none">
-    <path d="M13 0C5.8 0 0 5.7 0 12.8 0 22.4 13 32 13 32s13-9.6 13-19.2C26 5.7 20.2 0 13 0z"
-          fill="${fill}"/>
+    <path
+      d="M13 0C5.8 0 0 5.7 0 12.8C0 22.4 13 32 13 32s13-9.6 13-19.2C26 5.7 20.2 0 13 0z"
+      fill="${fill}"
+    />
     <circle cx="13" cy="12.5" r="7" fill="#fff"/>
     ${label}
   </svg>`;
@@ -86,6 +120,22 @@ function createPinElement(marker) {
     e.stopPropagation();
     emit('marker-click', marker);
   });
+  return element;
+}
+
+function createReferenceLocationElement() {
+  const element = document.createElement('div');
+  element.className = 'reference-location-marker';
+  element.setAttribute('aria-hidden', 'true');
+
+  const pole = document.createElement('span');
+  pole.className = 'reference-location-pole';
+
+  const flag = document.createElement('span');
+  flag.className = 'reference-location-flag';
+
+  element.append(pole, flag);
+
   return element;
 }
 
@@ -149,17 +199,33 @@ function convertPathToKakao(path) {
 }
 
 // 1. [Mode: list] 영역에 맞춘 자동 시점 계산
-function fitAllElements() {
+function fitAllElements(animate = false) {
   if (!map) return;
   const bounds = new window.kakao.maps.LatLngBounds();
   let hasValidCoords = false;
+  let hasPropertyMarkers = false;
 
   props.markers.forEach((m) => {
     if (m.lat != null && m.lng != null) {
       bounds.extend(new window.kakao.maps.LatLng(m.lat, m.lng));
       hasValidCoords = true;
+      hasPropertyMarkers = true;
     }
   });
+
+  if (
+    props.mode === 'list' &&
+    props.referenceLocation?.lat != null &&
+    props.referenceLocation?.lng != null
+  ) {
+    bounds.extend(
+      new window.kakao.maps.LatLng(
+        Number(props.referenceLocation.lat),
+        Number(props.referenceLocation.lng),
+      ),
+    );
+    hasValidCoords = true;
+  }
 
   props.dots.forEach((d) => {
     if (d.lat != null && d.lng != null) {
@@ -200,7 +266,37 @@ function fitAllElements() {
     return;
   }
 
+  if (!hasFittedListView) {
+    map.setBounds(bounds, 40, 40, 40, 40);
+    if (map.getLevel() < LIST_INITIAL_MIN_LEVEL) {
+      map.setLevel(LIST_INITIAL_MIN_LEVEL);
+    }
+    hasFittedListView = hasPropertyMarkers;
+    return;
+  }
+
+  if (!animate) {
+    map.setBounds(bounds, 40, 40, 40, 40);
+    return;
+  }
+
+  const previousCenter = map.getCenter();
+  const previousLevel = map.getLevel();
+
   map.setBounds(bounds, 40, 40, 40, 40);
+
+  const targetCenter = map.getCenter();
+  const targetLevel = map.getLevel();
+  const centerChanged =
+    Math.abs(previousCenter.getLat() - targetCenter.getLat()) > 0.000001 ||
+    Math.abs(previousCenter.getLng() - targetCenter.getLng()) > 0.000001;
+
+  if (!centerChanged && previousLevel === targetLevel) return;
+
+  map.jump(previousCenter, previousLevel);
+  map.jump(targetCenter, targetLevel, {
+    animate: { duration: 180 },
+  });
 }
 
 // 2. [Mode: infra & safety] 매물 정중앙 고정 + 가독성 극대화 스마트 줌
@@ -295,11 +391,11 @@ function fitCenterWithAllElements() {
   }
 }
 
-function applyViewMode() {
+function applyViewMode(animateList = false) {
   if (props.mode === 'infra' || props.mode === 'safety') {
     fitCenterWithAllElements();
   } else {
-    fitAllElements();
+    fitAllElements(animateList);
   }
 }
 
@@ -330,6 +426,25 @@ function redraw() {
     overlay.setMap(map);
     overlays.push(overlay);
   });
+
+  if (
+    props.mode === 'list' &&
+    props.referenceLocation?.lat != null &&
+    props.referenceLocation?.lng != null
+  ) {
+    const position = new window.kakao.maps.LatLng(
+      Number(props.referenceLocation.lat),
+      Number(props.referenceLocation.lng),
+    );
+    const overlay = new window.kakao.maps.CustomOverlay({
+      position,
+      content: createReferenceLocationElement(),
+      yAnchor: 1,
+      zIndex: 20,
+    });
+    overlay.setMap(map);
+    overlays.push(overlay);
+  }
 
   // 인프라/안전 도트
   props.dots.forEach((dot) => {
@@ -393,7 +508,13 @@ function redraw() {
     }
   });
 
-  applyViewMode();
+  const animateList =
+    props.mode === 'list' &&
+    previousListDotCount === 0 &&
+    props.dots.length > 0;
+
+  previousListDotCount = props.mode === 'list' ? props.dots.length : 0;
+  applyViewMode(animateList);
 }
 
 function updateActiveDot(newKey, oldKey) {
@@ -422,6 +543,7 @@ function handleIdle() {
 watch(
   () => [
     props.markers,
+    props.referenceLocation,
     props.dots,
     props.polygons,
     props.center,
@@ -492,6 +614,37 @@ onUnmounted(() => {
 
 :deep(.property-pin svg) {
   display: block;
+}
+
+:deep(.reference-location-marker) {
+  position: relative;
+  width: 24px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  filter: drop-shadow(0 1px 1px rgba(51, 48, 42, 0.2));
+  pointer-events: none;
+}
+
+:deep(.reference-location-pole) {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 2px;
+  height: 32px;
+  transform: translateX(-50%);
+  background: #161616;
+}
+
+:deep(.reference-location-flag) {
+  position: absolute;
+  top: 3px;
+  left: 50%;
+  width: 18px;
+  height: 12px;
+  background: #e91608;
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
 }
 
 :deep(.pin-medal) {

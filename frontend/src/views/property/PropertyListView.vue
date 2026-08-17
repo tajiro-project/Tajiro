@@ -5,6 +5,7 @@
         :markers="markers"
         :dots="dots"
         :center="center"
+        :reference-location="filter.workplace"
         :active-dot-key="activeDotKey"
         @marker-click="onMarkerClick"
         @dot-click="onDotClick"
@@ -63,9 +64,13 @@
             stroke-linejoin="round"
           />
         </svg>
-        
       </button>
-            <div class="filter-chips">
+      <div class="filter-chips">
+        <SlidersHorizontal
+          class="filter-icon"
+          :size="16"
+          :stroke-width="1.8"
+        />
         <button
           class="fchip"
           :class="{ on: commuteChipOn }"
@@ -120,29 +125,19 @@
           class="prow-icon"
           width="18"
           height="18"
-          viewBox="0 0 18 18"
+          viewBox="0 0 24 24"
           fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
         >
+          <path d="M12 6V2h-1" />
           <path
-            d="M2 5.5h3M8.5 5.5H16M2 12.5h7.5M13 12.5H16"
-            stroke="#33302a"
-            stroke-width="1.6"
-            stroke-linecap="round"
+            d="M9 15a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1"
           />
-          <circle
-            cx="6.75"
-            cy="5.5"
-            r="1.9"
-            stroke="#33302a"
-            stroke-width="1.6"
-          />
-          <circle
-            cx="11.25"
-            cy="12.5"
-            r="1.9"
-            stroke="#33302a"
-            stroke-width="1.6"
-          />
+          <path d="M9 21V11a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v10" />
         </svg>
 
         <span v-for="p in priorityChips" :key="p.criterion" class="pchip">
@@ -467,11 +462,19 @@
   <!-- 인프라 · 편의시설 -->
   <BottomSheet
     :model-value="openedSheet === 'infra'"
-    title="인프라 · 편의시설"
+    title="인프라/편의시설"
     @update:model-value="closeSheet"
   >
     <div class="field">
-      <p class="field-name">희망 인프라</p>
+      <div class="field-head field-head--selection">
+        <p class="field-name">희망 인프라</p>
+        <button
+          class="select-all-btn"
+          @click="toggleAllDraft(draft.infra, INFRA_CATEGORIES)"
+        >
+          {{ allInfraSelected ? '전체 해제' : '전체 선택' }}
+        </button>
+      </div>
       <p class="field-caption">반경 2km 이내만 표시</p>
       <div class="opt-grid">
         <button
@@ -487,7 +490,15 @@
     </div>
 
     <div class="field">
-      <p class="field-name">희망 편의시설</p>
+      <div class="field-head field-head--selection">
+        <p class="field-name">희망 편의시설</p>
+        <button
+          class="select-all-btn"
+          @click="toggleAllDraft(draft.amenity, AMENITY_CATEGORIES)"
+        >
+          {{ allAmenitySelected ? '전체 해제' : '전체 선택' }}
+        </button>
+      </div>
       <p class="field-caption">반경 2km 이내만 표시</p>
       <div class="opt-grid">
         <button
@@ -581,9 +592,11 @@
 
   <KakaoLocation
     :open="isLocationPickerOpen"
-    :initial-location="draft.workplace"
-    @close="isLocationPickerOpen = false"
-    @select="selectWorkplace"
+    :initial-location="
+      locationPickerMode === 'header' ? filter.workplace : draft.workplace
+    "
+    @close="closeLocationPicker"
+    @select="handleLocationSelect"
   />
 </template>
 
@@ -601,9 +614,12 @@ import medalBronze from '@/assets/img/medals/medal_bronze_ribbon.svg';
 import medalGoldRound from '@/assets/img/medals/medal_gold_round.svg';
 import medalSilverRound from '@/assets/img/medals/medal_silver_round.svg';
 import medalBronzeRound from '@/assets/img/medals/medal_bronze_round.svg';
+import { SlidersHorizontal } from 'lucide-vue-next';
 
 import {
   computed,
+  inject,
+  nextTick,
   ref,
   reactive,
   watch,
@@ -627,10 +643,11 @@ import {
   PREFERENCE_SLIDER_CONFIG,
 } from '@/constants/preferenceOptions';
 
-defineOptions({name:'PropertyListView'})
+defineOptions({ name: 'PropertyListView' });
 
 const router = useRouter();
 const route = useRoute();
+const propertyListHeader = inject('propertyListHeader');
 const center = computed(() => ({
   lat: filter.workplace?.lat ?? 36.3366,
   lng: filter.workplace?.lng ?? 127.459,
@@ -679,14 +696,27 @@ async function fetchProperties() {
 }
 
 let skipReload = false;
+let savedScrollTop = 0;
 
 onBeforeRouteLeave((to) => {
-  skipReload = /^\/properties\/\d+/.test(to.path);
+  const isPropertyDetail = /^\/properties\/\d+/.test(to.path);
+  skipReload = isPropertyDetail;
+
+  if (isPropertyDetail) {
+    savedScrollTop = getScrollElement()?.scrollTop ?? 0;
+  } else {
+    savedScrollTop = 0;
+  }
 });
 
 onActivated(async () => {
   if (skipReload) {
     skipReload = false;
+    await nextTick();
+    getScrollElement()?.scrollTo({
+      top: savedScrollTop,
+      behavior: 'auto',
+    });
     return;
   }
   
@@ -735,9 +765,9 @@ function applyPreferenceToFilter(p) {
   );
 }
 
-async function commitFilter() {
+async function commitFilter({ preserveSelection = false } = {}) {
   if (!preference.value) return;
-  clearSelection();
+  if (!preserveSelection) clearSelection();
 
   const workplace = filter.workplace ?? preference.value.workplace;
 
@@ -782,6 +812,14 @@ async function commitFilter() {
     const res = await client.put('/users/me/preferences', body);
     preference.value = res.data.data ?? res.data;
     await fetchProperties();
+
+    if (
+      preserveSelection &&
+      selectedBuildingId.value != null &&
+      !items.value.some((item) => item.buildingId === selectedBuildingId.value)
+    ) {
+      clearSelection();
+    }
   } catch (e) {
     loadError.value = getApiErrorMessage(e);
   } finally {
@@ -789,7 +827,11 @@ async function commitFilter() {
   }
 }
 
+let infraRequestId = 0;
+
 watch(selectedBuildingId, async (id) => {
+  const requestId = ++infraRequestId;
+
   if (!id) {
     infraItems.value = [];
     return;
@@ -797,8 +839,10 @@ watch(selectedBuildingId, async (id) => {
 
   try {
     const res = await buildingApi.infraPoints(id);
+    if (requestId !== infraRequestId || selectedBuildingId.value !== id) return;
     infraItems.value = res?.data ?? [];
   } catch {
+    if (requestId !== infraRequestId) return;
     infraItems.value = [];
   }
 });
@@ -888,6 +932,7 @@ const criterionLabel = (c) =>
 
 const openedSheet = ref(null);
 const isLocationPickerOpen = ref(false);
+const locationPickerMode = ref('filter');
 
 const draft = reactive({
   tradeTypes: [],
@@ -904,6 +949,13 @@ const draft = reactive({
   hasCar: false,
   priorities: [],
 });
+
+const allInfraSelected = computed(() =>
+  INFRA_CATEGORIES.every(({ key }) => draft.infra.includes(key)),
+);
+const allAmenitySelected = computed(() =>
+  AMENITY_CATEGORIES.every(({ key }) => draft.amenity.includes(key)),
+);
 
 function keyOf(dot) {
   return dot ? `${dot.lat},${dot.lng}` : null;
@@ -1125,6 +1177,31 @@ const sortLabel = computed(
   () => SORT_OPTIONS.find((o) => o.key === filter.sort)?.label ?? '추천순',
 );
 
+const currentLocationLabel = computed(() => {
+  const workplace = filter.workplace;
+
+  if (!workplace) return '매물 검색 결과';
+
+  const label = workplace.name || workplace.address || '';
+
+  const isCoordinate = /^-?\d+(\.\d+)?\s*,\s*-?\d+(\.\d+)?$/.test(label);
+
+  return isCoordinate ? '현재 선택 위치' : label || '매물 검색 결과';
+});
+
+watch(
+  currentLocationLabel,
+  (label) => propertyListHeader.setLocationLabel(label),
+  { immediate: true },
+);
+
+watch(
+  () => propertyListHeader.locationPickerRequestId,
+  () => {
+    if (route.name === 'property-list') openHeaderLocationPicker();
+  },
+);
+
 function openSheet(name) {
   if (name === 'commute') {
     draft.distance = filter.maxWorkplaceDistanceMeters ?? DEFAULT_DISTANCE;
@@ -1190,12 +1267,67 @@ function resetCommute() {
 }
 
 function goLocationSelect() {
+  locationPickerMode.value = 'filter';
   isLocationPickerOpen.value = true;
 }
 
 function selectWorkplace(location) {
   draft.workplace = location;
   isLocationPickerOpen.value = false;
+}
+
+function openHeaderLocationPicker() {
+  locationPickerMode.value = 'header';
+  isLocationPickerOpen.value = true;
+}
+
+function closeLocationPicker() {
+  isLocationPickerOpen.value = false;
+  locationPickerMode.value = 'filter';
+}
+
+async function handleLocationSelect(location) {
+  if (locationPickerMode.value === 'filter') {
+    selectWorkplace(location);
+    return;
+  }
+
+  await updateWorkplace(location);
+}
+
+async function updateWorkplace(location) {
+  if (!preference.value) return;
+
+  const workplace = {
+    name: location.name,
+    address: location.address,
+    lat: location.lat,
+    lng: location.lng,
+  };
+
+  isLoading.value = true;
+  loadError.value = '';
+
+  try {
+    const res = await client.put('/users/me/preferences', {
+      ...preference.value,
+      workplace,
+    });
+
+    preference.value = res.data.data ?? res.data;
+    filter.workplace = preference.value.workplace ?? workplace;
+    draft.workplace = { ...filter.workplace };
+
+    clearSelection();
+    closePanel();
+    infraItems.value = [];
+    closeLocationPicker();
+    await fetchProperties();
+  } catch (e) {
+    loadError.value = getApiErrorMessage(e);
+  } finally {
+    isLoading.value = false;
+  }
 }
 
 async function applyHousing() {
@@ -1249,7 +1381,13 @@ async function applyInfra() {
   filter.desiredInfraCategories = [...draft.infra];
   filter.desiredAmenityCategories = [...draft.amenity];
   closeSheet();
-  await commitFilter();
+  await commitFilter({ preserveSelection: true });
+}
+
+function toggleAllDraft(list, categories) {
+  const keys = categories.map(({ key }) => key);
+  const allSelected = keys.every((key) => list.includes(key));
+  list.splice(0, list.length, ...(allSelected ? [] : keys));
 }
 
 function applySort(key) {
@@ -1373,8 +1511,11 @@ function goDetail(p) {
 }
 
 function scrollToTop() {
-  const el = scrollArea.value?.scrollElement ?? scrollArea.value?.$el;
-  el?.scrollTo?.({ top: 0 });
+  getScrollElement()?.scrollTo({ top: 0 });
+}
+
+function getScrollElement() {
+  return scrollArea.value?.scrollElement ?? scrollArea.value?.$el ?? null;
 }
 
 const MAP_HEIGHT = 250;
@@ -1752,8 +1893,14 @@ watch(filter, scrollToTop);
 
 .filter-chips {
   display: flex;
+  align-items: center;
   gap: 8px;
-  padding: 0px 16px 0;
+  padding: 0 16px;
+}
+
+.filter-icon {
+  flex-shrink: 0;
+  color: #545045;
 }
 
 .fchip {
@@ -1829,6 +1976,7 @@ watch(filter, scrollToTop);
 
 .prow-icon {
   flex-shrink: 0;
+  color: #545045;
 }
 
 .pchip {
@@ -1927,6 +2075,26 @@ watch(filter, scrollToTop);
 
 .field-head .field-name {
   margin-bottom: 0;
+}
+
+.field-head--selection {
+  align-items: center;
+}
+
+.select-all-btn {
+  padding: 4px 8px;
+  border: 1px solid #f0dfaa;
+  border-radius: 999px;
+  background: #fffaf0;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #6b6251;
+  cursor: pointer;
+}
+
+.select-all-btn:hover {
+  border-color: #ffbc00;
+  background: #fff6dc;
 }
 
 .range-card {
@@ -2199,4 +2367,5 @@ watch(filter, scrollToTop);
   object-fit: cover;
   border-radius: 10px;
 }
+
 </style>

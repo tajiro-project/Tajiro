@@ -1,40 +1,57 @@
 <template>
   <div class="infra-panel" :class="{ collapsed }">
-    <button class="ip-head" @click="collapsed = !collapsed">
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-        <path
-          d="M7 1.5l5.5 3L7 7.5l-5.5-3L7 1.5z"
-          stroke="#545045"
-          stroke-width="1.2"
-          stroke-linejoin="round"
-        />
-        <path
-          d="M1.5 7.5L7 10.5l5.5-3M1.5 10.5L7 13.5l5.5-3"
-          stroke="#545045"
-          stroke-width="1.2"
-          stroke-linejoin="round"
-        />
-      </svg>
-      <span class="ip-title">지도에 표시</span>
-      <template v-if="layers.length">
-        <span v-if="collapsed" class="ip-count">{{ modelValue.length }}</span>
-        <svg
-          class="ip-chevron"
-          width="12"
-          height="12"
-          viewBox="0 0 12 12"
-          fill="none"
-        >
+    <div class="ip-head">
+      <button class="ip-head-main" @click="collapsed = !collapsed">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
           <path
-            d="M2.5 7.5L6 4l3.5 3.5"
-            stroke="#8a8d8f"
-            stroke-width="1.4"
-            stroke-linecap="round"
+            d="M7 1.5l5.5 3L7 7.5l-5.5-3L7 1.5z"
+            stroke="#545045"
+            stroke-width="1.2"
+            stroke-linejoin="round"
+          />
+          <path
+            d="M1.5 7.5L7 10.5l5.5-3M1.5 10.5L7 13.5l5.5-3"
+            stroke="#545045"
+            stroke-width="1.2"
             stroke-linejoin="round"
           />
         </svg>
+        <span class="ip-title">지도에 표시</span>
+      </button>
+      <template v-if="layers.length">
+        <button
+          class="ip-toggle ip-toggle--head"
+          :class="{ on: isAllOn }"
+          role="switch"
+          :aria-checked="isAllOn"
+          aria-label="인프라 전체 표시"
+          @click="toggleAll"
+        >
+          <span class="knob" />
+        </button>
+        <button
+          class="ip-chevron-button"
+          :aria-label="collapsed ? '인프라 목록 펼치기' : '인프라 목록 접기'"
+          @click="collapsed = !collapsed"
+        >
+          <svg
+            class="ip-chevron"
+            width="12"
+            height="12"
+            viewBox="0 0 12 12"
+            fill="none"
+          >
+            <path
+              d="M2.5 7.5L6 4l3.5 3.5"
+              stroke="#8a8d8f"
+              stroke-width="1.4"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </button>
       </template>
-    </button>
+    </div>
 
     <template v-if="!collapsed">
       <div class="ip-list">
@@ -99,6 +116,18 @@ const layers = computed(() =>
 );
 
 const isOn = (key) => props.modelValue.includes(key);
+const isAllOn = computed(
+  () =>
+    layers.value.length > 0 &&
+    layers.value.every(({ key }) => props.modelValue.includes(key)),
+);
+
+function toggleAll() {
+  emit(
+    'update:modelValue',
+    isAllOn.value ? [] : layers.value.map(({ key }) => key),
+  );
+}
 
 function toggle(key) {
   emit(
@@ -121,18 +150,33 @@ function toggle(key) {
   padding: 6px 12px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 0;
   pointer-events: auto;
 }
 
 .ip-head {
+  width: 100%;
   display: flex;
   align-items: center;
   gap: 6px;
-  padding-bottom: 2px;
+  padding: 2px 0 8px;
+  border-bottom: 1px solid #e8e4da;
+}
+
+.ip-head-main {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
   border: none;
-  background: none;
+  background: transparent;
   cursor: pointer;
+}
+
+.ip-head-main svg {
+  flex-shrink: 0;
 }
 
 .ip-list {
@@ -142,30 +186,29 @@ function toggle(key) {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  padding-top: 9px;
 }
 
 .ip-title {
   flex: 1;
   text-align: left;
-  font-size: 12.5px;
+  font-size: 11.5px;
   font-weight: 800;
   color: #33302a;
   white-space: nowrap;
 }
 
-.ip-count {
+.ip-chevron-button {
+  width: 12px;
+  height: 18px;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 5px;
-  flex-shrink: 0;
-  border-radius: 9px;
-  background: var(--kb-yellow);
-  font-size: 11px;
-  font-weight: 800;
-  color: #33302a;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
 }
 
 .ip-chevron {
@@ -175,6 +218,11 @@ function toggle(key) {
 
 .infra-panel.collapsed .ip-chevron {
   transform: rotate(180deg);
+}
+
+.infra-panel.collapsed .ip-head {
+  padding-bottom: 2px;
+  border-bottom: none;
 }
 
 .ip-row {
@@ -233,6 +281,26 @@ function toggle(key) {
 
 .ip-toggle.on .knob {
   left: 18px;
+}
+
+.ip-toggle--head {
+  width: 30px;
+  height: 16px;
+  margin-left: 2px;
+  border-radius: 8px;
+}
+
+.ip-toggle--head .knob {
+  width: 12px;
+  height: 12px;
+}
+
+.ip-toggle--head.on {
+  background: #545045;
+}
+
+.ip-toggle--head.on .knob {
+  left: 16px;
 }
 
 .ip-empty {

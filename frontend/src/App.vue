@@ -1,10 +1,23 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, provide, reactive } from 'vue';
 import { useRoute } from 'vue-router';
 import AppTabBar from '@/components/AppTabBar.vue';
 import PageHeader from '@/components/PageHeader.vue';
+import { ChevronDown, MapPin } from 'lucide-vue-next';
 
 const route = useRoute();
+const propertyListHeader = reactive({
+  locationLabel: '매물 검색 결과',
+  locationPickerRequestId: 0,
+  setLocationLabel(label) {
+    this.locationLabel = label || '매물 검색 결과';
+  },
+  requestLocationPicker() {
+    this.locationPickerRequestId += 1;
+  },
+});
+
+provide('propertyListHeader', propertyListHeader);
 
 const headerTitle = computed(() => route.meta.headerTitle ?? '');
 const showHeader = computed(() => Boolean(headerTitle.value));
@@ -51,6 +64,16 @@ const KEEP_ALIVE_VIEWS = ['PropertyListView'];
       :back="headerBack"
       :back-to="headerBackTo"
     >
+      <template v-if="route.name === 'property-list'" #title>
+        <button
+          class="header-location"
+          @click="propertyListHeader.requestLocationPicker"
+        >
+          <MapPin :size="18" :stroke-width="2" />
+          <span>{{ propertyListHeader.locationLabel }}</span>
+          <ChevronDown :size="14" :stroke-width="2" />
+        </button>
+      </template>
       <template v-if="route.meta.headerAction === 'edit-profile'" #right>
         <router-link class="header-action" to="/profile-setup">
           내 정보 수정
@@ -71,6 +94,39 @@ const KEEP_ALIVE_VIEWS = ['PropertyListView'];
 </template>
 
 <style scoped>
+.header-location {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  max-width: min(280px, calc(100vw - 76px));
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.header-location svg {
+  flex-shrink: 0;
+}
+
+.header-location svg:first-child {
+  color: #fe7b00;
+}
+
+.header-location svg:last-child {
+  color: #545045;
+}
+
+.header-location span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .header-action {
   padding: 5px 10px;
   border-radius: 999px;

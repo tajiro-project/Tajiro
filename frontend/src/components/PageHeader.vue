@@ -2,10 +2,18 @@
   <header class="page-header" :class="{ yellow }">
     <button v-if="back" class="back-btn" aria-label="뒤로" @click="onBack">
       <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-        <path d="M13.5 4.5L7 11L13.5 17.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+        <path
+          d="M13.5 4.5L7 11L13.5 17.5"
+          stroke="currentColor"
+          stroke-width="1.8"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
       </svg>
     </button>
-    <p class="title">{{ title }}</p>
+    <div class="title">
+      <slot name="title">{{ title }}</slot>
+    </div>
     <div class="right">
       <slot name="right" />
     </div>
@@ -13,19 +21,19 @@
 </template>
 
 <script setup>
-import { useRouter } from 'vue-router'
+import { useRouter } from 'vue-router';
 
 const props = defineProps({
   title: { type: String, default: '' },
   back: { type: Boolean, default: true },
   yellow: { type: Boolean, default: false },
   backTo: { type: String, default: null },
-})
+});
 
-const router = useRouter()
+const router = useRouter();
 function onBack() {
-  if (props.backTo) router.push(props.backTo)
-  else router.back()
+  if (props.backTo) router.push(props.backTo);
+  else router.back();
 }
 </script>
 
