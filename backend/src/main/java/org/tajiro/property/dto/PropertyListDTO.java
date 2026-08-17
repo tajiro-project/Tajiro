@@ -26,6 +26,7 @@ public class PropertyListDTO {
     private String floorInfo;
     private String address;
     private String thumbnailUrl;
+    private Boolean transactionStatus;
 
     private BigDecimal latitude;
     private BigDecimal longitude;
@@ -50,6 +51,7 @@ public class PropertyListDTO {
                 .floorInfo(property.getFloorInfo())
                 .address(property.getAddress())
                 .thumbnailUrl(property.getThumbnailUrl())
+                .transactionStatus(property.getTransactionStatus())
                 .latitude(property.getBuildingVO().getLatitude())
                 .longitude(property.getBuildingVO().getLongitude())
                 .distanceMeters(property.getDistanceMeters())
