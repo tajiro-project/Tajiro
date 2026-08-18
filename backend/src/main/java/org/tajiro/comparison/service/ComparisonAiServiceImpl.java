@@ -11,12 +11,19 @@ import org.tajiro.comparison.dto.ComparisonMetricDTO;
 import org.tajiro.comparison.dto.ComparisonMetricsResponseDTO;
 import org.tajiro.comparison.service.ai.ComparisonAiClient;
 import org.tajiro.exception.BusinessException;
+import org.tajiro.preference.domain.HousingPreferenceVO;
+import org.tajiro.preference.domain.PreferencePriorityVO;
+import org.tajiro.preference.mapper.PreferenceMapper;
 import org.tajiro.report.domain.ComparisonReportVO;
 import org.tajiro.report.mapper.ComparisonReportMapper;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -28,6 +35,8 @@ import java.util.stream.Collectors;
 public class ComparisonAiServiceImpl implements ComparisonAiService {
 
     private static final String COMPARISON_WORKPLACE_PREFIX = "__COMPARE_WORKPLACE__:";
+    private static final String SCORE_CONTEXT_PREFIX = "__PREFERENCE_SCORE_CONTEXT__:";
+    private static final String SCORE_CONTEXT_VERSION = "preference-score-v1";
     private static final Set<String> SUPPORTED_PRIORITIES = Set.of(
             "COMMUTE",
             "COST",
@@ -38,6 +47,7 @@ public class ComparisonAiServiceImpl implements ComparisonAiService {
     private final ComparisonService comparisonService;
     private final ComparisonReportMapper comparisonReportMapper;
     private final ComparisonAiClient comparisonAiClient;
+    private final PreferenceMapper preferenceMapper;
 
     @Override
     public ComparisonAnalysisResponseDTO analyze(
@@ -56,7 +66,13 @@ public class ComparisonAiServiceImpl implements ComparisonAiService {
                 .distinct()
                 .sorted()
                 .collect(Collectors.toList());
-        List<String> priorities = validatePriorities(request.getPriorities());
+        List<String> priorities = resolvePriorities(
+                userId,
+                request.getPriorities());
+        HousingPreferenceVO preference = preferenceMapper.findByUserId(userId);
+        if (preference == null) {
+            throw new BusinessException(ErrorCode.PREFERENCE_NOT_FOUND);
+        }
 
         String propertyIdsJson = toLongJson(propertyIds);
         LocalDateTime latestMarketSyncAt =
@@ -64,7 +80,8 @@ public class ComparisonAiServiceImpl implements ComparisonAiService {
         String prioritiesJson = toStringJson(buildComparisonContext(
                 priorities,
                 request.getWorkplaceLat(),
-                request.getWorkplaceLng()));
+                request.getWorkplaceLng(),
+                buildScoreContextHash(preference)));
 
         // 시세 점수를 새로 계산하지 않고 현재 DB 값만 조회해 기존 리포트 재사용 가능 여부를 먼저 판단한다.
         ComparisonMetricsResponseDTO metrics = comparisonService.getComparisonMetrics(
@@ -100,7 +117,7 @@ public class ComparisonAiServiceImpl implements ComparisonAiService {
                 true);
         maxPropertyUpdateDate = getMaxPropertyUpdateDate(metrics.getItems());
 
-        //새 AI 코칭 결과 생성
+        // 비교 지표 조회 단계에서 계산된 매물별 맞춤 점수를 전달하고, 최종 추천은 AI가 판단한다.
         ComparisonAnalysisResponseDTO generated = comparisonAiClient.generate(
                 metrics.getItems(),
                 priorities);
@@ -233,7 +250,8 @@ public class ComparisonAiServiceImpl implements ComparisonAiService {
     private List<String> buildComparisonContext(
             List<String> priorities,
             Double workplaceLat,
-            Double workplaceLng) {
+            Double workplaceLng,
+            String scoreContextHash) {
         List<String> context = priorities == null
                 ? new ArrayList<>()
                 : new ArrayList<>(priorities);
@@ -243,7 +261,54 @@ public class ComparisonAiServiceImpl implements ComparisonAiService {
                 COMPARISON_WORKPLACE_PREFIX,
                 workplaceLat,
                 workplaceLng));
+        context.add(SCORE_CONTEXT_PREFIX + scoreContextHash);
         return context;
+    }
+
+    private List<String> resolvePriorities(
+            Long userId,
+            List<String> requestedPriorities) {
+        List<String> validatedRequest = validatePriorities(requestedPriorities);
+        List<String> storedPriorities = preferenceMapper.findPrioritiesByUserId(userId)
+                .stream()
+                .sorted((left, right) -> left.getPriorityOrder()
+                        .compareTo(right.getPriorityOrder()))
+                .map(PreferencePriorityVO::getCriterion)
+                .collect(Collectors.toList());
+        validatePriorities(storedPriorities);
+
+        if (!validatedRequest.isEmpty()
+                && !validatedRequest.equals(storedPriorities)) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
+        }
+        return storedPriorities;
+    }
+
+    private String buildScoreContextHash(HousingPreferenceVO preference) {
+        String context = String.join("|",
+                SCORE_CONTEXT_VERSION,
+                valueOf(preference.getMinDeposit()),
+                valueOf(preference.getMaxDeposit()),
+                valueOf(preference.getMinMonthlyRent()),
+                valueOf(preference.getMaxMonthlyRent()),
+                valueOf(preference.getMinSellingPrice()),
+                valueOf(preference.getMaxSellingPrice()),
+                valueOf(preference.getMinArea()),
+                valueOf(preference.getMaxArea()),
+                valueOf(preference.getMaxWorkplaceDistanceMeters()),
+                valueOf(preference.getDesiredInfraCategories()),
+                valueOf(preference.getDesiredAmenityCategories()));
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-256")
+                    .digest(context.getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(digest);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 is not available", e);
+        }
+    }
+
+    private String valueOf(Object value) {
+        return value == null ? "" : String.valueOf(value);
     }
 
     private List<String> validatePriorities(List<String> priorities) {
@@ -286,4 +351,3 @@ public class ComparisonAiServiceImpl implements ComparisonAiService {
         return value != null && !value.trim().isEmpty();
     }
 }
-

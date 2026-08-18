@@ -24,7 +24,13 @@ public class ComparisonMetricDTO {
     private BigDecimal areaM2;
     private String floorInfo;
     private LocalDateTime updateDate;
+    private Boolean hasCar;
     private Integer commuteMinutes;
+    private Integer preferenceScore;
+    private Integer commuteScore;
+    private Integer costScore;
+    private Integer infraScore;
+    private Integer amenityScore;
     private Integer infraCount;
     private Integer amenityCount;
     private BigDecimal evaluationScore;

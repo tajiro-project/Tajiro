@@ -10,6 +10,7 @@ import org.tajiro.preference.dto.PropertySearchRequest;
 import org.tajiro.preference.mapper.PreferenceMapper;
 import org.tajiro.property.domain.PropertyVO;
 import org.tajiro.property.domain.PropertyValueAnalysisResultVO;
+import org.tajiro.property.dto.PropertyComparisonScoreDTO;
 import org.tajiro.property.mapper.PropertyMapper;
 import org.tajiro.property.mapper.PropertyScoreMapper;
 
@@ -178,6 +179,37 @@ class PropertyScoreServiceImplTest {
         assertEquals(true, propertyMapper.request.isUseAllCategoriesWhenEmpty());
         assertEquals(1, propertyScoreMapper.savedScores.size());
         assertEquals(10L, propertyScoreMapper.savedScores.get(0).getPropertyId());
+    }
+
+    @Test
+    void calculatesSelectedComparisonScoresWithoutPersistingThem() {
+        preferenceMapper.preference = preference();
+        preferenceMapper.priorities = Arrays.asList(
+                priority("COMMUTE", 1),
+                priority("COST", 2));
+        propertyMapper.properties = Collections.singletonList(PropertyVO.builder()
+                .id(10L)
+                .tradeType("월세")
+                .deposit(500)
+                .monthlyRent(20)
+                .distanceMeters(200)
+                .build());
+
+        PropertyComparisonScoreDTO score = service.calculateComparisonScores(
+                1L,
+                Collections.singletonList(10L),
+                new BigDecimal("37.5000"),
+                new BigDecimal("127.0000"))
+                .get(10L);
+
+        assertEquals(Collections.singletonList(10L), propertyMapper.request.getPropertyIds());
+        assertEquals(new BigDecimal("37.5000"), propertyMapper.request.getRefLat());
+        assertEquals(76, score.getPreferenceScore());
+        assertEquals(80, score.getCommuteScore());
+        assertEquals(68, score.getCostScore());
+        assertEquals(0, score.getInfraScore());
+        assertEquals(0, score.getAmenityScore());
+        assertFalse(propertyScoreMapper.upsertCalled);
     }
 
     private HousingPreferenceVO preference() {

@@ -19,6 +19,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.content;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.header;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
@@ -40,8 +41,8 @@ class OpenAiComparisonClientTest {
     void generateParsesStructuredCoachingResponse() {
         String responseBody = "{\"choices\":[{\"message\":{\"content\":"
                 + "\"{\\\"aiPropertySummaryText\\\":\\\"두 매물을 비교했어요.\\\","
-                + "\\\"aiSummary\\\":\\\"112번 매물이 우선순위에 더 적합해요.\\\","
-                + "\\\"aiRecommendedPropertyId\\\":112,"
+                + "\\\"aiSummary\\\":\\\"랭크썸 점수 외 시세까지 고려해 119번 매물이 더 적합해요.\\\","
+                + "\\\"aiRecommendedPropertyId\\\":119,"
                 + "\\\"aiAtp\\\":\\\"계약 전에 관리비 항목을 확인하세요.\\\"}\"}}]}";
 
         server.expect(requestTo("https://api.openai.com/v1/chat/completions"))
@@ -51,14 +52,21 @@ class OpenAiComparisonClientTest {
                         "\"response_format\":{\"type\":\"json_schema\"")))
                 .andExpect(content().string(containsString(
                         "\"enum\":[112,119]")))
+                .andExpect(content().string(containsString(
+                        "\"preferenceScore\":82")))
+                .andExpect(content().string(not(containsString(
+                        "\"commuteScore\""))))
                 .andRespond(withSuccess(responseBody, MediaType.APPLICATION_JSON));
 
         ComparisonAnalysisResponseDTO result = clientWith("test-key").generate(
                 metrics(),
-                Arrays.asList("직주근접", "가격 낮은 순"));
+                Arrays.asList("COMMUTE", "COST"));
 
-        assertEquals(112L, result.getAiRecommendedPropertyId());
+        assertEquals(119L, result.getAiRecommendedPropertyId());
         assertEquals("두 매물을 비교했어요.", result.getAiPropertySummaryText());
+        assertEquals(
+                "맞춤 평가 점수 외 시세까지 고려해 119번 매물이 더 적합해요.",
+                result.getAiSummary());
         server.verify();
     }
 
@@ -83,7 +91,9 @@ class OpenAiComparisonClientTest {
 
         BusinessException exception = assertThrows(
                 BusinessException.class,
-                () -> clientWith("test-key").generate(metrics(), Collections.emptyList()));
+                () -> clientWith("test-key").generate(
+                        metrics(),
+                        Collections.emptyList()));
 
         assertEquals(ErrorCode.AI_COACHING_UNAVAILABLE, exception.getResponseCode());
         server.verify();
@@ -106,6 +116,11 @@ class OpenAiComparisonClientTest {
                         .monthlyRent(20)
                         .maintenanceFee(5)
                         .commuteMinutes(30)
+                        .preferenceScore(82)
+                        .commuteScore(80)
+                        .costScore(68)
+                        .infraScore(50)
+                        .amenityScore(0)
                         .policeNearestDistanceMeters(350)
                         .updateDate(LocalDateTime.of(2026, 7, 24, 12, 30))
                         .build(),
@@ -115,6 +130,7 @@ class OpenAiComparisonClientTest {
                         .monthlyRent(38)
                         .maintenanceFee(5)
                         .commuteMinutes(20)
+                        .preferenceScore(74)
                         .policeNearestDistanceMeters(620)
                         .build());
     }

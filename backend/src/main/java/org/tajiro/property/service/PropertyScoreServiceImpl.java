@@ -11,6 +11,7 @@ import org.tajiro.preference.dto.PropertySearchRequest;
 import org.tajiro.preference.mapper.PreferenceMapper;
 import org.tajiro.property.domain.PropertyVO;
 import org.tajiro.property.domain.PropertyValueAnalysisResultVO;
+import org.tajiro.property.dto.PropertyComparisonScoreDTO;
 import org.tajiro.property.mapper.PropertyMapper;
 import org.tajiro.property.mapper.PropertyScoreMapper;
 
@@ -23,6 +24,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -73,6 +75,52 @@ public class PropertyScoreServiceImpl implements PropertyScoreService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public Map<Long, PropertyComparisonScoreDTO> calculateComparisonScores(
+            Long userId,
+            List<Long> propertyIds,
+            BigDecimal workplaceLatitude,
+            BigDecimal workplaceLongitude) {
+        if (userId == null
+                || propertyIds == null
+                || propertyIds.isEmpty()
+                || propertyIds.stream().anyMatch(id -> id == null)
+                || (workplaceLatitude == null) != (workplaceLongitude == null)) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
+        }
+
+        HousingPreferenceVO preference = findPreference(userId);
+        BigDecimal refLat = workplaceLatitude == null
+                ? preference.getWorkplaceLatitude()
+                : workplaceLatitude;
+        BigDecimal refLng = workplaceLongitude == null
+                ? preference.getWorkplaceLongitude()
+                : workplaceLongitude;
+        if (refLat == null || refLng == null) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
+        }
+
+        List<Long> distinctPropertyIds = propertyIds.stream()
+        .distinct()
+        .collect(Collectors.toList());
+        List<PropertyVO> properties = propertyMapper.getList(PropertySearchRequest.builder()
+                .userId(userId)
+                .propertyIds(distinctPropertyIds)
+                .refLat(refLat)
+                .refLng(refLng)
+                .desiredInfraCategories(preference.getDesiredInfraCategories())
+                .desiredAmenityCategories(preference.getDesiredAmenityCategories())
+                .applyDesiredCategoryFilter(false)
+                .useAllCategoriesWhenEmpty(true)
+                .build());
+
+        if (properties.size() != distinctPropertyIds.size()) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
+        }
+        return calculateComparisonScoreDetails(userId, preference, properties);
+    }
+
+    @Override
     @Transactional
     public Map<Long, PropertyValueAnalysisResultVO> saveScores(
             Long userId,
@@ -85,16 +133,27 @@ public class PropertyScoreServiceImpl implements PropertyScoreService {
             return Collections.emptyMap();
         }
 
-        HousingPreferenceVO preference = findPreference(userId);
+        Map<Long, PropertyValueAnalysisResultVO> scoresByPropertyId =
+                calculateScores(userId, properties);
 
+        propertyScoreMapper.upsertAll(List.copyOf(scoresByPropertyId.values()));
+        return scoresByPropertyId;
+    }
+
+    private Map<Long, PropertyValueAnalysisResultVO> calculateScores(
+            Long userId,
+            List<PropertyVO> properties) {
+        HousingPreferenceVO preference = findPreference(userId);
         Map<String, Double> criterionWeights = calculateRankSumWeights(
                 preferenceMapper.findPrioritiesByUserId(userId));
         LocalDateTime computedAt = LocalDateTime.now();
         Map<Long, PropertyValueAnalysisResultVO> scoresByPropertyId = new LinkedHashMap<>();
 
         for (PropertyVO property : properties) {
+            Map<String, Double> criterionScores =
+                    calculateCriterionScores(property, preference);
             int recommendScore = calculateRecommendScore(
-                    property, preference, criterionWeights);
+                    criterionScores, criterionWeights);
             PropertyValueAnalysisResultVO score = PropertyValueAnalysisResultVO.builder()
                     .userId(userId)
                     .propertyId(property.getId())
@@ -104,8 +163,32 @@ public class PropertyScoreServiceImpl implements PropertyScoreService {
                     .build();
             scoresByPropertyId.put(property.getId(), score);
         }
+        return scoresByPropertyId;
+    }
 
-        propertyScoreMapper.upsertAll(List.copyOf(scoresByPropertyId.values()));
+    private Map<Long, PropertyComparisonScoreDTO> calculateComparisonScoreDetails(
+            Long userId,
+            HousingPreferenceVO preference,
+            List<PropertyVO> properties) {
+        Map<String, Double> criterionWeights = calculateRankSumWeights(
+                preferenceMapper.findPrioritiesByUserId(userId));
+        Map<Long, PropertyComparisonScoreDTO> scoresByPropertyId =
+                new LinkedHashMap<>();
+
+        for (PropertyVO property : properties) {
+            Map<String, Double> criterionScores =
+                    calculateCriterionScores(property, preference);
+            PropertyComparisonScoreDTO score = PropertyComparisonScoreDTO.builder()
+                    .propertyId(property.getId())
+                    .preferenceScore(calculateRecommendScore(
+                            criterionScores, criterionWeights))
+                    .commuteScore(roundScore(criterionScores.get(COMMUTE)))
+                    .costScore(roundScore(criterionScores.get(COST)))
+                    .infraScore(roundScore(criterionScores.get(INFRA)))
+                    .amenityScore(roundScore(criterionScores.get(AMENITY)))
+                    .build();
+            scoresByPropertyId.put(property.getId(), score);
+        }
         return scoresByPropertyId;
     }
 
@@ -147,18 +230,32 @@ public class PropertyScoreServiceImpl implements PropertyScoreService {
     }
 
     private int calculateRecommendScore(
-            PropertyVO property,
-            HousingPreferenceVO preference,
+            Map<String, Double> criterionScores,
             Map<String, Double> criterionWeights) {
         double weightedScore = 0.0;
 
         for (Map.Entry<String, Double> entry : criterionWeights.entrySet()) {
-            double criterionScore = calculateCriterionScore(
-                    entry.getKey(), property, preference);
+            double criterionScore = criterionScores.get(entry.getKey());
             weightedScore += criterionScore * entry.getValue();
         }
 
-        return (int) Math.round(clamp(weightedScore, 0.0, 100.0));
+        return roundScore(weightedScore);
+    }
+
+    private Map<String, Double> calculateCriterionScores(
+            PropertyVO property,
+            HousingPreferenceVO preference) {
+        Map<String, Double> scores = new LinkedHashMap<>();
+        for (String criterion : DEFAULT_CRITERIA) {
+            scores.put(
+                    criterion,
+                    calculateCriterionScore(criterion, property, preference));
+        }
+        return scores;
+    }
+
+    private int roundScore(Double score) {
+        return (int) Math.round(clamp(score == null ? 0.0 : score, 0.0, 100.0));
     }
 
     private double calculateCriterionScore(

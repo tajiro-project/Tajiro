@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
 public class ComparisonReportServiceImpl implements ComparisonReportService {
 
     private static final String COMPARISON_WORKPLACE_PREFIX = "__COMPARE_WORKPLACE__:";
+    private static final String SCORE_CONTEXT_PREFIX = "__PREFERENCE_SCORE_CONTEXT__:";
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private final ComparisonReportMapper comparisonReportMapper;
@@ -133,7 +134,8 @@ public class ComparisonReportServiceImpl implements ComparisonReportService {
             List<String> priorities = new ArrayList<>();
             for (JsonNode value : context) {
                 String text = value.asText("");
-                if (!text.startsWith(COMPARISON_WORKPLACE_PREFIX)) {
+                if (!text.startsWith(COMPARISON_WORKPLACE_PREFIX)
+                        && !text.startsWith(SCORE_CONTEXT_PREFIX)) {
                     priorities.add(text);
                 }
             }
