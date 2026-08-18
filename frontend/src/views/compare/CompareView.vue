@@ -480,14 +480,14 @@ const aiRecommendationLine = computed(() => {
 });
 const aiPrimaryText = computed(() => {
   if (coachingError.value) return coachingError.value;
-  return (
-    coaching.value?.aiPropertySummaryText || AI_COACHING_UNAVAILABLE_MESSAGE
+  return formatKoreanMoneyText(
+    coaching.value?.aiPropertySummaryText || AI_COACHING_UNAVAILABLE_MESSAGE,
   );
 });
 
 const aiSecondaryText = computed(() => {
   if (coachingError.value) return '';
-  const summary = coaching.value?.aiSummary ?? '';
+  const summary = formatKoreanMoneyText(coaching.value?.aiSummary ?? '');
   return summary === aiPrimaryText.value ? '' : summary;
 });
 
@@ -1124,11 +1124,30 @@ function moneyLabel(value) {
   if (manwon >= 10000) {
     const eok = Math.floor(manwon / 10000);
     const rest = manwon % 10000;
-    return rest === 0 ? `${eok}억` : `${eok}억 ${rest}`;
+    return rest === 0
+      ? `${eok}억`
+      : `${eok}억 ${rest.toLocaleString('ko-KR')}만`;
   }
 
-  return String(manwon);
+  return `${manwon.toLocaleString('ko-KR')}만`;
 }
+function formatKoreanMoneyText(text) {
+  if (!text) return text;
+
+  return String(text).replace(
+    /(\d{1,3}(?:,\d{3})+|\d+)\uB9CC/g,
+    (match, amountText, offset, source) => {
+      const prefix = source.slice(Math.max(0, offset - 3), offset);
+      if (prefix.includes('\uC5B5')) return match;
+
+      const manwon = Number(String(amountText).replaceAll(',', ''));
+      return manwon >= 10000 ? moneyLabel(manwon) : match;
+    },
+  );
+}
+
+
+
 
 function normalize(values, invert = false) {
   if (!values.length) return [];
