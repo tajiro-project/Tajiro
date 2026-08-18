@@ -1,6 +1,10 @@
 <template>
   <div class="benefit">
-    <simplebar class="scroll-area" :class="{ dimmed: needProfile }">
+    <simplebar
+      ref="scrollAreaRef"
+      class="scroll-area"
+      :class="{ dimmed: needProfile }"
+    >
       <!-- 탭 -->
       <div class="tabs">
         <button
@@ -255,13 +259,18 @@
 import {
   computed,
   nextTick,
+  onActivated,
   onBeforeUnmount,
+  onDeactivated,
   onMounted,
   ref,
   watch,
 } from 'vue';
 import simplebar from 'simplebar-vue';
 import { financeApi, policyApi, userApi } from '@/api/services';
+import { onBeforeRouteLeave } from 'vue-router';
+
+defineOptions({ name: 'BenefitMatchView' });
 
 const props = defineProps({
   initialTab: { type: String, default: 'policy' },
@@ -276,11 +285,14 @@ const filtersExpanded = ref(false);
 const filterDropdownRef = ref(null);
 const filterToggleRef = ref(null);
 const targetFiltersRef = ref(null);
+const scrollAreaRef = ref(null);
 const filterDropdownStyle = ref({});
 const policies = ref([]);
 const products = ref([]);
 const needProfile = ref(false);
 const currentPage = ref(1);
+const savedScrollTop = ref(0);
+const reloadOnActivate = ref(false);
 const pageSize = 5;
 const financeFilterGroups = [
   {
@@ -330,20 +342,79 @@ const selectedTargetSummary = computed(() => {
 });
 
 onMounted(async () => {
+  await checkProfile();
+  await loadMatches();
+});
+
+onActivated(async () => {
   document.addEventListener('pointerdown', closeFilterOnOutsideClick);
   window.addEventListener('resize', updateFilterDropdownPosition);
-  const profile = await userApi.getProfile();
-  // 프로필(지역·생년월일) 미입력 시 12-1 모달 노출
-  if (!profile || !profile.targetRegion || !profile.birthDate)
-    needProfile.value = true;
-  policies.value = (await policyApi.matches()) ?? [];
-  products.value = (await financeApi.matches()) ?? [];
+
+  if (reloadOnActivate.value) {
+    reloadOnActivate.value = false;
+    await checkProfile();
+    await loadMatches();
+  } else if (needProfile.value) {
+    await checkProfile();
+  }
+
+  await nextTick();
+  scrollTo(savedScrollTop.value);
+});
+
+onDeactivated(() => {
+  document.removeEventListener('pointerdown', closeFilterOnOutsideClick);
+  window.removeEventListener('resize', updateFilterDropdownPosition);
+  filtersExpanded.value = false;
+  financeFiltersExpanded.value = false;
+});
+
+onBeforeRouteLeave((to) => {
+  const isDetailRoute = [
+    'policy-detail',
+    'financial-product-detail',
+  ].includes(to.name);
+
+  if (isDetailRoute) {
+    savedScrollTop.value = getScrollElement()?.scrollTop ?? 0;
+    return;
+  }
+
+  resetListState();
+  reloadOnActivate.value = true;
 });
 
 onBeforeUnmount(() => {
   document.removeEventListener('pointerdown', closeFilterOnOutsideClick);
   window.removeEventListener('resize', updateFilterDropdownPosition);
 });
+
+async function checkProfile() {
+  const profile = await userApi.getProfile();
+  needProfile.value = !profile || !profile.targetRegion || !profile.birthDate;
+}
+
+async function loadMatches() {
+  policies.value = (await policyApi.matches()) ?? [];
+  products.value = (await financeApi.matches()) ?? [];
+}
+
+function getScrollElement() {
+  return scrollAreaRef.value?.scrollElement ?? null;
+}
+
+function scrollTo(top) {
+  getScrollElement()?.scrollTo({ top, behavior: 'auto' });
+}
+
+function resetListState() {
+  tab.value = props.initialTab;
+  keyword.value = '';
+  selectedTargetCodes.value = [];
+  selectedFinanceFilters.value = { transaction: '', product: '' };
+  currentPage.value = 1;
+  savedScrollTop.value = 0;
+}
 
 // 키워드 프론트 필터링 (기능명세 43)
 const filteredPolicies = computed(() =>
@@ -398,9 +469,11 @@ const paginatedProducts = computed(() => {
   return filteredProducts.value.slice(start, start + pageSize);
 });
 
-function movePage(page) {
+async function movePage(page) {
   if (page < 1 || page > totalPages.value) return;
   currentPage.value = page;
+  await nextTick();
+  scrollTo(0);
 }
 
 async function toggleTargetFilter(code) {
@@ -491,6 +564,13 @@ function closeFilterOnOutsideClick(event) {
     filtersExpanded.value = false;
   }
 }
+
+watch(
+  () => props.initialTab,
+  (value) => {
+    tab.value = value;
+  },
+);
 
 watch([tab, keyword, selectedTargetCodes, selectedFinanceFilters], () => {
   currentPage.value = 1;
