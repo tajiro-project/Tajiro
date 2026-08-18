@@ -53,7 +53,7 @@ const showTabBar = computed(() => {
   );
 });
 
-const KEEP_ALIVE_VIEWS = ['PropertyListView'];
+const KEEP_ALIVE_VIEWS = ['PropertyListView', 'BenefitMatchView'];
 </script>
 
 <template>
