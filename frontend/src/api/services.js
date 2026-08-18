@@ -117,6 +117,7 @@ export const comparisonApi = {
           workplaceLng: workplace?.lng,
           refreshMarketScore,
         },
+        timeout: 35000,
       })
     ).data;
   },
