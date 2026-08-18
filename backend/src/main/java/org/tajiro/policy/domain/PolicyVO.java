@@ -9,6 +9,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -35,5 +36,9 @@ public class PolicyVO{
     private String categoryName;
     private BigDecimal categorySimilarity;
     private String embedding;
+
+    // 배치용
+    private String sourcePolicyNo;
+    private LocalDateTime sourceModifiedAt;
 }
 

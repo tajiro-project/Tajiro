@@ -81,4 +81,47 @@ public interface PolicyMapper{
             @Param("region") String region,
             @Param("age") Integer age
     );
+
+    // 정책 배치
+    List<PolicyVO> getLegacyPolicies();
+
+
+    int deletePoliciesByIds(
+            @Param("policyIds")
+            List<Long> policyIds
+    );
+
+
+    List<PolicyVO> getBatchPolicySources();
+
+
+    int insertBatchPolicy(
+            PolicyVO policy
+    );
+
+
+    int updateBatchPolicy(
+            PolicyVO policy
+    );
+
+
+    int deletePolicyTargetRegions(
+            @Param("policyId")
+            Long policyId
+    );
+
+
+    int insertPolicyTargetRegions(
+            @Param("policyId")
+            Long policyId,
+
+            @Param("sggCodes")
+            List<String> sggCodes
+    );
+
+
+    int deleteMissingBatchPolicies(
+            @Param("activePolicyNos")
+            List<String> activePolicyNos
+    );
 }

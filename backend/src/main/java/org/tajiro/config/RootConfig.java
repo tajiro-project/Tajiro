@@ -68,7 +68,11 @@ import java.util.concurrent.Executor;
         "org.tajiro.favorite.service",
         "org.tajiro.dashboard.service",
         "org.tajiro.terms.service",
-        "org.tajiro.market"
+        "org.tajiro.market",
+        "org.tajiro.policy.service",
+        "org.tajiro.policy.batch",
+        "org.tajiro.policy.client",
+        "org.tajiro.policy.scheduler"
 })
 public class RootConfig {
 

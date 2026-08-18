@@ -234,4 +234,181 @@
             LIMIT 3
 
     </select>
+    <!-- 정책 배치 -->
+    <!-- ============================= -->
+    <!-- 정책 자동 동기화 배치 -->
+    <!-- ============================= -->
+
+    <select id="getLegacyPolicies"
+            resultType="PolicyVO">
+
+        SELECT
+            id,
+            application_period
+
+        FROM policy
+
+        WHERE source_policy_no IS NULL
+
+    </select>
+
+
+    <delete id="deletePoliciesByIds">
+
+        DELETE
+        FROM policy
+
+        WHERE id IN
+
+        <foreach collection="policyIds"
+                 item="policyId"
+                 open="("
+                 separator=","
+                 close=")">
+
+            #{policyId}
+
+        </foreach>
+
+    </delete>
+
+    <select id="getBatchPolicySources"
+            resultType="PolicyVO">
+
+        SELECT
+            id,
+            source_policy_no,
+            source_modified_at
+
+        FROM policy
+
+        WHERE source_policy_no IS NOT NULL
+
+        ORDER BY id
+
+    </select>
+
+
+    <insert id="insertBatchPolicy"
+            parameterType="PolicyVO"
+            useGeneratedKeys="true"
+            keyProperty="id">
+
+        INSERT INTO policy (
+            source_policy_no,
+            source_modified_at,
+            title,
+            region,
+            min_age,
+            max_age,
+            application_period,
+            agency,
+            apply_method,
+            required_documents,
+            description,
+            sum_description,
+            sbiz_cd
+        )
+
+        VALUES (
+                   #{sourcePolicyNo},
+                   #{sourceModifiedAt},
+                   #{title},
+                   #{region},
+                   #{minAge},
+                   #{maxAge},
+                   #{applicationPeriod},
+                   #{agency},
+                   #{applyMethod},
+                   #{requiredDocuments},
+                   #{description},
+                   #{sumDescription},
+                   #{sbizCd}
+               )
+
+    </insert>
+
+
+    <update id="updateBatchPolicy"
+            parameterType="PolicyVO">
+
+        UPDATE policy
+
+        SET
+            source_modified_at = #{sourceModifiedAt},
+            title = #{title},
+            region = #{region},
+            min_age = #{minAge},
+            max_age = #{maxAge},
+            application_period = #{applicationPeriod},
+            agency = #{agency},
+            apply_method = #{applyMethod},
+            required_documents = #{requiredDocuments},
+            description = #{description},
+            sum_description = #{sumDescription},
+            sbiz_cd = #{sbizCd},
+
+            embedding = NULL,
+            category_id = NULL,
+            category_similarity = NULL
+
+        WHERE id = #{id}
+          AND source_policy_no = #{sourcePolicyNo}
+
+    </update>
+
+
+    <delete id="deletePolicyTargetRegions">
+
+        DELETE
+        FROM policy_target_region
+
+        WHERE policy_id = #{policyId}
+
+    </delete>
+
+
+    <insert id="insertPolicyTargetRegions">
+
+        INSERT IGNORE INTO policy_target_region (
+        policy_id,
+        sgg_code
+        )
+
+        VALUES
+
+        <foreach collection="sggCodes"
+                 item="sggCode"
+                 separator=",">
+
+            (
+            #{policyId},
+            #{sggCode}
+            )
+
+        </foreach>
+
+    </insert>
+
+
+    <delete id="deleteMissingBatchPolicies">
+
+        DELETE
+        FROM policy
+
+        WHERE source_policy_no IS NOT NULL
+
+        AND source_policy_no NOT IN
+
+        <foreach collection="activePolicyNos"
+                 item="policyNo"
+                 open="("
+                 separator=","
+                 close=")">
+
+            #{policyNo}
+
+        </foreach>
+
+    </delete>
 </mapper>
