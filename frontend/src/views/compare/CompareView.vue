@@ -1,15 +1,37 @@
 <template>
   <div class="cmp">
     <simplebar class="scroll-area">
-      <div v-if="loading && !isReportMode" class="loading-state">
-        <div class="loading-spinner" aria-hidden="true"></div>
-        <p class="loading-title">AI 비교 리포트를 생성 중입니다</p>
-        <p class="loading-text">가치관 기준으로 매물을 분석하고 있어요</p>
-        <div class="loading-dots" aria-hidden="true">
-          <span></span>
-          <span></span>
-          <span></span>
+      <div
+        v-if="loading && !isReportMode"
+        class="loading-state"
+        role="status"
+        aria-live="polite"
+      >
+        <div
+          class="loading-progress"
+          :style="{ '--loading-progress': `${loadingProgress * 3.6}deg` }"
+          aria-hidden="true"
+        >
+          <strong>{{ loadingProgress }}%</strong>
         </div>
+        <p class="loading-title">{{ currentLoadingStep.title }}</p>
+        <p class="loading-text">데이터 양에 따라 잠시 시간이 걸릴 수 있어요</p>
+
+        <ol class="loading-steps" aria-label="AI 비교 리포트 생성 단계">
+          <li
+            v-for="(step, index) in LOADING_STEPS"
+            :key="step.title"
+            :class="{
+              complete: index < loadingStage,
+              current: index === loadingStage,
+            }"
+          >
+            <span class="loading-step-icon" aria-hidden="true">
+              <span v-if="index < loadingStage">✓</span>
+            </span>
+            <span>{{ loadingStepText(step, index) }}</span>
+          </li>
+        </ol>
       </div>
       <div v-else-if="loading" class="state">
         저장된 리포트를 불러오는 중이에요.
@@ -372,7 +394,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import client, { getApiErrorMessage } from '@/api/client';
 import { comparisonApi } from '@/api/services';
@@ -384,6 +406,30 @@ const router = useRouter();
 const letters = ['A', 'B', 'C'];
 const PRIORITY_KEYS = ['COMMUTE', 'COST', 'INFRA', 'AMENITY', 'AREA'];
 const SCORE_KEYS = ['COMMUTE', 'COST', 'INFRA', 'MARKET', 'AMENITY'];
+const LOADING_STEPS = [
+  {
+    title: '비교할 매물을 확인하고 있어요',
+    label: '매물과 비교 조건 확인',
+    done: '매물과 비교 조건을 확인했어요',
+  },
+  {
+    title: '기존 리포트와 최신 데이터를 확인하고 있어요',
+    label: '기존 리포트와 최신 데이터 확인',
+    done: '기존 리포트와 최신 데이터를 확인했어요',
+  },
+  {
+    title: '실거래가·시세 지표를 분석하고 있어요',
+    label: '실거래가·시세 지표 분석',
+    done: '실거래가·시세 지표를 분석했어요',
+  },
+  {
+    title: '가치관 기준 AI 리포트를 작성하고 있어요',
+    label: '가치관 기준 AI 리포트 작성',
+    done: '가치관 기준 AI 리포트를 작성했어요',
+  },
+];
+const LOADING_STAGE_DELAYS = [600, 1800, 3500];
+const LOADING_PROGRESS_VALUES = [18, 42, 68, 92];
 const AI_COACHING_UNAVAILABLE_MESSAGE =
   'AI 코칭을 불러오지 못했어요. 잠시 후 다시 시도해주세요.';
 const CONVERSION_RATE = 0.053;
@@ -395,6 +441,13 @@ const coaching = ref(null);
 const coachingError = ref('');
 
 const loading = ref(false);
+const loadingStage = ref(0);
+const loadingProgress = computed(
+  () => LOADING_PROGRESS_VALUES[loadingStage.value] ?? 92,
+);
+const currentLoadingStep = computed(
+  () => LOADING_STEPS[loadingStage.value] ?? LOADING_STEPS[0],
+);
 const saving = ref(false);
 const errorMessage = ref('');
 const showOverall = ref(true);
@@ -409,6 +462,7 @@ const activePriorities = ref([]);
 const showAiRefreshModal = ref(false);
 const refreshingCoaching = ref(false);
 let metricTouchStartX = null;
+let loadingStageTimers = [];
 
 const selectedIds = computed(() =>
   []
@@ -863,10 +917,35 @@ const safetyRows = computed(() => {
   });
 });
 onMounted(loadComparison);
+onBeforeUnmount(stopLoadingStages);
+
+function startLoadingStages() {
+  stopLoadingStages();
+  loadingStage.value = 0;
+  loadingStageTimers = LOADING_STAGE_DELAYS.map((delay, index) =>
+    window.setTimeout(() => {
+      if (loading.value && !isReportMode.value) {
+        loadingStage.value = Math.min(index + 1, LOADING_STEPS.length - 1);
+      }
+    }, delay),
+  );
+}
+
+function stopLoadingStages() {
+  loadingStageTimers.forEach((timerId) => window.clearTimeout(timerId));
+  loadingStageTimers = [];
+}
+
+function loadingStepText(step, index) {
+  if (index < loadingStage.value) return step.done;
+  if (index === loadingStage.value) return step.title;
+  return step.label;
+}
 
 // 매물 비교 화면에 필요한 데이터를 서버에서 불러오는 함수
 async function loadComparison() {
   loading.value = true;
+  if (!isReportMode.value) startLoadingStages();
   errorMessage.value = '';
   currentPropertyIds.value = [];
   showAiRefreshModal.value = false;
@@ -898,15 +977,12 @@ async function loadComparison() {
     activeWorkplace.value = workplace;
     activePriorities.value = priorities;
     selectInitialScore(priorities);
-    const metricsResult = await getMetrics(
-      propertyIds,
-      workplace,
-      !isReportMode.value,
-    );
+    let metricsResult = null;
     let coachingDto = null;
     coachingError.value = '';
 
     if (savedReport) {
+      metricsResult = await getMetrics(propertyIds, workplace, false);
       coachingDto = createReportCoaching(savedReport);
       if (!coachingDto.aiPropertySummaryText && !coachingDto.aiSummary) {
         coachingError.value = AI_COACHING_UNAVAILABLE_MESSAGE;
@@ -917,6 +993,8 @@ async function loadComparison() {
       } catch (error) {
         coachingError.value = error.message;
       }
+      loadingStage.value = LOADING_STEPS.length - 1;
+      metricsResult = await getMetrics(propertyIds, workplace, false);
     }
 
     applyComparisonResult({
@@ -934,6 +1012,7 @@ async function loadComparison() {
         '비교 서버와 연결하지 못했습니다. 잠시 후 다시 시도해주세요.',
     );
   } finally {
+    stopLoadingStages();
     loading.value = false;
   }
 }
@@ -1262,69 +1341,109 @@ function goBack() {
 .loading-state {
   display: flex;
   min-height: calc(100vh - 112px);
-  padding-bottom: 64px;
+  padding: 44px 4px 64px;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
 }
-.loading-spinner {
-  width: 56px;
-  height: 56px;
+.loading-progress {
+  --loading-progress: 0deg;
+  position: relative;
+  display: grid;
+  width: 92px;
+  height: 92px;
   margin-bottom: 24px;
-  border: 5px solid #efefef;
-  border-top-color: var(--kb-yellow);
-  border-right-color: var(--kb-yellow);
+  place-items: center;
   border-radius: 50%;
-  animation: compare-spin 0.9s linear infinite;
+  background: conic-gradient(
+    var(--kb-yellow) 0deg var(--loading-progress),
+    #e9e8e5 var(--loading-progress) 360deg
+  );
+  transition: background 0.4s ease;
+}
+.loading-progress::before {
+  position: absolute;
+  inset: 7px;
+  border-radius: 50%;
+  background: var(--bg);
+  content: '';
+}
+.loading-progress strong {
+  position: relative;
+  color: #24211d;
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: -0.5px;
 }
 .loading-title {
-  margin: 0 0 8px;
+  max-width: 310px;
+  margin: 0 0 7px;
   color: #24211d;
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 800;
-  line-height: 1.4;
+  line-height: 1.45;
+  word-break: keep-all;
 }
 .loading-text {
   margin: 0;
-  color: #a8a29a;
-  font-size: 13px;
+  color: #a09b93;
+  font-size: 12.5px;
   line-height: 1.45;
 }
-.loading-dots {
+.loading-steps {
+  width: 100%;
+  max-width: 340px;
+  margin-top: 24px;
+  padding: 16px 16px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: 0 3px 10px rgba(50, 43, 31, 0.06);
+  text-align: left;
+}
+.loading-steps li {
   display: flex;
-  gap: 6px;
-  justify-content: center;
-  margin-top: 26px;
+  align-items: center;
+  gap: 10px;
+  min-height: 30px;
+  color: #aaa69f;
+  font-size: 12.5px;
+  line-height: 1.4;
+  transition: color 0.2s ease;
 }
-.loading-dots span {
-  width: 6px;
-  height: 6px;
+.loading-steps li.complete {
+  color: #777168;
+}
+.loading-steps li.current {
+  color: #2f2b25;
+  font-weight: 800;
+}
+.loading-step-icon {
+  display: grid;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  place-items: center;
+  border: 1.5px solid #deddd9;
   border-radius: 50%;
+  color: var(--white);
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1;
+}
+.loading-steps li.complete .loading-step-icon {
+  border-color: var(--kb-yellow);
   background: var(--kb-yellow);
-  animation: compare-dot 1.2s ease-in-out infinite;
 }
-.loading-dots span:nth-child(2) {
-  animation-delay: 0.16s;
-}
-.loading-dots span:nth-child(3) {
-  animation-delay: 0.32s;
+.loading-steps li.current .loading-step-icon {
+  border: 2px solid #e3e1dc;
+  border-top-color: var(--kb-yellow);
+  animation: compare-spin 0.85s linear infinite;
 }
 @keyframes compare-spin {
   to {
     transform: rotate(360deg);
-  }
-}
-@keyframes compare-dot {
-  0%,
-  80%,
-  100% {
-    opacity: 0.35;
-    transform: scale(0.8);
-  }
-  40% {
-    opacity: 1;
-    transform: scale(1);
   }
 }
 .state {
