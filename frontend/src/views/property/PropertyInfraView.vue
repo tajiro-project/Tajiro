@@ -53,15 +53,27 @@
             @mouseenter="onRowHover(item)"
             @mouseleave="onRowHover(null)"
           >
-            <!-- 좌측: 아이콘 + 카테고리 라벨 영역 -->
+            <!-- 좌측: 아이콘 + 카테고리 라벨 영역 (색상 커스텀 적용) -->
             <div class="r-icon-col">
-              <span class="r-icon">
+              <span
+                class="r-icon"
+                :style="{
+                  backgroundColor: item.color + '1f' /* 12% 투명도 배경 */,
+                  color: item.color,
+                  borderColor: item.color + '40',
+                }"
+              >
                 <component
                   :is="item.icon"
                   :size="18"
                 />
               </span>
-              <span class="r-cat-label">{{ item.categoryLabel }}</span>
+              <span
+                class="r-cat-label"
+                :style="{ color: item.color }"
+              >
+                {{ item.categoryLabel }}
+              </span>
             </div>
 
             <!-- 우측: 이름 + 거리 정보 + 게이지 바 -->
@@ -72,10 +84,9 @@
               </div>
 
               <!-- 게이지 바 + 500m 단위 눈금 영역 -->
-              <!-- 게이지 바 + 500m 단위 눈금 영역 -->
               <div class="r-bar-wrapper">
                 <div class="r-track">
-                  <!-- 500m 단위 눈금선 (트랙 바깥으로 살짝 돌출) -->
+                  <!-- 500m 단위 눈금선 -->
                   <div class="r-ticks">
                     <span
                       class="r-tick"
@@ -144,24 +155,18 @@ import { MapPin } from 'lucide-vue-next';
 
 const route = useRoute();
 
-// 💡 1. 쿼리 스트링으로 전달받은 buildingName 우선 사용
 const buildingName = ref(route.query.buildingName || '');
 
-// 상태 관리
 const infras = ref([]);
 const activeDotKey = ref(null);
 
-// 탭 상태 ('infra' | 'amenity')
 const currentTab = ref('infra');
 
-// 지도 중심 좌표
 const mapCenter = ref({ lat: 36.3320194, lng: 127.4570694 });
 
-// 카테고리 구분용 Set 생성
 const infraKeySet = new Set(INFRA_CATEGORIES.map((c) => c.key));
 const amenityKeySet = new Set(AMENITY_CATEGORIES.map((c) => c.key));
 
-// 전체 카테고리 Map 생성
 const ALL_CATEGORIES = [...INFRA_CATEGORIES, ...AMENITY_CATEGORIES];
 const categoryMap = computed(() => {
   const map = {};
@@ -171,12 +176,10 @@ const categoryMap = computed(() => {
   return map;
 });
 
-// API 데이터 로드
 onMounted(async () => {
   const propertyId = route.params.id;
   if (!propertyId) return;
 
-  // 💡 2. buildingName 쿼리가 없는 경우(직접 URL 진입 등) 매물 상세 API로 예외 처리
   if (!buildingName.value) {
     try {
       const pRes = await propertyApi.getPropertyDetail(propertyId);
@@ -190,7 +193,6 @@ onMounted(async () => {
     }
   }
 
-  // 3. 인프라 데이터 로드
   try {
     const infraRes = await propertyApi.infrastructures(propertyId);
     const rawData = infraRes?.data || infraRes || {};
@@ -217,7 +219,6 @@ onMounted(async () => {
   }
 });
 
-// KakaoMap 중심 마커
 const markers = computed(() => {
   if (!mapCenter.value?.lat) return [];
   return [
@@ -230,13 +231,14 @@ const markers = computed(() => {
   ];
 });
 
-// 공통 데이터 포맷팅 함수
 function formatRowItem(item) {
   const catConfig = categoryMap.value[item.category];
   const categoryLabel = catConfig?.label || item.category;
   const categoryIcon = catConfig?.icon || MapPin;
+  // 💡 카테고리 정의된 고유 색상값 매핑 (없을 경우 기본 gray)
+  const categoryColor = catConfig?.color || '#475569';
 
-  const MAX_DISTANCE = 2000; // 기준 최대 거리 (2km = 2000m)
+  const MAX_DISTANCE = 2000;
   const distMeters = item.distanceMeters ?? 0;
 
   const rawPct = (distMeters / MAX_DISTANCE) * 100;
@@ -245,6 +247,7 @@ function formatRowItem(item) {
   return {
     icon: categoryIcon,
     categoryLabel: categoryLabel,
+    color: categoryColor, // 💡 객체에 색상값 추가
     name: item.name,
     dist:
       distMeters >= 1000
@@ -258,7 +261,6 @@ function formatRowItem(item) {
   };
 }
 
-// INFRA_CATEGORIES
 const infraRows = computed(() => {
   return infras.value
     .filter((i) => infraKeySet.has(i.category))
@@ -266,7 +268,6 @@ const infraRows = computed(() => {
     .map(formatRowItem);
 });
 
-// AMENITY_CATEGORIES
 const amenityRows = computed(() => {
   return infras.value
     .filter((i) => amenityKeySet.has(i.category))
@@ -274,12 +275,10 @@ const amenityRows = computed(() => {
     .map(formatRowItem);
 });
 
-// 현재 선택된 탭에 따른 리스트
 const activeRows = computed(() => {
   return currentTab.value === 'infra' ? infraRows.value : amenityRows.value;
 });
 
-// KakaoMap 핀(dot) 목록
 const dots = computed(() => {
   const validInfras = infras.value.filter(
     (i) => i.lat != null && i.lng != null,
@@ -332,7 +331,6 @@ const dots = computed(() => {
   return [...rawDots, ...dummyDots];
 });
 
-// 핸들러
 const onMarkerClick = (marker) => console.log('매물 마커 클릭:', marker);
 const onDotClick = (dot) => {
   activeDotKey.value = `${dot.lat},${dot.lng}`;
@@ -456,14 +454,14 @@ const onBoundsChange = () => {};
   width: 34px;
   height: 34px;
   border-radius: 100px;
-  background: var(--yellow-tint);
-  color: #a8842c;
+  /* 💡 동적 입체감을 위한 테두리 및 트랜지션 추가 */
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
 }
 
 .r-cat-label {
   font-size: 10.5px;
-  font-weight: 600;
-  color: #666666;
+  font-weight: 700; /* 가독성을 위해 600 -> 700으로 상향 */
   text-align: center;
   line-height: 1.1;
   word-break: keep-all;
@@ -499,8 +497,6 @@ const onBoundsChange = () => {};
   flex-shrink: 0;
 }
 
-/* 게이지 트랙 및 눈금 스타일 */
-/* 게이지 트랙 및 눈금 고대비(High-Contrast) 스타일 */
 .r-bar-wrapper {
   display: flex;
   flex-direction: column;
@@ -512,13 +508,12 @@ const onBoundsChange = () => {};
 .r-track {
   position: relative;
   width: 100%;
-  height: 8px; /* 트랙 두께 확장 (6px -> 8px) */
-  background-color: #e2e8f0; /* 더 또렷한 배경색 */
+  height: 8px;
+  background-color: #e2e8f0;
   border-radius: 4px;
   overflow: visible;
 }
 
-/* 선명한 눈금선 (트랙 위아래로 2px씩 돌출) */
 .r-ticks {
   position: absolute;
   top: -2px;
@@ -533,12 +528,11 @@ const onBoundsChange = () => {};
   top: 0;
   width: 2px;
   height: 100%;
-  background-color: #cbd5e1; /* 진한 눈금선 */
+  background-color: #cbd5e1;
   transform: translateX(-50%);
   z-index: 1;
 }
 
-/* 게이지 채움 바 (선명한 개나리색 / 필요 시 #f59e0b 로 변경 가능) */
 .r-fill {
   position: absolute;
   top: 0;
@@ -550,7 +544,6 @@ const onBoundsChange = () => {};
   z-index: 2;
 }
 
-/* 핀 마커 (크기 확대 + 입체 그림자 추가) */
 .r-pin {
   position: absolute;
   top: 50%;
@@ -560,18 +553,17 @@ const onBoundsChange = () => {};
   background-color: var(--kb-yellow, #ffb703);
   border: 2.5px solid #ffffff;
   border-radius: 50%;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35); /* 그림자 강조 */
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
   transition: left 0.3s ease;
   z-index: 3;
 }
 
-/* 하단 거리 텍스트 가독성 보정 */
 .r-scale {
   display: flex;
   justify-content: space-between;
-  font-size: 11px; /* 글자 크기 확대 (9px -> 11px) */
+  font-size: 11px;
   font-weight: 600;
-  color: #475569; /* 진한 슬레이트 그레이로 변경 */
+  color: #475569;
   line-height: 1;
 }
 </style>

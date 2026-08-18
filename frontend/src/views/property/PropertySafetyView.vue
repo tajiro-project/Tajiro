@@ -57,13 +57,31 @@
                 @click="toggleItemSelection(item)"
               >
                 <div class="item-left">
-                  <div class="icon-badge">
+                  <!-- 💡 동적 색상을 반영한 아이콘 뱃지 -->
+                  <div
+                    class="icon-badge"
+                    :style="{
+                      backgroundColor: item.color
+                        ? item.color + '1f'
+                        : '#fff8e1',
+                      borderColor: item.color
+                        ? item.color + '40'
+                        : 'transparent',
+                    }"
+                  >
                     <component
                       :is="item.icon"
                       class="item-icon"
+                      :style="{ color: item.color || '#d97706' }"
                     />
                   </div>
-                  <span class="item-label">{{ item.label }}</span>
+                  <!-- 💡 동적 색상을 반영한 라벨 -->
+                  <span
+                    class="item-label"
+                    :style="{ color: item.color || '#222222' }"
+                  >
+                    {{ item.label }}
+                  </span>
                 </div>
                 <span
                   class="item-value"
@@ -104,7 +122,7 @@ import { SAFETY_CATEGORIES } from '@/constants/preferenceOptions';
 
 const route = useRoute();
 
-// 💡 1. 쿼리 스트링으로 전달받은 buildingName 우선 사용
+// 💡 쿼리 스트링으로 전달받은 buildingName 우선 사용
 const buildingName = ref(route.query.buildingName || '');
 
 const CATEGORY_KEY_MAP = {
@@ -149,7 +167,6 @@ onMounted(async () => {
   const propertyId = route.params.id;
   if (!propertyId) return;
 
-  // 💡 2. buildingName 쿼리가 없는 경우(직접 URL 진입 등) 매물 상세 API로 예외 처리
   if (!buildingName.value) {
     try {
       const pRes = await propertyApi.getPropertyDetail(propertyId);
@@ -163,7 +180,6 @@ onMounted(async () => {
     }
   }
 
-  // 3. 안전 정보 데이터 로드
   try {
     isLoading.value = true;
     const res = await propertyApi.safety(propertyId);
@@ -233,7 +249,7 @@ const activeTabItems = computed(() => {
       key,
       label: categoryMeta.label || key,
       icon: categoryMeta.icon,
-      color: categoryMeta.color,
+      color: categoryMeta.color, // 💡 SAFETY_CATEGORIES에서 정의된 색상 주입
       value: displayValue,
       count,
       apiCategoryKey: apiItem?.safeCategory,
@@ -487,26 +503,28 @@ const toggleItemSelection = (item) => {
   gap: 12px;
 }
 
+/* 💡 동적 입체감을 주는 테두리와 부드러운 전환 효과 추가 */
 .icon-badge {
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  background-color: #fff8e1;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
 }
 .item-icon {
   width: 18px;
   height: 18px;
-  color: #d97706;
+  transition: color 0.2s ease;
 }
 
 .item-label {
   font-size: 14px;
-  font-weight: 600;
-  color: #222222;
+  font-weight: 700;
+  transition: color 0.2s ease;
 }
 .item-value {
   font-size: 13px;
