@@ -215,7 +215,7 @@
 
     <!-- 12-1 내 정보 입력 필요 모달 -->
     <Teleport to="body">
-      <div v-if="needProfile" class="modal-overlay">
+      <div v-if="isActive && needProfile" class="modal-overlay">
         <div class="modal">
           <span class="m-icon">
             <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
@@ -290,6 +290,7 @@ const filterDropdownStyle = ref({});
 const policies = ref([]);
 const products = ref([]);
 const needProfile = ref(false);
+const isActive = ref(false);
 const currentPage = ref(1);
 const savedScrollTop = ref(0);
 const reloadOnActivate = ref(false);
@@ -347,6 +348,7 @@ onMounted(async () => {
 });
 
 onActivated(async () => {
+  isActive.value = true;
   document.addEventListener('pointerdown', closeFilterOnOutsideClick);
   window.addEventListener('resize', updateFilterDropdownPosition);
 
@@ -363,6 +365,7 @@ onActivated(async () => {
 });
 
 onDeactivated(() => {
+  isActive.value = false;
   document.removeEventListener('pointerdown', closeFilterOnOutsideClick);
   window.removeEventListener('resize', updateFilterDropdownPosition);
   filtersExpanded.value = false;
