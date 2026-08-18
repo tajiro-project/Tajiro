@@ -132,6 +132,12 @@
 
         <where>
             p.deleted_at IS NULL
+            <if test="propertyIds != null and propertyIds.size() > 0">
+                AND p.id IN
+                <foreach item="propertyId" collection="propertyIds" open="(" separator="," close=")">
+                    #{propertyId}
+                </foreach>
+            </if>
             <if test="effectiveRadiusMeters != null">
                 AND <include refid="boundingBox"/>
             </if>

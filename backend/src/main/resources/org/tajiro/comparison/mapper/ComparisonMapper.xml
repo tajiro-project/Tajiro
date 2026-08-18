@@ -78,6 +78,7 @@
                p.area_m2,
                p.floor_info,
                p.update_date,
+               COALESCE(pref.has_car, FALSE) AS has_car,
                CASE
                    WHEN #{workplaceLat} IS NOT NULL
                         AND #{workplaceLng} IS NOT NULL
@@ -92,10 +93,10 @@
                                    + SIN(RADIANS(#{workplaceLat}))
                                    * SIN(RADIANS(b.latitude))
                                ))
-                           ) * 2 / 67.0
+                           ) * 2 / CASE WHEN COALESCE(pref.has_car, FALSE) THEN 250.0 ELSE 67.0 END
                        )
                    WHEN pvar.workplace_distance_meters IS NULL THEN NULL
-                   ELSE CEIL(pvar.workplace_distance_meters * 2 / 67.0)
+                   ELSE CEIL(pvar.workplace_distance_meters * 2 / CASE WHEN COALESCE(pref.has_car, FALSE) THEN 250.0 ELSE 67.0 END)
                END AS commute_minutes,
                COALESCE(infra.infra_count, 0) AS infra_count,
                COALESCE(infra.amenity_count, 0) AS amenity_count,
@@ -115,38 +116,32 @@
         LEFT JOIN property_value_analysis_result pvar
                ON pvar.property_id = p.id
               AND pvar.user_id = #{userId}
+        LEFT JOIN housing_preference pref ON pref.user_id = #{userId}
         LEFT JOIN (
-            SELECT building_id,
-                   ROUND(AVG(
-                       CASE
-                           WHEN infra_category IN (
-                               'SUBWAY', 'BUS_TERMINAL', 'TRAIN', 'HOSPITAL',
-                               'PHARMACY', 'SCHOOL', 'KINDERGARTEN', 'ACADEMY',
-                               'LIBRARY', 'PARK', 'POLICE', 'FIRE', 'GOV_OFFICE',
-                               'PUBLIC', 'POST_OFFICE', 'BANK'
-                           ) THEN CASE
-                               WHEN count_within2000m > 0
-                                   THEN 80 + LEAST(count_within2000m, 5) * 4
-                               ELSE 0
-                           END
-                       END
-                   )) AS infra_count,
-                   ROUND(AVG(
-                       CASE
-                           WHEN infra_category IN (
-                               'CONVENIENCE', 'MART', 'CAFE', 'FOOD', 'CULTURE',
-                               'SPORTS', 'SWIMMING', 'PARKING', 'GAS'
-                           ) THEN CASE
-                               WHEN count_within2000m > 0
-                                   THEN 80 + LEAST(count_within2000m, 5) * 4
-                               ELSE 0
-                           END
-                       END
-                   )) AS amenity_count,
-                   MAX(CASE WHEN infra_category = 'POLICE'
-                            THEN nearest_distance_meters END) AS police_nearest_distance_meters
-            FROM infrastructure
-            GROUP BY building_id
+            SELECT i.building_id,
+                   COUNT(DISTINCT CASE
+                       WHEN i.count_within2000m &gt; 0
+                            AND FIND_IN_SET(
+                                i.infra_category,
+                                COALESCE(NULLIF(hp.desired_infra_categories, ''),
+                                    'SUBWAY,BUS_TERMINAL,TRAIN,HOSPITAL,PHARMACY,SCHOOL,KINDERGARTEN,ACADEMY,LIBRARY,PARK,POLICE,FIRE,GOV_OFFICE,PUBLIC,POST_OFFICE,BANK')
+                            )
+                           THEN i.infra_category
+                   END) AS infra_count,
+                   COUNT(DISTINCT CASE
+                       WHEN i.count_within2000m &gt; 0
+                            AND FIND_IN_SET(
+                                i.infra_category,
+                                COALESCE(NULLIF(hp.desired_amenity_categories, ''),
+                                    'CONVENIENCE,MART,CAFE,FOOD,CULTURE,SPORTS,SWIMMING,PARKING,GAS')
+                            )
+                           THEN i.infra_category
+                   END) AS amenity_count,
+                   MAX(CASE WHEN i.infra_category = 'POLICE'
+                            THEN i.nearest_distance_meters END) AS police_nearest_distance_meters
+            FROM infrastructure i
+            LEFT JOIN housing_preference hp ON hp.user_id = #{userId}
+            GROUP BY i.building_id
         ) infra ON infra.building_id = p.building_id
         LEFT JOIN (
             SELECT building_id,

@@ -13,9 +13,13 @@ import org.tajiro.comparison.dto.ComparisonMetricsResponseDTO;
 import org.tajiro.comparison.mapper.ComparisonMapper;
 import org.tajiro.exception.BusinessException;
 import org.tajiro.market.service.MarketEvaluationService;
+import org.tajiro.property.dto.PropertyComparisonScoreDTO;
+import org.tajiro.property.service.PropertyScoreService;
 
+import java.math.BigDecimal;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -26,6 +30,7 @@ public class ComparisonServiceImpl implements ComparisonService {
 
     private final ComparisonMapper comparisonMapper;
     private final MarketEvaluationService marketEvaluationService;
+    private final PropertyScoreService propertyScoreService;
 
     @Override
     @Transactional(readOnly = true)
@@ -96,9 +101,31 @@ public class ComparisonServiceImpl implements ComparisonService {
             throw new BusinessException(ErrorCode.PROPERTY_NOT_FOUND);
         }
 
+        Map<Long, PropertyComparisonScoreDTO> scores =
+                propertyScoreService.calculateComparisonScores(
+                        userId,
+                        propertyIds,
+                        toBigDecimal(workplaceLat),
+                        toBigDecimal(workplaceLng));
+        for (ComparisonMetricDTO item : items) {
+            PropertyComparisonScoreDTO score = scores.get(item.getPropertyId());
+            if (score == null) {
+                throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
+            }
+            item.setPreferenceScore(score.getPreferenceScore());
+            item.setCommuteScore(score.getCommuteScore());
+            item.setCostScore(score.getCostScore());
+            item.setInfraScore(score.getInfraScore());
+            item.setAmenityScore(score.getAmenityScore());
+        }
+
         return ComparisonMetricsResponseDTO.builder()
                 .items(items)
                 .build();
+    }
+
+    private BigDecimal toBigDecimal(Double value) {
+        return value == null ? null : BigDecimal.valueOf(value);
     }
 
     private void validateWorkplace(Double workplaceLat, Double workplaceLng) {

@@ -14,6 +14,7 @@ import java.util.List;
 @Builder
 public class PropertySearchRequest {
     private Long userId;
+    private List<Long> propertyIds;
     private BigDecimal refLat;
     private BigDecimal refLng;
     private Integer radiusMeters;

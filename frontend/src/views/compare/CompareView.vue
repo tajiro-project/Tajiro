@@ -87,9 +87,10 @@
           >
             {{ aiPrimaryText }}
           </p>
-          <p v-if="aiSecondaryText" class="ai-p">
-            {{ aiSecondaryText }}
-          </p>
+          <div v-if="aiSecondaryText" class="ai-summary-box">
+            <span class="ai-summary-label">코칭 요약</span>
+            <p>{{ aiSecondaryText }}</p>
+          </div>
         </section>
 
         <p v-if="warningText" class="warn">
@@ -177,6 +178,9 @@
                 <strong>{{ selectedScoreTitle }}</strong>
                 <span>높을수록 좋아요</span>
               </div>
+              <p v-if="selectedScoreDescription" class="score-guidance">
+                {{ selectedScoreDescription }}
+              </p>
               <div class="metric-chart-navigation">
                 <!-- 터치 스와이프 처리 -->
                 <div
@@ -196,13 +200,17 @@
                           <div
                             class="metric-bar-fill"
                             :style="{
-                              height: `${bar.score}%`,
+                              height:
+                                bar.score === null ? '0%' : `${bar.score}%`,
                               background: selectedScoreSpec.color,
                             }"
                           >
-                            <span class="metric-bar-score">{{
-                              bar.score
-                            }}</span>
+                            <span
+                              class="metric-bar-score"
+                              :class="{ unevaluated: bar.score === null }"
+                            >
+                              {{ bar.score === null ? '미평가' : bar.score }}
+                            </span>
                           </div>
                         </div>
                         <span class="metric-raw-label">
@@ -217,7 +225,9 @@
 
             <div class="cumulative-chart">
               <div class="score-section-head cumulative-head">
-                <strong>5개 지표 누적 점수</strong>
+                <strong
+                  >{{ cumulativeScoreSpecs.length }}개 지표 누적 점수</strong
+                >
                 <span>총 {{ cumulativeTotalMax }}점</span>
               </div>
               <div
@@ -247,8 +257,7 @@
             </div>
 
             <p v-if="showRecommendationMismatch" class="score-notice">
-              <!-- {{ recommendationMismatchText }} -->
-              AI 코칭 결과와 종합 비교 점수는 일치하지 않을 수 있습니다.
+              AI 추천이 종합 점수와 다를 수 있으며, 그 이유는 코칭 요약에 함께 설명돼요.
             </p>
           </div>
         </section>
@@ -599,35 +608,36 @@ const allScoreSpecs = computed(() => {
   return [
     {
       key: 'COMMUTE',
+      scoreKey: 'commuteScore',
       tabLabel: '직주',
       label: '직주근접',
       color: '#f2926d',
-      available: metrics.value.every((m) => hasNumber(m.commuteMinutes)),
-      values: metrics.value.map((m) => Number(m.commuteMinutes)),
-      invert: true,
-      formatRaw: (value) => `${formatCompactNumber(value)}분`,
+      available: metrics.value.every((m) => hasNumber(m.commuteScore)),
+      values: metrics.value,
+      description: commuteDescription,
+      formatRaw: formatCommuteTime,
     },
     {
       key: 'COST',
+      scoreKey: 'costScore',
       tabLabel: '가격',
       label: '가격',
       color: '#ffca43',
-      available: metrics.value.every(
-        (m) => hasNumber(m.deposit) && hasNumber(m.monthlyRent),
-      ),
-      values: metrics.value.map((m) => monthlyCostValue(m)),
-      invert: true,
-      formatRaw: (value) => `${formatCompactNumber(value)}만원`,
+      available: metrics.value.every((m) => hasNumber(m.costScore)),
+      values: metrics.value,
+      description: '타지로 내부 기준으로 가격 조건 적합도를 계산한 점수예요.',
+      formatRaw: formatTradePrice,
     },
     {
       key: 'INFRA',
+      scoreKey: 'infraScore',
       tabLabel: '인프라',
       label: '인프라',
       color: '#78b58c',
-      available: metrics.value.every((m) => hasNumber(m.infraCount)),
+      available: metrics.value.every((m) => hasNumber(m.infraScore)),
       values: metrics.value.map((m) => Number(m.infraCount)),
-      invert: false,
-      formatRaw: (value) => `${formatCompactNumber(value)}점`,
+      description: '선택한 인프라 항목 중 반경 2km 안에 있는 항목 수예요.',
+      formatRaw: (value) => `${formatCompactNumber(value)}개 충족`,
     },
     {
       key: 'MARKET',
@@ -637,25 +647,30 @@ const allScoreSpecs = computed(() => {
       available: metrics.value.some((m) => hasNumber(m.evaluationScore)),
       includeInTotal: metrics.value.every((m) => hasNumber(m.evaluationScore)),
       values: metrics.value.map((m) =>
-        hasNumber(m.evaluationScore) ? Math.abs(Number(m.evaluationScore)) : null,
+        hasNumber(m.evaluationScore) ? Number(m.evaluationScore) : null,
       ),
-      invert: true,
+      scores: metrics.value.map((m) =>
+        hasNumber(m.evaluationScore)
+          ? calculateMarketStabilityScore(m.evaluationScore)
+          : null,
+      ),
+      description: '주변 시세와 차이가 작을수록 높은 점수예요.',
       formatRaw: (value) =>
-        hasNumber(value) ? `${formatCompactNumber(value)}%` : '데이터 부족',
+        hasNumber(value) ? formatSignedPercent(value) : '데이터 부족',
     },
     {
       key: 'AMENITY',
+      scoreKey: 'amenityScore',
       tabLabel: '편의',
       label: '편의시설',
       color: '#8d82cc',
-      available: metrics.value.every((m) => hasNumber(m.amenityCount)),
+      available: metrics.value.every((m) => hasNumber(m.amenityScore)),
       values: metrics.value.map((m) => Number(m.amenityCount)),
-      invert: false,
-      formatRaw: (value) => `${formatCompactNumber(value)}점`,
+      description: '선택한 편의시설 항목 중 반경 2km 안에 있는 항목 수예요.',
+      formatRaw: (value) => `${formatCompactNumber(value)}개 충족`,
     },
   ];
 });
-
 const scoreSpecs = computed(() =>
   allScoreSpecs.value.filter((spec) => spec.available),
 );
@@ -664,18 +679,26 @@ const cumulativeScoreSpecs = computed(() =>
   scoreSpecs.value.filter((spec) => spec.includeInTotal !== false),
 );
 
-const cumulativeTotalMax = computed(() => cumulativeScoreSpecs.value.length * 100);
+const cumulativeTotalMax = computed(
+  () => cumulativeScoreSpecs.value.length * 100,
+);
 
-// 차트 점수를 정규화하여 35~95점 사이로 변환
+// 맞춤 기준은 백엔드 점수를 사용하고, 시세는 주변 시세 대비 절대 편차로 계산
 const seriesScores = computed(() => {
   if (!metrics.value.length || !scoreSpecs.value.length) return [];
 
-  const normalizedByAxis = scoreSpecs.value.map((spec) =>
-    normalize(spec.values, spec.invert),
+  const scoresByAxis = scoreSpecs.value.map((spec) =>
+    spec.scoreKey
+      ? metrics.value.map((metric) =>
+          hasNumber(metric[spec.scoreKey])
+            ? Number(metric[spec.scoreKey])
+            : null,
+        )
+      : (spec.scores ?? normalize(spec.values, spec.invert)),
   );
 
   return metrics.value.map((_, propertyIndex) =>
-    normalizedByAxis.map((axisScores) => axisScores[propertyIndex]),
+    scoresByAxis.map((axisScores) => axisScores[propertyIndex]),
   );
 });
 //현재 선택된 지표 객체
@@ -698,6 +721,10 @@ const selectedScoreTitle = computed(() => {
     priorityIndex >= 0 ? `${priorityIndex + 1}순위 · ` : '';
   return `${priorityPrefix}${selectedScoreSpec.value.label} 점수`;
 });
+const selectedScoreDescription = computed(() => {
+  const description = selectedScoreSpec.value?.description;
+  return typeof description === 'function' ? description() : (description ?? '');
+});
 const selectedMetricBars = computed(() => {
   if (!selectedScoreSpec.value) return [];
   const scoreIndex = scoreSpecs.value.findIndex(
@@ -707,7 +734,7 @@ const selectedMetricBars = computed(() => {
   return metrics.value.map((metric, propertyIndex) => ({
     propertyId: metric.propertyId,
     letter: letters[propertyIndex],
-    score: seriesScores.value[propertyIndex]?.[scoreIndex] ?? 0,
+    score: seriesScores.value[propertyIndex]?.[scoreIndex] ?? null,
     rawLabel: selectedScoreSpec.value.formatRaw(
       selectedScoreSpec.value.values[propertyIndex],
     ),
@@ -716,29 +743,37 @@ const selectedMetricBars = computed(() => {
 const cumulativeSeriesScores = computed(() => {
   if (!metrics.value.length || !cumulativeScoreSpecs.value.length) return [];
 
-  const normalizedByAxis = cumulativeScoreSpecs.value.map((spec) =>
-    normalize(spec.values, spec.invert),
+  const scoresByAxis = cumulativeScoreSpecs.value.map((spec) =>
+    spec.scoreKey
+      ? metrics.value.map((metric) =>
+          hasNumber(metric[spec.scoreKey])
+            ? Number(metric[spec.scoreKey])
+            : null,
+        )
+      : (spec.scores ?? normalize(spec.values, spec.invert)),
   );
 
   return metrics.value.map((_, propertyIndex) =>
-    normalizedByAxis.map((axisScores) => axisScores[propertyIndex]),
+    scoresByAxis.map((axisScores) => axisScores[propertyIndex]),
   );
 });
 
 const seriesTotals = computed(() =>
   cumulativeSeriesScores.value.map((scores) =>
-    scores.reduce((total, score) => total + score, 0),
+    scores.reduce((total, score) => total + (score ?? 0), 0),
   ),
 );
 function getCumulativeSegmentWidth(score) {
   const axisCount = cumulativeScoreSpecs.value.length;
-  return axisCount ? `${score / axisCount}%` : '0%';
+  return axisCount && score !== null ? `${score / axisCount}%` : '0%';
 }
 
 function getCumulativeSegmentTitle(score, scoreIndex) {
   const spec = cumulativeScoreSpecs.value[scoreIndex];
   const label = spec?.label ?? '지표';
-  return `${label} · ${Math.round(score)}점`;
+  return score === null
+    ? `${label} · 미평가`
+    : `${label} · ${Math.round(score)}점`;
 }
 const topCumulativePropertyIds = computed(() => {
   if (!seriesTotals.value.length) return [];
@@ -752,45 +787,6 @@ const showRecommendationMismatch = computed(
     hasAiRecommendation.value &&
     !topCumulativePropertyIds.value.includes(String(recommendedId.value)),
 );
-// const recommendationMismatchText = computed(() => {
-//   if (!showRecommendationMismatch.value) return '';
-
-//   const recommendedIndex = items.value.findIndex(
-//     (item) => String(item.propertyId) === String(recommendedId.value),
-//   );
-//   const topIndex = items.value.findIndex((item) =>
-//     topCumulativePropertyIds.value.includes(String(item.propertyId)),
-//   );
-//   if (recommendedIndex < 0 || topIndex < 0) return '';
-
-//   const recommendedLetter = letters[recommendedIndex];
-//   const topLetter = letters[topIndex];
-//   const priorityOrder = new Map(
-//     activePriorities.value.map((key, index) => [key, index]),
-//   );
-//   const strongerMetrics = scoreSpecs.value
-//     .map((spec, scoreIndex) => ({
-//       key: spec.key,
-//       label: spec.label,
-//       difference:
-//         (seriesScores.value[recommendedIndex]?.[scoreIndex] ?? 0) -
-//         (seriesScores.value[topIndex]?.[scoreIndex] ?? 0),
-//     }))
-//     .filter((metric) => metric.difference > 0)
-//     .sort((a, b) => {
-//       const aPriority = priorityOrder.get(a.key) ?? Number.MAX_SAFE_INTEGER;
-//       const bPriority = priorityOrder.get(b.key) ?? Number.MAX_SAFE_INTEGER;
-//       return aPriority - bPriority || b.difference - a.difference;
-//     })
-//     .slice(0, 2)
-//     .map((metric) => metric.label);
-
-//   if (!strongerMetrics.length) {
-//     return `AI 추천 ${recommendedLetter}는 사용자 우선순위와 코칭 내용을 반영한 결과이며, 5개 지표를 동일하게 합산한 누적 점수는 ${topLetter}가 가장 높습니다.`;
-//   }
-
-//   return `AI 추천 ${recommendedLetter}는 ${strongerMetrics.join('·')} 지표에서 ${topLetter}보다 앞섰지만, 5개 지표를 동일하게 합산한 누적 점수는 ${topLetter}가 가장 높습니다.`;
-// });
 
 function selectInitialScore(priorities) {
   const firstVisiblePriority = priorities.find((criterion) =>
@@ -1111,11 +1107,7 @@ async function refreshAiCoaching() {
 async function getMetrics(propertyIds, workplace, refreshMarketScore = true) {
   try {
     return unwrapApiData(
-      await comparisonApi.metrics(
-        propertyIds,
-        workplace,
-        refreshMarketScore,
-      ),
+      await comparisonApi.metrics(propertyIds, workplace, refreshMarketScore),
     );
   } catch (error) {
     throw new Error(
@@ -1193,6 +1185,20 @@ function formatTradePrice(item) {
   }
   return `${tradeType ?? ''} ${deposit}`.trim();
 }
+function formatCommuteTime(item) {
+  return `${formatCompactNumber(item?.commuteMinutes)}분`;
+}
+function formatSignedPercent(value) {
+  const numericValue = Number(value);
+  const sign = numericValue > 0 ? '+' : numericValue < 0 ? '-' : '';
+  return `${sign}${formatCompactNumber(Math.abs(numericValue))}%`;
+}
+function commuteDescription() {
+  const hasCar = metrics.value.some((metric) => metric.hasCar === true);
+  return hasCar
+    ? '출근지까지 차량 왕복 기준으로 계산한 시간이에요.'
+    : '출근지까지 도보 왕복 기준으로 계산한 시간이에요.';
+}
 
 function moneyLabel(value) {
   if (value === null || value === undefined || value === '') return '-';
@@ -1225,22 +1231,26 @@ function formatKoreanMoneyText(text) {
   );
 }
 
-
-
-
 function normalize(values, invert = false) {
   if (!values.length) return [];
   const numericValues = values.filter((value) => hasNumber(value)).map(Number);
-  if (!numericValues.length) return values.map(() => 0);
+  if (!numericValues.length) return values.map(() => null);
 
   const min = Math.min(...numericValues);
   const max = Math.max(...numericValues);
-  if (min === max) return values.map((value) => (hasNumber(value) ? 70 : 0));
+  if (min === max) {
+    return values.map((value) => (hasNumber(value) ? 50 : null));
+  }
   return values.map((value) => {
-    if (!hasNumber(value)) return 0;
+    if (!hasNumber(value)) return null;
     const ratio = (Number(value) - min) / (max - min);
-    return Math.round(35 + (invert ? 1 - ratio : ratio) * 60);
+    return Math.round((invert ? 1 - ratio : ratio) * 100);
   });
+}
+
+function calculateMarketStabilityScore(evaluationScore) {
+  const difference = Math.abs(Number(evaluationScore));
+  return Math.max(0, Math.round(100 - difference * (100 / 30)));
 }
 
 function hasNumber(value) {
@@ -1281,13 +1291,6 @@ function getReportSummaryText() {
   return coaching.value?.aiSummary ?? '';
 }
 
-function monthlyCostValue(item) {
-  return (
-    Number(item.monthlyRent) +
-    (Number(item.deposit) * CONVERSION_RATE) / 12 +
-    Number(item.maintenanceFee ?? 0)
-  );
-}
 // 숫자를 천 단위로 구분하여 문자열로 반환
 function formatCompactNumber(value) {
   const numericValue = Number(value);
@@ -1541,6 +1544,26 @@ function goBack() {
   font-weight: 800;
   line-height: 1.45;
 }
+.ai-summary-box {
+  margin-top: 12px;
+  padding: 12px 13px;
+  background: #fff8df;
+  border: 1px solid #f1dfa7;
+  border-radius: 10px;
+}
+.ai-summary-label {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--kb-gold);
+  font-size: 11px;
+  font-weight: 800;
+}
+.ai-summary-box p {
+  margin: 0;
+  color: #3f3b34;
+  font-size: 13px;
+  line-height: 1.6;
+}
 .ai-p:last-child {
   margin-bottom: 0;
 }
@@ -1638,6 +1661,12 @@ function goBack() {
   font-size: 9.5px;
   color: #9b978f;
 }
+.score-guidance {
+  margin: 6px 0 0;
+  color: #9b978f;
+  font-size: 10.5px;
+  line-height: 1.45;
+}
 .metric-chart-navigation {
   margin-top: 16px;
 }
@@ -1699,6 +1728,12 @@ function goBack() {
   font-size: 11px;
   font-weight: 800;
   color: #36322c;
+}
+.metric-bar-score.unevaluated {
+  top: -18px;
+  width: max-content;
+  color: #9b978f;
+  font-size: 9px;
 }
 .metric-raw-label {
   display: block;

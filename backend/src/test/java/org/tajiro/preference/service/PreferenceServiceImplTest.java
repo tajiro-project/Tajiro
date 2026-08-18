@@ -10,6 +10,7 @@ import org.tajiro.preference.dto.PreferenceDTO;
 import org.tajiro.preference.mapper.PreferenceMapper;
 import org.tajiro.property.domain.PropertyVO;
 import org.tajiro.property.domain.PropertyValueAnalysisResultVO;
+import org.tajiro.property.dto.PropertyComparisonScoreDTO;
 import org.tajiro.property.service.PropertyScoreService;
 
 import java.math.BigDecimal;
@@ -156,6 +157,15 @@ class PreferenceServiceImplTest {
         public Map<Long, PropertyValueAnalysisResultVO> saveScores(
                 Long userId,
                 List<PropertyVO> properties) {
+            return Collections.emptyMap();
+        }
+
+        @Override
+        public Map<Long, PropertyComparisonScoreDTO> calculateComparisonScores(
+                Long userId,
+                List<Long> propertyIds,
+                java.math.BigDecimal workplaceLatitude,
+                java.math.BigDecimal workplaceLongitude) {
             return Collections.emptyMap();
         }
 
