@@ -230,11 +230,29 @@ function moneyLabel(value) {
   if (manwon >= 10000) {
     const eok = Math.floor(manwon / 10000);
     const rest = manwon % 10000;
-    return rest === 0 ? `${eok}억` : `${eok}억 ${rest}`;
+    return rest === 0
+      ? `${eok}억`
+      : `${eok}억 ${rest.toLocaleString('ko-KR')}만`;
   }
 
-  return String(manwon);
+  return `${manwon.toLocaleString('ko-KR')}만`;
 }
+function formatKoreanMoneyText(text) {
+  if (!text) return text;
+
+  return String(text).replace(
+    /(\d{1,3}(?:,\d{3})+|\d+)\uB9CC/g,
+    (match, amountText, offset, source) => {
+      const prefix = source.slice(Math.max(0, offset - 3), offset);
+      if (prefix.includes('\uC5B5')) return match;
+
+      const manwon = Number(String(amountText).replaceAll(',', ''));
+      return manwon >= 10000 ? moneyLabel(manwon) : match;
+    },
+  );
+}
+
+
 // 리포트 저장 날짜 이후 매물 정보가 업데이트됐는지 확인
 function hasUpdatedProperty(report) {
   const savedAt = new Date(report.createdAt);
@@ -261,12 +279,15 @@ function recommendedOf(r) {
   return r.aiRecommendedPropertyId ?? '';
 }
 function summaryOf(r) {
-  return firstText(
-    r.aiSummary,
-    r.aiPropertySummaryText,
-    'AI 코칭을 아직 불러오지 못했어요.',
+  return formatKoreanMoneyText(
+    firstText(
+      r.aiSummary,
+      r.aiPropertySummaryText,
+      'AI 코칭을 아직 불러오지 못했어요.',
+    ),
   );
 }
+
 
 function firstText(...values) {
   return values.find((value) => String(value ?? '').trim()) ?? '';
