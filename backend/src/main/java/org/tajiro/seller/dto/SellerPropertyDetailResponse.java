@@ -9,6 +9,7 @@ import org.tajiro.property.domain.PropertyVO;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
@@ -35,6 +36,8 @@ public class SellerPropertyDetailResponse {
     private LocalDate moveInDate;
     private LocalDate availableDate;
     private String address;
+    private Boolean transactionStatus;
+    private LocalDateTime updateDate;
     private String roadAddress;
     private String jibunAddress;
     private String buildingName;
@@ -65,6 +68,8 @@ public class SellerPropertyDetailResponse {
                 .moveInDate(vo.getMoveInDate())
                 .availableDate(vo.getAvailableDate())
                 .address(vo.getAddress())
+                .transactionStatus(vo.getTransactionStatus())
+                .updateDate(vo.getUpdateDate())
                 .roadAddress(building == null ? null : building.getRoadAddress())
                 .jibunAddress(building == null ? null : building.getJibunAddress())
                 .buildingName(building == null ? null : building.getBldNm())

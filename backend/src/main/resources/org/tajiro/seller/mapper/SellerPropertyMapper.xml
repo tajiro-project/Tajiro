@@ -24,6 +24,8 @@
         <result property="moveInDate" column="move_in_date"/>
         <result property="availableDate" column="available_date"/>
         <result property="address" column="address"/>
+        <result property="transactionStatus" column="transaction_status"/>
+        <result property="updateDate" column="update_date"/>
         <association property="buildingVO" javaType="BuildingVO">
             <id property="id" column="building_id"/>
             <result property="roadAddress" column="road_address"/>
@@ -56,6 +58,8 @@
             p.move_in_date,
             p.available_date,
             p.address,
+            p.transaction_status,
+            p.update_date,
             b.road_address,
             b.jibun_address,
             b.bld_nm AS building_name,
