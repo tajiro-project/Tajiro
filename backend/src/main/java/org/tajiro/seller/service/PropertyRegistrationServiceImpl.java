@@ -15,7 +15,7 @@ import org.tajiro.seller.event.PropertyRegisteredEvent;
 import org.tajiro.seller.mapper.PropertyRegistrationMapper;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -77,7 +77,7 @@ public class PropertyRegistrationServiceImpl implements PropertyRegistrationServ
                 .propertyDescription(trimToNull(request.getPropertyDescription()))
                 .availableDate(request.getAvailableDate())
                 .moveInDate(request.getMoveInDate())
-                .updateDate(LocalDate.now())
+                .updateDate(LocalDateTime.now())
                 .discussionStatus(Boolean.TRUE.equals(request.getDiscussionStatus()))
                 .dong(trimToNull(request.getDong()))
                 .build();

@@ -10,4 +10,6 @@ public interface SellerPropertyService {
             Long sellerId, int page, int size, String status);
 
     void changeStatus(Long sellerId, Long propertyId, boolean transactionStatus);
+
+    void deleteProperty(Long sellerId, Long PropertyId);
 }

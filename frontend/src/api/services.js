@@ -151,6 +151,7 @@ export const sellerApi = {
         transactionStatus,
       })
     ).data,
+  remove: async (id) => (await client.delete(`/seller/properties/${id}`)).data,
 };
 
 // ---------- location ----------
