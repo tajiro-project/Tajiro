@@ -1,6 +1,10 @@
 <template>
   <div class="benefit">
-    <simplebar class="scroll-area" :class="{ dimmed: needProfile }">
+    <simplebar
+      ref="scrollArea"
+      class="scroll-area"
+      :class="{ dimmed: needProfile }"
+    >
       <!-- 탭 -->
       <div class="tabs">
         <button
@@ -255,13 +259,17 @@
 import {
   computed,
   nextTick,
+  onActivated,
   onBeforeUnmount,
   onMounted,
   ref,
   watch,
 } from 'vue';
+import { onBeforeRouteLeave } from 'vue-router';
 import simplebar from 'simplebar-vue';
 import { financeApi, policyApi, userApi } from '@/api/services';
+
+defineOptions({ name: 'BenefitMatchView' });
 
 const props = defineProps({
   initialTab: { type: String, default: 'policy' },
@@ -276,12 +284,15 @@ const filtersExpanded = ref(false);
 const filterDropdownRef = ref(null);
 const filterToggleRef = ref(null);
 const targetFiltersRef = ref(null);
+const scrollArea = ref(null);
 const filterDropdownStyle = ref({});
 const policies = ref([]);
 const products = ref([]);
 const needProfile = ref(false);
 const currentPage = ref(1);
 const pageSize = 5;
+let restoreScrollOnActivate = false;
+let savedScrollTop = 0;
 const financeFilterGroups = [
   {
     key: 'transaction',
@@ -344,6 +355,28 @@ onBeforeUnmount(() => {
   document.removeEventListener('pointerdown', closeFilterOnOutsideClick);
   window.removeEventListener('resize', updateFilterDropdownPosition);
 });
+
+onBeforeRouteLeave((to) => {
+  const isBenefitDetail =
+    to.name === 'policy-detail' || to.name === 'financial-product-detail';
+
+  restoreScrollOnActivate = isBenefitDetail;
+  savedScrollTop = isBenefitDetail
+    ? (getScrollElement()?.scrollTop ?? 0)
+    : 0;
+});
+
+onActivated(async () => {
+  if (!restoreScrollOnActivate) return;
+
+  restoreScrollOnActivate = false;
+  await nextTick();
+  getScrollElement()?.scrollTo({ top: savedScrollTop, behavior: 'auto' });
+});
+
+function getScrollElement() {
+  return scrollArea.value?.scrollElement ?? scrollArea.value?.$el ?? null;
+}
 
 // 키워드 프론트 필터링 (기능명세 43)
 const filteredPolicies = computed(() =>
