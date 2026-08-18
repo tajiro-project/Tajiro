@@ -397,9 +397,7 @@
         >
           <div class="demo-complete-card">
             <p class="demo-complete-title">다시보기를 완료했어요</p>
-            <p class="demo-complete-text">
-              4단계를 모두 둘러봤어요. 더 둘러보시겠어요, 마이페이지로 돌아가시겠어요?
-            </p>
+            <p class="demo-complete-text">마이페이지로 돌아가시겠어요?</p>
             <div class="demo-complete-actions">
               <button
                 class="demo-complete-stay"
