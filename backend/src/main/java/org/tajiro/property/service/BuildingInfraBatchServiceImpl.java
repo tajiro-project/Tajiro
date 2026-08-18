@@ -54,15 +54,25 @@ public class BuildingInfraBatchServiceImpl implements BuildingInfraBatchService 
             InfraMapper mapper = session.getMapper(InfraMapper.class);
             b = mapper.selectBuildingById(buildingId);
         }
-        if (b != null) {
-            executeAggregationForBuilding(b);
+        if (b == null) {
+            throw new IllegalArgumentException(
+                    "존재하지 않는 buildingId입니다: " + buildingId
+            );
         }
+        executeAggregationForBuilding(b);
     }
 
     private void executeAggregationForBuilding(BuildingVO b) {
         if (b.getLatitude() == null || b.getLongitude() == null) {
-            log.warn("건물 ID {} 의 위경도 좌표가 없습니다.", b.getId());
-            return;
+            throw new IllegalStateException(
+                    "건물의 위경도 좌표가 없습니다. buildingId=" + b.getId()
+            );
+        }
+        if (BigDecimal.ZERO.compareTo(b.getLatitude()) == 0
+                || BigDecimal.ZERO.compareTo(b.getLongitude()) == 0) {
+            throw new IllegalStateException(
+                    "건물의 위경도 좌표가 0입니다. buildingId=" + b.getId()
+            );
         }
 
         double lat = b.getLatitude().doubleValue();
@@ -87,21 +97,34 @@ public class BuildingInfraBatchServiceImpl implements BuildingInfraBatchService 
                 .map(CompletableFuture::join)
                 .collect(Collectors.toList());
 
+        Optional<CategoryResult> failedResult = results.stream()
+                .filter(result -> result.exception != null)
+                .findFirst();
+        if (failedResult.isPresent()) {
+            CategoryResult failed = failedResult.get();
+            throw new IllegalStateException(
+                    "인프라 카테고리 수집에 실패했습니다. buildingId="
+                            + b.getId()
+                            + ", category="
+                            + failed.item.getKey(),
+                    failed.exception
+            );
+        }
+
         // DB 작업 모아서 처리
         try (SqlSession session = sqlSessionFactory.openSession(false)) {
             InfraMapper mapper = session.getMapper(InfraMapper.class);
 
             for (CategoryResult res : results) {
-                if (res.exception != null) {
-                    log.error("건물 ID {} 의 카테고리 [{}] 수집 중 오류 발생", b.getId(), res.item.getKey(), res.exception);
-                    continue;
-                }
                 saveInfrastructure(mapper, b.getId(), res.item.getKey(), res.result.count, res.result.docs, res.result.saturated);
             }
 
             session.commit();
         } catch (Exception e) {
-            log.error("건물 ID {} 인프라 수집 처리 중 오류 발생", b.getId(), e);
+            throw new IllegalStateException(
+                    "인프라 저장에 실패했습니다. buildingId=" + b.getId(),
+                    e
+            );
         }
     }
 
