@@ -95,7 +95,7 @@
       <section class="card">
         <p class="card-head">매물 정보</p>
         <div class="tag-row">
-          <span class="tag">{{ p.propertyType }}</span>
+          <span class="tag yellow">{{ p.propertyType }}</span>
           <span class="tag yellow">{{ p.tradeType }}</span>
         </div>
         <dl class="info-list">
@@ -164,10 +164,10 @@
               :size="14"
               color="#8a8d8f"
             />
-            통근
+            통근 거리
           </p>
           <p class="mini-value">
-            {{ formatCommuteTime(p.workplaceDistanceMeters) }}
+            {{ formatDistance(p.workplaceDistanceMeters) }}
           </p>
         </div>
       </div>
@@ -791,6 +791,21 @@ const formatKoreanMoney = (value) => {
   } else {
     return `${man}만원`;
   }
+};
+
+// m단위 거리를 입력받아 1,000m 이상일 때 km로 변환하는 함수
+const formatDistance = (meters) => {
+  if (meters === null || meters === undefined || isNaN(meters)) return '0m';
+
+  const num = Number(meters);
+
+  if (num >= 1000) {
+    // 1000m 이상인 경우 km 단위 변경 (소수점 첫째 자리까지 표시)
+    return `${(num / 1000).toFixed(1)} km`;
+  }
+
+  // 1000m 미만인 경우 m 단위로 표시
+  return `${num} m`;
 };
 
 const formattedPrice = computed(() => {
