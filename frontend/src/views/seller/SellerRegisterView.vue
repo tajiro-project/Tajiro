@@ -248,9 +248,12 @@
       </div>
 
       <div v-if="form.tradeType === '월세'" class="field">
-        <label class="section-title"
-          >보증금(만원)<span class="req">*</span></label
-        >
+        <label class="section-title">
+          보증금(만원)<span class="req">*</span>
+          <span v-if="moneyHint(form.deposit)" class="money-hint">
+            {{ moneyHint(form.deposit) }}
+          </span>
+        </label>
         <input
           v-model="form.deposit"
           class="field-input"
@@ -260,9 +263,12 @@
         />
       </div>
       <div v-if="form.tradeType === '월세'" class="field">
-        <label class="section-title"
-          >월세(만원)<span class="req">*</span></label
-        >
+        <label class="section-title">
+          월세(만원)<span class="req">*</span>
+          <span v-if="moneyHint(form.monthlyRent)" class="money-hint">
+            {{ moneyHint(form.monthlyRent) }}
+          </span>
+        </label>
         <input
           v-model="form.monthlyRent"
           class="field-input"
@@ -273,9 +279,12 @@
       </div>
 
       <div v-if="form.tradeType === '전세'" class="field">
-        <label class="section-title"
-          >전세금(만원)<span class="req">*</span></label
-        >
+        <label class="section-title">
+          전세금(만원)<span class="req">*</span>
+          <span v-if="moneyHint(form.deposit)" class="money-hint">
+            {{ moneyHint(form.deposit) }}
+          </span>
+        </label>
         <input
           v-model="form.deposit"
           class="field-input"
@@ -286,9 +295,12 @@
       </div>
 
       <div v-if="form.tradeType === '매매'" class="field">
-        <label class="section-title"
-          >매매가(만원)<span class="req">*</span></label
-        >
+        <label class="section-title">
+          매매가(만원)<span class="req">*</span>
+          <span v-if="moneyHint(form.deposit)" class="money-hint">
+            {{ moneyHint(form.deposit) }}
+          </span>
+        </label>
         <input
           v-model="form.deposit"
           class="field-input"
@@ -299,7 +311,12 @@
       </div>
 
       <div class="field">
-        <label class="section-title">관리비(만원)</label>
+        <label class="section-title">
+          관리비(만원)
+          <span v-if="moneyHint(form.maintenanceFee)" class="money-hint">
+            {{ moneyHint(form.maintenanceFee) }}
+          </span>
+        </label>
         <input
           v-model="form.maintenanceFee"
           class="field-input"
@@ -612,6 +629,25 @@ async function onNext() {
     isSubmitting.value = false;
   }
 }
+
+function moneyHint(manwon) {
+  const value = Number(manwon);
+  if (
+    manwon === '' ||
+    manwon == null ||
+    !Number.isFinite(value) ||
+    value <= 0
+  ) {
+    return '';
+  }
+
+  const eok = Math.floor(value / 10000);
+  const rest = value % 10000;
+
+  if (eok === 0) return `${rest.toLocaleString()}만원`;
+  if (rest === 0) return `${eok}억원`;
+  return `${eok}억 ${rest.toLocaleString()}만원`;
+}
 </script>
 
 <style scoped>
@@ -856,5 +892,11 @@ async function onNext() {
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
+}
+.money-hint {
+  margin-left: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--kb-silver);
 }
 </style>
