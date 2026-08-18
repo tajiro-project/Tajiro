@@ -81,4 +81,12 @@ public class SellerPropertyServiceImpl implements SellerPropertyService {
         }
     }
 
+    @Override
+    @Transactional
+    public void deleteProperty(Long sellerId, Long propertyId) {
+        if (mapper.deleteProperty(sellerId, propertyId) == 0) {
+            throw new BusinessException(ErrorCode.PROPERTY_NOT_FOUND);
+        }
+    }
+
 }

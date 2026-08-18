@@ -117,6 +117,7 @@ export const comparisonApi = {
           workplaceLng: workplace?.lng,
           refreshMarketScore,
         },
+        timeout: 35000,
       })
     ).data;
   },
@@ -151,6 +152,7 @@ export const sellerApi = {
         transactionStatus,
       })
     ).data,
+  remove: async (id) => (await client.delete(`/seller/properties/${id}`)).data,
 };
 
 // ---------- location ----------

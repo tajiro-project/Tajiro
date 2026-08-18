@@ -205,6 +205,9 @@
         2~3개를 담으면 선택한 가치관 기준으로 비교 코칭을 해드려요.
       </p>
 
+    </simplebar>
+
+    <div class="compare-actions">
       <button
         class="btn-cta"
         type="button"
@@ -217,7 +220,7 @@
             : `비교 시작 (${items.length}개)`
         }}
       </button>
-    </simplebar>
+    </div>
 
     <KakaoLocation
       :open="isLocationPickerOpen"
@@ -574,8 +577,21 @@ function formatTrade(item) {
 
 function formatMoney(value) {
   if (value === null || value === undefined || value === '') return '-';
-  return `${Number(value).toLocaleString('ko-KR')}만`;
+
+  const manwon = Number(value);
+  if (!Number.isFinite(manwon)) return '-';
+
+  if (manwon >= 10000) {
+    const eok = Math.floor(manwon / 10000);
+    const rest = manwon % 10000;
+    return rest === 0
+      ? `${eok}억`
+      : `${eok}억 ${rest.toLocaleString('ko-KR')}만`;
+  }
+
+  return `${manwon.toLocaleString('ko-KR')}만`;
 }
+
 
 function formatArea(areaM2) {
   if (!areaM2) return '면적 정보 없음';
@@ -1012,7 +1028,11 @@ function formatFloorInfo(floorInfo) {
   margin-top: 2px;
 }
 .btn-cta {
-  margin-top: 16px;
   color: var(--kb-dark-gray);
+}
+.compare-actions {
+  flex-shrink: 0;
+  padding: 12px 16px 16px;
+  background: transparent;
 }
 </style>

@@ -7,13 +7,13 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class PropertyRegistrationVO {
-
     private Long id;
     private Long sellerId;
     private Long buildingId;
@@ -34,7 +34,7 @@ public class PropertyRegistrationVO {
     private String propertyDescription;
     private LocalDate availableDate;
     private LocalDate moveInDate;
-    private LocalDate updateDate;
+    private LocalDateTime updateDate;
     private Boolean discussionStatus;
     private String dong;
 }

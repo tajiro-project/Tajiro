@@ -69,8 +69,19 @@
           @click="financeFiltersExpanded = !financeFiltersExpanded"
         >
           <span class="finance-filter-toggle-title">
-            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-              <path d="M2 4h12M4 8h8M6 12h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+            <svg
+              width="15"
+              height="15"
+              viewBox="0 0 16 16"
+              fill="none"
+              aria-hidden="true"
+            >
+              <path
+                d="M2 4h12M4 8h8M6 12h4"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+              />
             </svg>
             필터
             <span v-if="activeFinanceFilterCount" class="filter-count">
@@ -98,8 +109,12 @@
                 :key="option.value"
                 type="button"
                 class="finance-filter-chip"
-                :class="{ on: selectedFinanceFilters[group.key] === option.value }"
-                :aria-pressed="selectedFinanceFilters[group.key] === option.value"
+                :class="{
+                  on: selectedFinanceFilters[group.key] === option.value,
+                }"
+                :aria-pressed="
+                  selectedFinanceFilters[group.key] === option.value
+                "
                 @click="toggleFinanceFilter(group.key, option.value)"
               >
                 <span class="chip-check" aria-hidden="true">✓</span>
@@ -134,10 +149,7 @@
               <span v-if="formatRateRange(f)" class="rate-range">
                 연 {{ formatRateRange(f) }}
               </span>
-              <span
-                v-if="formatLoanLimit(f.loanLimit)"
-                class="loan-limit"
-              >
+              <span v-if="formatLoanLimit(f.loanLimit)" class="loan-limit">
                 {{ formatLoanLimit(f.loanLimit) }}
               </span>
             </p>
@@ -266,9 +278,9 @@ import {
   ref,
   watch,
 } from 'vue';
+import { onBeforeRouteLeave } from 'vue-router';
 import simplebar from 'simplebar-vue';
 import { financeApi, policyApi, userApi } from '@/api/services';
-import { onBeforeRouteLeave } from 'vue-router';
 
 defineOptions({ name: 'BenefitMatchView' });
 
@@ -315,8 +327,8 @@ const financeFilterGroups = [
     ],
   },
 ];
-const activeFinanceFilterCount = computed(() =>
-  Object.values(selectedFinanceFilters.value).filter(Boolean).length,
+const activeFinanceFilterCount = computed(
+  () => Object.values(selectedFinanceFilters.value).filter(Boolean).length,
 );
 const targetFilters = [
   { code: 'HOUSING', label: '주거' },
@@ -361,6 +373,9 @@ onActivated(async () => {
   }
 
   await nextTick();
+  scrollAreaRef.value?.recalculate?.();
+  await nextFrame();
+  await nextFrame();
   scrollTo(savedScrollTop.value);
 });
 
@@ -373,10 +388,9 @@ onDeactivated(() => {
 });
 
 onBeforeRouteLeave((to) => {
-  const isDetailRoute = [
-    'policy-detail',
-    'financial-product-detail',
-  ].includes(to.name);
+  const isDetailRoute = ['policy-detail', 'financial-product-detail'].includes(
+    to.name,
+  );
 
   if (isDetailRoute) {
     savedScrollTop.value = getScrollElement()?.scrollTop ?? 0;
@@ -408,6 +422,10 @@ function getScrollElement() {
 
 function scrollTo(top) {
   getScrollElement()?.scrollTo({ top, behavior: 'auto' });
+}
+
+function nextFrame() {
+  return new Promise((resolve) => requestAnimationFrame(resolve));
 }
 
 function resetListState() {
@@ -499,9 +517,8 @@ function resetFinanceFilters() {
 function matchesFinanceFilter(product, group, selected) {
   if (!selected) return true;
 
-  const explicitValue = group === 'transaction'
-    ? product.tradeType
-    : product.productType;
+  const explicitValue =
+    group === 'transaction' ? product.tradeType : product.productType;
 
   return String(explicitValue ?? '').trim() === selected;
 }
@@ -536,9 +553,8 @@ function formatRateRange(product) {
 function formatLoanLimit(value) {
   const loanLimit = String(value ?? '');
   const parenthesisIndex = loanLimit.indexOf('(');
-  return (parenthesisIndex === -1
-    ? loanLimit
-    : loanLimit.slice(0, parenthesisIndex)
+  return (
+    parenthesisIndex === -1 ? loanLimit : loanLimit.slice(0, parenthesisIndex)
   ).trim();
 }
 
@@ -575,9 +591,13 @@ watch(
   },
 );
 
-watch([tab, keyword, selectedTargetCodes, selectedFinanceFilters], () => {
-  currentPage.value = 1;
-}, { deep: true });
+watch(
+  [tab, keyword, selectedTargetCodes, selectedFinanceFilters],
+  () => {
+    currentPage.value = 1;
+  },
+  { deep: true },
+);
 
 watch(totalPages, (total) => {
   if (currentPage.value > total) {
