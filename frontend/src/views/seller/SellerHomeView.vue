@@ -74,7 +74,16 @@
 
         <ul v-if="recent.length" class="recent">
           <li v-for="item in recent" :key="item.propertyId">
-          <div class="recent-card">
+            <button
+              class="recent-card"
+              type="button"
+              @click="
+                router.push({
+                  path: `/seller/properties/${item.propertyId}`,
+                  query: { from: 'home' },
+                })
+              "
+            >
               <span class="thumb">
                 <img
                   v-if="item.imageUrl"
@@ -118,7 +127,12 @@
                   >찜 {{ item.favoriteCount ?? 0 }}</span
                 >
               </span>
-          </div>
+              <ChevronRight
+                class="detail-chevron"
+                :size="20"
+                aria-hidden="true"
+              />
+            </button>
           </li>
         </ul>
         <p v-else class="empty">아직 등록한 매물이 없어요</p>
@@ -131,6 +145,7 @@
 import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import simplebar from 'simplebar-vue';
+import { ChevronRight } from 'lucide-vue-next';
 import client, { withMock } from '@/api/client';
 import { sellerApi } from '@/api/services';
 import { priceLabel, statusLabel, titleOf } from '@/utils/sellerProperty';
@@ -412,6 +427,12 @@ async function handleLogout() {
   border-radius: var(--radius-card);
   box-shadow: var(--shadow-card);
   text-align: left;
+  cursor: pointer;
+}
+
+.detail-chevron {
+  flex-shrink: 0;
+  color: #b4b0a8;
 }
 
 .thumb {

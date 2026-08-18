@@ -16,7 +16,16 @@
     <simplebar class="content">
       <ul v-if="items.length" class="cards">
         <li v-for="item in items" :key="item.propertyId" class="card">
-          <div class="card-body" :class="{ dimmed: !item.transactionStatus }">
+          <div
+            class="card-body"
+            :class="{ dimmed: !item.transactionStatus }"
+            @click="
+              router.push({
+                path: `/seller/properties/${item.propertyId}`,
+                query: { from: 'list' },
+              })
+            "
+          >
             <span class="thumb">
               <img
                 v-if="item.imageUrl"
@@ -59,6 +68,7 @@
               <p class="card-price">{{ priceLabel(item) }}</p>
               <p class="card-meta">{{ subMeta(item) }}</p>
             </div>
+            <ChevronRight class="detail-chevron" :size="20" aria-hidden="true" />
           </div>
 
           <div class="card-actions">
@@ -137,6 +147,7 @@
 import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import simplebar from 'simplebar-vue';
+import { ChevronRight } from 'lucide-vue-next';
 import { sellerApi } from '@/api/services';
 import { getApiErrorMessage } from '@/api/client';
 import {
@@ -320,6 +331,7 @@ async function removeProperty(item) {
   align-items: center;
   gap: 12px;
   padding: 13px;
+  cursor: pointer;
 }
 
 .card-body.dimmed {
@@ -351,6 +363,11 @@ async function removeProperty(item) {
   flex-direction: column;
   align-items: flex-start;
   gap: 3px;
+}
+
+.detail-chevron {
+  flex-shrink: 0;
+  color: #b4b0a8;
 }
 
 .status-badge {
