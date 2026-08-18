@@ -7,11 +7,9 @@ export function manwon(value) {
   const eok = Math.floor(number / 10000);
   const rest = number % 10000;
 
-  if (eok > 0 && rest > 0) {
-    return `${eok.toLocaleString('ko-KR')}억 ${rest.toLocaleString('ko-KR')}만원`;
-  }
-  if (eok > 0) return `${eok.toLocaleString('ko-KR')}억`;
-  return `${rest.toLocaleString('ko-KR')}만원`;
+  if (eok === 0) return `${rest.toLocaleString('ko-KR')}`;
+  if (rest === 0) return `${eok}억`;
+  return `${eok}억 ${rest.toLocaleString('ko-KR')}`;
 }
 
 export function priceLabel(item) {

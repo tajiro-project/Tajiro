@@ -35,6 +35,7 @@ public class KakaoLocalClient {
             "https://dapi.kakao.com/v2/local/geo/coord2address.json";
 
     private static final int SEARCH_SIZE = 10;
+    private static final int PLACE_SEARCH_SIZE = 15;
     private static final int MAX_RETRY = 3;
 
     private final RestTemplate restTemplate;
@@ -63,6 +64,39 @@ public class KakaoLocalClient {
     public AddressResolveResult geocode(String address) {
         List<AddressResolveResult> results = searchAddress(address);
         return results.isEmpty() ? null : results.get(0);
+    }
+
+    public List<AddressResolveResult> searchPlaces(String query) {
+        if (!hasText(restKey)) {
+            throw new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR);
+        }
+        if (!hasText(query)) {
+            return Collections.emptyList();
+        }
+
+        JsonNode root = call(UriComponentsBuilder.fromHttpUrl(KEYWORD_URL)
+                .queryParam("query", query)
+                .queryParam("size", PLACE_SEARCH_SIZE)
+                .build()
+                .encode(StandardCharsets.UTF_8)
+                .toUri());
+
+        List<AddressResolveResult> results = new ArrayList<>();
+        for (JsonNode doc : root.path("documents")) {
+            BigDecimal lng = decimal(doc.path("x").asText(null));
+            BigDecimal lat = decimal(doc.path("y").asText(null));
+            if (lat == null || lng == null) {
+                continue;
+            }
+            results.add(AddressResolveResult.base()
+                    .roadAddress(text(doc.path("road_address_name")))
+                    .jibunAddress(text(doc.path("address_name")))
+                    .buildingName(text(doc.path("place_name")))
+                    .lat(lat)
+                    .lng(lng)
+                    .build());
+        }
+        return results;
     }
 
     private List<AddressResolveResult> searchByAddress(String query) {

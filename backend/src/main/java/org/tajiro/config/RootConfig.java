@@ -15,11 +15,13 @@ import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.scheduling.annotation.EnableScheduling;
 
 import javax.sql.DataSource;
+import java.util.concurrent.Executor;
 
 /**
  * 루트 컨텍스트 - DataSource, MyBatis, 트랜잭션, 서비스 계층 스캔.
@@ -31,6 +33,7 @@ import javax.sql.DataSource;
 @PropertySource("classpath:application.properties")
 @EnableTransactionManagement
 @EnableScheduling
+@EnableAsync
 @MapperScan(basePackages = {
         "org.tajiro.auth.mapper",
         "org.tajiro.terms.mapper",
@@ -65,7 +68,11 @@ import javax.sql.DataSource;
         "org.tajiro.favorite.service",
         "org.tajiro.dashboard.service",
         "org.tajiro.terms.service",
-        "org.tajiro.market"
+        "org.tajiro.market",
+        "org.tajiro.policy.service",
+        "org.tajiro.policy.batch",
+        "org.tajiro.policy.client",
+        "org.tajiro.policy.scheduler"
 })
 public class RootConfig {
 
@@ -122,5 +129,16 @@ public class RootConfig {
         requestFactory.setConnectTimeout(5_000);
         requestFactory.setReadTimeout(30_000);
         return new RestTemplate(requestFactory);
+    }
+
+    @Bean(name = "propertyAggregationExecutor")
+    public Executor propertyAggregationExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(2);
+        executor.setMaxPoolSize(4);
+        executor.setQueueCapacity(50);
+        executor.setThreadNamePrefix("property-aggregation-");
+        executor.initialize();
+        return executor;
     }
 }

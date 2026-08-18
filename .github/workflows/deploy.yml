@@ -34,7 +34,7 @@ jobs:
           java-version: '17'
 
       # ==========================================
-      # 3. Node.js 설정
+      # 3. Node.js 20 설정
       # ==========================================
       - name: Set up Node.js
         uses: actions/setup-node@v6
@@ -60,6 +60,8 @@ jobs:
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           KAKAO_REST_API_KEY: ${{ secrets.KAKAO_REST_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          MARKET_API_SERVICE_KEY: ${{ secrets.MARKET_API_SERVICE_KEY }}
+          YOUTH_POLICY_API_KEY: ${{ secrets.YOUTH_POLICY_API_KEY }}
         run: |
           umask 077
 
@@ -67,25 +69,74 @@ jobs:
           app.name=Tajiro
           app.api-base-package=org.tajiro
 
+          # ==========================================
+          # Database
+          # ==========================================
           db.driver-class-name=net.sf.log4jdbc.sql.jdbcapi.DriverSpy
           db.url=$DB_URL
           db.username=$DB_USERNAME
           db.password=$DB_PASSWORD
 
+          # ==========================================
+          # JWT
+          # ==========================================
           jwt.secret=$JWT_SECRET
           jwt.access-token-validity-seconds=3600
 
+          # ==========================================
+          # Kakao
+          # ==========================================
           kakao.rest-api-key=$KAKAO_REST_API_KEY
           kakao.local-base-url=https://dapi.kakao.com
 
+          # ==========================================
+          # AI
+          # ==========================================
           ai.api-key=$OPENAI_API_KEY
           ai.model=gpt-4o-mini
           ai.api-url=https://api.openai.com/v1/embeddings
           ai.embedding-model=text-embedding-3-small
 
+          # ==========================================
+          # Safety Batch
+          # ==========================================
           safety.aggregation.batch-size=20
           safety.aggregation.fixed-delay-ms=60000
           safety.aggregation.initial-delay-ms=10000
+
+          # ==========================================
+          # Market API
+          # ==========================================
+          market.api.service-key=$MARKET_API_SERVICE_KEY
+          market.api.service-key-encoded=false
+          market.api.num-of-rows=1000
+
+          market.rent-conversion-rate=0.05
+
+          market.sync.enabled=true
+          market.sync.history-months=24
+          market.sync.refresh-months=3
+          market.sync.initial-delay-ms=60000
+          market.sync.fixed-delay-ms=86400000
+
+          # ==========================================
+          # Youth Policy API
+          # ==========================================
+          youth-policy.api-url=https://www.youthcenter.go.kr/go/ythip/getPlcy
+          youth-policy.api-key=$YOUTH_POLICY_API_KEY
+          youth-policy.page-size=3000
+
+          # ==========================================
+          # Policy Batch
+          # ==========================================
+          policy.sync.enabled=true
+
+          # 매일 오전 4시 10분
+          policy.sync.cron=0 10 4 * * *
+          policy.sync.zone=Asia/Seoul
+
+          # LLM 한 번에 요약할 정책 수
+          policy.summary.batch-size=20
           EOF
 
       # ==========================================
@@ -190,7 +241,7 @@ jobs:
           echo "Tajiro deployment successful"
 
       # ==========================================
-      # 12. Actions 작업공간의 Secret 파일 제거
+      # 12. Secret 파일 제거
       # ==========================================
       - name: Cleanup generated secret files
         if: always()

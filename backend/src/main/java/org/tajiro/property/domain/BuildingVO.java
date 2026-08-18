@@ -23,4 +23,5 @@ public class BuildingVO {
     private BigDecimal latitude;   // DB: latitude (decimal 10,7)
     private BigDecimal longitude;  // DB: longitude (decimal 10,7)
     private String infraStatus;    // DB: infra_status
+    private String safetyStatus;   // DB: safety_status
 }
