@@ -68,7 +68,15 @@ const isLastStep = computed(() => state.stepIndex === props.steps.length - 1);
 const showReturnPrompt = ref(false);
 
 watch(visible, (isVisible, wasVisible) => {
-  if (wasVisible && !isVisible && props.returnTo && route.query.demo === '1') {
+  if (!wasVisible || isVisible) return;
+
+  // 투어 마지막 스텝이 화면 아래쪽에 있으면 scrollIntoView로 그쪽까지 내려가 있는 채로
+  // 끝나버린다 — 투어가 끝나면 원래 보던 위치(맨 위)로 되돌려준다.
+  document.querySelectorAll('.simplebar-content-wrapper').forEach((el) => {
+    el.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  if (props.returnTo && route.query.demo === '1') {
     showReturnPrompt.value = true;
   }
 });
