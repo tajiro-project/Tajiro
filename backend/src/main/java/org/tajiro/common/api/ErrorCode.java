@@ -31,6 +31,10 @@ public enum ErrorCode {
     EMAIL_DUPLICATE(409, "AUTH_409", "이미 사용 중인 이메일입니다."),
     REQUIRED_TERMS_NOT_AGREED(400, "AUTH_400", "필수 약관에 동의해야 합니다."),
 
+    // --- 비교함 ---
+    COMPARE_DUPLICATE(409, "COMPARE_409_1", "이미 비교함에 담긴 매물입니다."),
+    COMPARE_LIMIT_EXCEEDED(409, "COMPARE_409_2", "비교함에는 매물을 최대 3개까지 담을 수 있습니다."),
+
     // --- 비교 리포트 ---
     COMPARISON_REPORT_NOT_FOUND(404, "REPORT_404", "존재하지 않는 비교 리포트입니다."),
 

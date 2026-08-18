@@ -2,10 +2,8 @@ package org.tajiro.comparison.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DuplicateKeyException;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 import org.tajiro.common.api.ErrorCode;
 import org.tajiro.comparison.dto.ComparePropertyDTO;
 import org.tajiro.comparison.dto.ComparisonMetricDTO;
@@ -42,21 +40,21 @@ public class ComparisonServiceImpl implements ComparisonService {
     @Transactional
     public void addCompareProperty(Long userId, Long propertyId) {
         if (!comparisonMapper.existsProperty(propertyId)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "존재하지 않는 매물입니다.");
+            throw new BusinessException(ErrorCode.PROPERTY_NOT_FOUND);
         }
 
         if (comparisonMapper.existsByUserIdAndPropertyId(userId, propertyId)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 비교함에 담긴 매물입니다.");
+            throw new BusinessException(ErrorCode.COMPARE_DUPLICATE);
         }
 
         if (comparisonMapper.countByUserId(userId) >= MAX_COMPARE_PROPERTIES) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "비교함에는 매물을 최대 3개까지 담을 수 있습니다.");
+            throw new BusinessException(ErrorCode.COMPARE_LIMIT_EXCEEDED);
         }
 
         try {
             comparisonMapper.insert(userId, propertyId);
         } catch (DuplicateKeyException e) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 비교함에 담긴 매물입니다.", e);
+            throw new BusinessException(ErrorCode.COMPARE_DUPLICATE);
         }
     }
 
