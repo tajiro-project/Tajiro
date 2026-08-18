@@ -3,6 +3,14 @@
     <p v-if="isDemoMode" class="demo-banner">
       예시 화면이에요 · 실제 내 가치관 설정이 아니에요
     </p>
+    <button
+      v-if="isDemoMode"
+      class="demo-corner-exit"
+      type="button"
+      @click="goToMypage"
+    >
+      마이페이지로
+    </button>
     <!-- STEP 표시 + 진행 바 -->
     <div class="step-head" data-tour="preferences-wizard">
       <p class="step-line">
@@ -383,39 +391,6 @@
     <Teleport to="body">
       <Transition name="demo-pop">
         <div
-          v-if="showContinuePrompt"
-          class="demo-complete-overlay"
-          @click.self="stayOnDemo"
-        >
-          <div class="demo-complete-card">
-            <p class="demo-complete-title">1단계 설명이 끝났어요</p>
-            <p class="demo-complete-text">
-              4단계까지 계속 둘러보시겠어요, 마이페이지로 돌아가시겠어요?
-            </p>
-            <div class="demo-complete-actions">
-              <button
-                class="demo-complete-stay"
-                type="button"
-                @click="stayOnDemo"
-              >
-                더 둘러보기
-              </button>
-              <button
-                class="demo-complete-go"
-                type="button"
-                @click="goToMypage"
-              >
-                마이페이지로
-              </button>
-            </div>
-          </div>
-        </div>
-      </Transition>
-    </Teleport>
-
-    <Teleport to="body">
-      <Transition name="demo-pop">
-        <div
           v-if="showDemoCompletePrompt"
           class="demo-complete-overlay"
           @click.self="stayOnDemo"
@@ -463,7 +438,6 @@ import KakaoLocation from '@/components/KakaoLocation.vue';
 import simplebar from 'simplebar-vue';
 import SingleSlider from '@/components/SingleSlider.vue';
 import OnboardingSpotlight from '@/components/OnboardingSpotlight.vue';
-import { useOnboardingTour } from '@/composables/useOnboardingTour';
 import { ONBOARDING_STEPS } from '@/constants/onboardingSteps';
 import {
   AMENITY_CATEGORIES,
@@ -551,34 +525,15 @@ const activeQuickPreset = ref(null);
 const quickSetupError = ref('');
 // 목데이터 다시보기에서 4단계까지 실제로 다 넘겨본 뒤 '설정 완료'를 누른 시점에만 띄우는 안내.
 const showDemoCompletePrompt = ref(false);
-// 1단계 코치마크 투어가 끝난 직후(건너뛰기 포함) 한 번, 4단계까지 더 볼지 물어보는 안내.
-const showContinuePrompt = ref(false);
 
 function stayOnDemo() {
   showDemoCompletePrompt.value = false;
-  showContinuePrompt.value = false;
 }
 
 function goToMypage() {
   showDemoCompletePrompt.value = false;
-  showContinuePrompt.value = false;
   router.push('/mypage');
 }
-
-const { state: onboardingState } = useOnboardingTour();
-watch(
-  () => onboardingState.activeGroup,
-  (group, previousGroup) => {
-    if (
-      isDemoMode.value &&
-      step.value === 1 &&
-      previousGroup === 'preferences' &&
-      group !== 'preferences'
-    ) {
-      showContinuePrompt.value = true;
-    }
-  },
-);
 
 onMounted(loadPreference);
 
@@ -951,6 +906,19 @@ async function onNext() {
   font-weight: 700;
   color: var(--kb-gray);
   text-align: center;
+}
+
+.demo-corner-exit {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  z-index: 50;
+  padding: 6px 12px;
+  border-radius: 100px;
+  background: rgba(33, 30, 21, 0.72);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
 }
 
 .demo-complete-overlay {
