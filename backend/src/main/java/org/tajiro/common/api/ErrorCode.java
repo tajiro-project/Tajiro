@@ -44,7 +44,10 @@ public enum ErrorCode {
     TERMS_NOT_FOUND(404, "TERMS_404", "존재하지 않는 약관입니다."),
 
     // --- 임베딩 ---
-    AI_EMBEDDING_UNAVAILABLE( 503, "AI_503_3","금융상품 임베딩 생성에 실패했습니다.");
+    AI_EMBEDDING_UNAVAILABLE( 503, "AI_503_3","금융상품 임베딩 생성에 실패했습니다."),
+
+    // --- 정책 배치 ---
+    AI_POLICY_SUMMARY_UNAVAILABLE(503, "AI_503_4", "정책 요약 생성에 실패했습니다.");
 
     private final int status;
     private final String code;

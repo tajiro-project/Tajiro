@@ -1,4 +1,4 @@
-package org.tajiro.policy.batch;
+package org.tajiro.policy.batch.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;

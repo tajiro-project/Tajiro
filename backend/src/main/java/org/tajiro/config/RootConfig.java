@@ -17,7 +17,6 @@ import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.scheduling.annotation.EnableScheduling;
 
 import javax.sql.DataSource;
 
@@ -65,7 +64,11 @@ import javax.sql.DataSource;
         "org.tajiro.favorite.service",
         "org.tajiro.dashboard.service",
         "org.tajiro.terms.service",
-        "org.tajiro.market"
+        "org.tajiro.market",
+        "org.tajiro.policy.service",
+        "org.tajiro.policy.batch",
+        "org.tajiro.policy.client",
+        "org.tajiro.policy.scheduler"
 })
 public class RootConfig {
 
