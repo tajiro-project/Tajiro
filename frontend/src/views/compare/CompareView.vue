@@ -44,6 +44,9 @@
       </div>
 
       <template v-else>
+        <p v-if="isDemoMode" class="demo-banner">
+          예시 화면이에요 · 실제 내 비교 데이터가 아니에요
+        </p>
         <div class="target-row">
           <div
             v-for="(item, i) in items"
@@ -66,7 +69,7 @@
           </div>
         </div>
 
-        <section class="ai-card">
+        <section class="ai-card" data-tour="compare-ai-card">
           <p class="ai-head">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <path
@@ -148,7 +151,11 @@
             </span>
           </button>
           <div v-show="showOverall" class="panel-body">
-            <div class="score-tabs" role="tablist" aria-label="비교 지표 선택">
+            <div
+              class="score-tabs"
+              role="tablist"
+              aria-label="비교 지표 선택"
+            >
               <button
                 v-for="spec in allScoreSpecs"
                 :key="spec.key"
@@ -181,7 +188,7 @@
               <p v-if="selectedScoreDescription" class="score-guidance">
                 {{ selectedScoreDescription }}
               </p>
-              <div class="metric-chart-navigation">
+              <div class="metric-chart-navigation" data-tour="compare-metric-tabs">
                 <!-- 터치 스와이프 처리 -->
                 <div
                   class="metric-slide-viewport"
@@ -307,7 +314,7 @@
             </span>
           </button>
           <div v-show="showSafety" class="panel-body">
-            <table class="safety-table">
+            <table class="safety-table" data-tour="compare-safety-table">
               <thead>
                 <tr>
                   <th></th>
@@ -399,6 +406,8 @@
         </div>
       </div>
     </Teleport>
+
+    <OnboardingSpotlight group-name="compare" :steps="ONBOARDING_STEPS.compare" return-to="/mypage" />
   </div>
 </template>
 
@@ -408,6 +417,8 @@ import { useRoute, useRouter } from 'vue-router';
 import client, { getApiErrorMessage } from '@/api/client';
 import { comparisonApi } from '@/api/services';
 import simplebar from 'simplebar-vue';
+import OnboardingSpotlight from '@/components/OnboardingSpotlight.vue';
+import { ONBOARDING_STEPS } from '@/constants/onboardingSteps';
 
 const route = useRoute();
 const router = useRouter();
@@ -513,6 +524,7 @@ const reportId = computed(() =>
   String(route.params.reportId ?? route.query.reportId ?? ''),
 );
 const isReportMode = computed(() => Boolean(reportId.value));
+const isDemoMode = computed(() => route.query.demo === '1');
 // AI가 추천한 매물 객체
 const aiRecommendedItem = computed(() => {
   const aiRecommendedPropertyId = coaching.value?.aiRecommendedPropertyId;
@@ -938,8 +950,96 @@ function loadingStepText(step, index) {
   return step.label;
 }
 
+// 온보딩 다시보기 전용 목데이터 — 비교함에 실제로 매물을 안 담아도 화면을 볼 수 있게 함.
+// 실제 API를 하나도 안 타서, 백엔드/DB 상태와 무관하게 항상 정상 렌더링된다.
+function loadDemoComparison() {
+  items.value = [
+    {
+      propertyId: 'demo-1',
+      title: 'e편한세상대전에코포레 2101호',
+      propertyType: '아파트',
+      tradeType: '전세',
+      deposit: 35400,
+      monthlyRent: 0,
+      maintenanceFee: 13,
+      areaM2: 84.97,
+      floorInfo: '21/34층',
+    },
+    {
+      propertyId: 'demo-2',
+      title: '한밭리버파크 1502호',
+      propertyType: '아파트',
+      tradeType: '월세',
+      deposit: 5000,
+      monthlyRent: 65,
+      maintenanceFee: 15,
+      areaM2: 59.8,
+      floorInfo: '15/25층',
+    },
+  ];
+  metrics.value = [
+    {
+      propertyId: 'demo-1',
+      commuteMinutes: 18,
+      deposit: 35400,
+      monthlyRent: 0,
+      maintenanceFee: 13,
+      infraCount: 12,
+      amenityCount: 9,
+      evaluationScore: -4.2,
+      marketStatus: null,
+      commuteScore: 82,
+      costScore: 58,
+      infraScore: 71,
+      amenityScore: 65,
+      cctvCountWithin500m: 6,
+      policeNearestDistanceMeters: 320,
+      safetyLightCountWithin500m: 14,
+      bellCountWithin500m: 3,
+      childrenCountWithin500m: 1,
+    },
+    {
+      propertyId: 'demo-2',
+      commuteMinutes: 27,
+      deposit: 5000,
+      monthlyRent: 65,
+      maintenanceFee: 15,
+      infraCount: 8,
+      amenityCount: 11,
+      evaluationScore: 2.1,
+      marketStatus: null,
+      commuteScore: 54,
+      costScore: 76,
+      infraScore: 60,
+      amenityScore: 73,
+      cctvCountWithin500m: 3,
+      policeNearestDistanceMeters: 540,
+      safetyLightCountWithin500m: 7,
+      bellCountWithin500m: 1,
+      childrenCountWithin500m: 0,
+    },
+  ];
+  coaching.value = {
+    reportId: null,
+    aiRecommendedPropertyId: 'demo-1',
+    aiPropertySummaryText:
+      'A 매물은 통근 시간과 안전 지표에서 앞서 있어, 출퇴근 부담을 줄이고 싶다면 더 적합해요.',
+    aiSummary: 'A 매물이 직주근접·안전 지표에서 우세해요.',
+    aiAtp: null,
+  };
+  activeWorkplace.value = { lat: 36.35, lng: 127.38 };
+  activePriorities.value = ['COMMUTE', 'COST'];
+  selectInitialScore(activePriorities.value);
+  currentPropertyIds.value = ['demo-1', 'demo-2'];
+}
+
 // 매물 비교 화면에 필요한 데이터를 서버에서 불러오는 함수
 async function loadComparison() {
+  if (route.query.demo === '1') {
+    loadDemoComparison();
+    return;
+  }
+
   loading.value = true;
   if (!isReportMode.value) startLoadingStages();
   errorMessage.value = '';
@@ -1461,6 +1561,17 @@ function goBack() {
 }
 .state.error {
   color: var(--danger);
+}
+.demo-banner {
+  margin-bottom: 12px;
+  padding: 9px 12px;
+  background: #f1efea;
+  border: 1px dashed var(--kb-silver);
+  border-radius: 10px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--kb-gray);
+  text-align: center;
 }
 .target-row {
   display: flex;

@@ -1,6 +1,9 @@
 <template>
   <div class="cbox">
     <simplebar class="scroll-area">
+      <p v-if="usingDemoItems" class="demo-banner">
+        예시 화면이에요 · 실제 내 비교함이 아니에요
+      </p>
       <h1 class="title">비교할 매물을 확인해주세요 (최대 3개)</h1>
       <p class="sub">
         {{ items.length }}개 담겨 있어요
@@ -9,7 +12,7 @@
         >
       </p>
 
-      <section class="comparison-settings-card">
+      <section class="comparison-settings-card" data-tour="comparebox-settings">
         <button class="location-row" type="button" @click="openLocationPicker">
           <span class="location-marker" aria-hidden="true">
             <span class="location-marker-dot" />
@@ -152,6 +155,7 @@
             </div>
 
             <button
+              v-if="!usingDemoItems"
               class="remove"
               type="button"
               aria-label="삭제"
@@ -211,6 +215,7 @@
       <button
         class="btn-cta"
         type="button"
+        data-tour="comparebox-start"
         :disabled="items.length < 2 || startingComparison"
         @click="startCompare"
       >
@@ -270,16 +275,20 @@
         </button>
       </div>
     </BottomSheet>
+
+    <OnboardingSpotlight group-name="compare-box" :steps="ONBOARDING_STEPS['compare-box']" return-to="/mypage" />
   </div>
 </template>
 
 <script setup>
 import { onMounted, ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import simplebar from 'simplebar-vue';
 import { ChevronRight } from 'lucide-vue-next';
 import KakaoLocation from '@/components/KakaoLocation.vue';
 import BottomSheet from '@/components/BottomSheet.vue';
+import OnboardingSpotlight from '@/components/OnboardingSpotlight.vue';
+import { ONBOARDING_STEPS } from '@/constants/onboardingSteps';
 import { getApiErrorMessage } from '@/api/client';
 import { comparisonApi, preferenceApi } from '@/api/services';
 import {
@@ -287,13 +296,40 @@ import {
   PRIORITY_OPTIONS,
 } from '@/constants/preferenceOptions';
 
+const route = useRoute();
 const router = useRouter();
 const COMPARISON_DRAFT_KEY = 'tajiro:compare-box:draft';
+
+const DEMO_ITEMS = [
+  {
+    propertyId: 'demo-1',
+    title: 'e편한세상대전에코포레 2101호',
+    propertyType: '아파트',
+    tradeType: '전세',
+    deposit: 35400,
+    monthlyRent: 0,
+    maintenanceFee: 13,
+    areaM2: 84.97,
+    floorInfo: '21/34층',
+  },
+  {
+    propertyId: 'demo-2',
+    title: '한밭리버파크 1502호',
+    propertyType: '아파트',
+    tradeType: '월세',
+    deposit: 5000,
+    monthlyRent: 65,
+    maintenanceFee: 15,
+    areaM2: 59.8,
+    floorInfo: '15/25층',
+  },
+];
 
 const loading = ref(false);
 const deletingId = ref('');
 const errorMessage = ref('');
 const items = ref([]);
+const usingDemoItems = ref(false);
 const imageErrorIds = ref([]);
 const startingComparison = ref(false);
 const comparisonWorkplace = ref(null);
@@ -307,11 +343,25 @@ const hasEditedPriorities = ref(false);
 
 onMounted(() => {
   loadCompareBox();
+
+  // 온보딩 다시보기(?demo=1)는 예시 매물만 보여줘야 하므로, 실제 저장된 가치관이나
+  // 세션에 남아있던 실제 비교 기준 draft를 불러와 섞지 않는다.
+  if (route.query.demo === '1') return;
+
   const restoredDraft = restoreComparisonDraft();
   loadDefaultComparisonSettings(restoredDraft);
 });
 
 async function loadCompareBox() {
+  // 온보딩 다시보기(?demo=1)는 실제 상태와 무관하게 항상 예시로 보여준다 —
+  // 실제 API를 아예 안 타서 백엔드/DB 상태에도 영향을 안 받는다.
+  if (route.query.demo === '1') {
+    items.value = DEMO_ITEMS;
+    usingDemoItems.value = true;
+    imageErrorIds.value = [];
+    return;
+  }
+
   loading.value = true;
   errorMessage.value = '';
 
@@ -320,6 +370,7 @@ async function loadCompareBox() {
     const payload = data?.data ?? data;
     const nextItems = Array.isArray(payload) ? payload : (payload?.items ?? []);
     items.value = nextItems.slice(0, 3);
+    usingDemoItems.value = false;
     imageErrorIds.value = [];
   } catch (error) {
     errorMessage.value = getApiErrorMessage(
@@ -355,6 +406,11 @@ function markImageError(propertyId) {
 
 async function startCompare() {
   if (items.value.length < 2 || startingComparison.value) return;
+
+  if (usingDemoItems.value) {
+    router.push('/compare?demo=1');
+    return;
+  }
 
   if (!hasDesiredLocation(comparisonWorkplace.value)) {
     locationMessage.value = '직주근접 비교 기준이 될 위치를 선택해주세요.';
@@ -653,6 +709,17 @@ function formatFloorInfo(floorInfo) {
   display: flex;
   flex-direction: column;
   padding: 0 16px;
+}
+.demo-banner {
+  margin-bottom: 12px;
+  padding: 9px 12px;
+  background: #f1efea;
+  border: 1px dashed var(--kb-silver);
+  border-radius: 10px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--kb-gray);
+  text-align: center;
 }
 .title {
   font-size: 16px;
