@@ -64,27 +64,21 @@ const routes = [
   }, // 12-2 KB
   {
     path: '/properties/:id',
-    component: () => import('@/views/property/PropertyLayout.vue'), // 부모 레이아웃
-    children: [
-      {
-        path: '', // /properties/158 접속 시
-        name: 'property-detail',
-        component: () => import('@/views/property/PropertyDetailView.vue'),
-        meta: { headerTitle: '매물 상세' },
-      },
-      {
-        path: 'infra', // /properties/158/infra 접속 시
-        name: 'property-infra',
-        component: () => import('@/views/property/PropertyInfraView.vue'),
-        meta: { headerTitle: '주변 생활 인프라' },
-      },
-      {
-        path: 'safety', // /properties/158/safety 접속 시
-        name: 'property-safety',
-        component: () => import('@/views/property/PropertySafetyView.vue'),
-        meta: { headerTitle: '안전 정보' },
-      },
-    ],
+    name: 'property-detail',
+    component: () => import('@/views/property/PropertyDetailView.vue'),
+    meta: { headerTitle: '매물 상세' },
+  },
+  {
+    path: '/properties/:id/infra',
+    name: 'property-infra',
+    component: () => import('@/views/property/PropertyInfraView.vue'),
+    meta: { headerTitle: '주변 생활 인프라' },
+  },
+  {
+    path: '/properties/:id/safety',
+    name: 'property-safety',
+    component: () => import('@/views/property/PropertySafetyView.vue'),
+    meta: { headerTitle: '안전 정보' },
   },
   {
     path: '/preferences',
