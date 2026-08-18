@@ -8,6 +8,11 @@
       class="scroll-area"
       :auto-hide="true"
     >
+      <p v-if="route.query.demo === '1'" class="demo-banner">
+        예시 화면이에요 · 실제 매물이 아니에요
+      </p>
+
+      <!-- 1. 사진 캐러셀 -->
       <div
         class="photo-slider"
         @touchstart="handleTouchStart"
@@ -65,7 +70,8 @@
         <p class="addr">{{ regionLine }}</p>
       </div>
 
-      <div class="score-card">
+      <!-- 내 기준 점수 & 시세 문구 통합 카드 -->
+      <div class="score-card" data-tour="detail-score">
         <div class="score-header">
           <span class="label">주거 가치관 반영 점수</span>
         </div>
@@ -248,7 +254,8 @@
         </div>
       </div>
 
-      <div class="banner-group">
+      <!-- 단순 이동 바 -->
+      <div class="banner-group" data-tour="detail-banners">
         <button
           class="simple-banner yellow"
           @click="goToInfra"
@@ -449,6 +456,7 @@
         </button>
         <button
           class="compare-btn"
+          data-tour="detail-compare-btn"
           :disabled="isSubmitting"
           @click="addToCompare"
         >
@@ -462,6 +470,12 @@
         {{ compareMsg }}
       </p>
     </div>
+
+    <OnboardingSpotlight
+      group-name="property-detail"
+      :steps="ONBOARDING_STEPS['property-detail']"
+      return-to="/mypage"
+    />
   </div>
 </template>
 
@@ -469,6 +483,8 @@
 import { watch, computed, onMounted, ref, onActivated, nextTick } from 'vue';
 import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router';
 import simplebar from 'simplebar-vue';
+import OnboardingSpotlight from '@/components/OnboardingSpotlight.vue';
+import { ONBOARDING_STEPS } from '@/constants/onboardingSteps';
 import {
   propertyApi,
   favoriteApi,
@@ -595,6 +611,17 @@ const fetchDetailAndRecommendations = async () => {
   const propertyId = route.params.id;
   if (!propertyId) return;
 
+  // 온보딩 다시보기(?demo=1) — 실제 API를 안 타고 바로 예시 데이터로 채운다.
+  if (route.query.demo === '1') {
+    p.value = DEMO_PROPERTY;
+    isDetailLoading.value = false;
+    isProfileEntered.value = true;
+    policyList.value = MOCK_POLICIES;
+    financeList.value = MOCK_FINANCE;
+    isRecommendLoading.value = false;
+    return;
+  }
+
   // 1) 매물 상세 데이터 직접 조회
   isDetailLoading.value = true;
   try {
@@ -646,7 +673,10 @@ const goToInfra = () => {
   router.push({
     name: 'property-infra',
     params: { id: p.value.id },
-    query: { buildingName: buildingName.value },
+    query: {
+      buildingName: buildingName.value,
+      ...(route.query.demo === '1' ? { demo: '1' } : {}),
+    },
   });
 };
 
@@ -654,7 +684,10 @@ const goToSafety = () => {
   router.push({
     name: 'property-safety',
     params: { id: p.value.id },
-    query: { buildingName: buildingName.value },
+    query: {
+      buildingName: buildingName.value,
+      ...(route.query.demo === '1' ? { demo: '1' } : {}),
+    },
   });
 };
 
@@ -696,6 +729,44 @@ watch(
   },
   { immediate: true },
 );
+
+// 온보딩 다시보기(?demo=1) 전용 예시 매물 — 실제 API를 안 타서 백엔드/DB 상태와 무관하게 항상 뜬다.
+const DEMO_PROPERTY = {
+  id: 'demo-1',
+  title: 'e편한세상대전에코포레 2101호',
+  propertyType: '아파트',
+  tradeType: '전세',
+  deposit: 35400,
+  monthlyRent: 0,
+  maintenanceFee: 13,
+  areaM2: 84.97,
+  floorInfo: '21/34층',
+  address: '대전광역시 동구 용운로 203',
+  dong: '101동',
+  roomNum: 3,
+  bathroomNum: 2,
+  parkAvailability: true,
+  propertyDescription: '깔끔하게 관리된 신축급 아파트예요. 채광이 좋고 지하철역이 가까워요.',
+  moveInDate: '2026-08-31T00:00:00',
+  availableDate: '2021-11-30T00:00:00',
+  discussionStatus: false,
+  recommendScore: 82,
+  workplaceDistanceMeters: 1200,
+  images: [],
+  infraSummary: [],
+  isFavorite: false,
+  realtorPreview: { name: 'KB부동산공인중개사' },
+};
+
+const MOCK_FINANCE = [
+  {
+    id: 'mock-f1',
+    productName: 'KB 청년 전월세보증금 대출',
+    minRate: 2.5,
+    maxRate: 3.6,
+    loanLimit: '최대 2억원',
+  },
+];
 
 const formatRateText = (item) => {
   if (item.minRate && item.maxRate) {
@@ -926,6 +997,10 @@ const formattedAmenityList = computed(() => {
 
 async function toggleFavorite() {
   if (!p.value?.id) return;
+  if (route.query.demo === '1') {
+    isFavorite.value = !isFavorite.value;
+    return;
+  }
   try {
     if (isFavorite.value) {
       await favoriteApi.remove(p.value.id);
@@ -941,6 +1016,14 @@ async function toggleFavorite() {
 
 async function addToCompare() {
   if (!p.value?.id || isSubmitting.value) return;
+
+  if (route.query.demo === '1') {
+    compareMsg.value = '비교함에 담았어요.';
+    setTimeout(() => {
+      compareMsg.value = '';
+    }, 2500);
+    return;
+  }
 
   try {
     isSubmitting.value = true;
@@ -990,6 +1073,18 @@ async function addToCompare() {
 
 .scroll-area {
   padding-bottom: 16px;
+}
+
+.demo-banner {
+  margin: 12px 16px 0;
+  padding: 9px 12px;
+  background: #f1efea;
+  border: 1px dashed var(--kb-silver);
+  border-radius: 10px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--kb-gray);
+  text-align: center;
 }
 
 /* ==========================================================================

@@ -1,7 +1,10 @@
 <template>
   <div class="pref-wizard">
+    <p v-if="isDemoMode" class="demo-banner">
+      예시 화면이에요 · 실제 내 가치관 설정이 아니에요
+    </p>
     <!-- STEP 표시 + 진행 바 -->
-    <div class="step-head">
+    <div class="step-head" data-tour="preferences-wizard">
       <p class="step-line">
         <span class="step-no"
           >STEP {{ step }} / {{ PREFERENCE_STEP_COUNT }}</span
@@ -277,6 +280,7 @@
           v-if="step === 1"
           class="btn-quick-setup"
           type="button"
+          data-tour="preferences-quick-setup"
           :disabled="isLoading || isSaving || !pref.workplace"
           @click="openQuickSetupModal"
         >
@@ -375,6 +379,77 @@
       </div>
     </Teleport>
     <!-- </div> -->
+
+    <Teleport to="body">
+      <Transition name="demo-pop">
+        <div
+          v-if="showContinuePrompt"
+          class="demo-complete-overlay"
+          @click.self="stayOnDemo"
+        >
+          <div class="demo-complete-card">
+            <p class="demo-complete-title">1단계 설명이 끝났어요</p>
+            <p class="demo-complete-text">
+              4단계까지 계속 둘러보시겠어요, 마이페이지로 돌아가시겠어요?
+            </p>
+            <div class="demo-complete-actions">
+              <button
+                class="demo-complete-stay"
+                type="button"
+                @click="stayOnDemo"
+              >
+                더 둘러보기
+              </button>
+              <button
+                class="demo-complete-go"
+                type="button"
+                @click="goToMypage"
+              >
+                마이페이지로
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
+    <Teleport to="body">
+      <Transition name="demo-pop">
+        <div
+          v-if="showDemoCompletePrompt"
+          class="demo-complete-overlay"
+          @click.self="stayOnDemo"
+        >
+          <div class="demo-complete-card">
+            <p class="demo-complete-title">다시보기를 완료했어요</p>
+            <p class="demo-complete-text">
+              4단계를 모두 둘러봤어요. 더 둘러보시겠어요, 마이페이지로 돌아가시겠어요?
+            </p>
+            <div class="demo-complete-actions">
+              <button
+                class="demo-complete-stay"
+                type="button"
+                @click="stayOnDemo"
+              >
+                더 둘러보기
+              </button>
+              <button
+                class="demo-complete-go"
+                type="button"
+                @click="goToMypage"
+              >
+                마이페이지로
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
+    <OnboardingSpotlight
+      group-name="preferences"
+      :steps="ONBOARDING_STEPS.preferences"
+    />
   </div>
 </template>
 
@@ -387,6 +462,9 @@ import DualSlider from '@/components/DualSlider.vue';
 import KakaoLocation from '@/components/KakaoLocation.vue';
 import simplebar from 'simplebar-vue';
 import SingleSlider from '@/components/SingleSlider.vue';
+import OnboardingSpotlight from '@/components/OnboardingSpotlight.vue';
+import { useOnboardingTour } from '@/composables/useOnboardingTour';
+import { ONBOARDING_STEPS } from '@/constants/onboardingSteps';
 import {
   AMENITY_CATEGORIES,
   FLOOR_OPTIONS,
@@ -460,6 +538,9 @@ function createDefaultPreference() {
 const pref = reactive(createDefaultPreference());
 
 const step = computed(() => Number(route.params.step) || 1);
+// 마이페이지 "다시보기"(?demo=1) 전용 — 실제 저장된 가치관을 불러오지 않고 항상 빈 기본값 폼으로
+// 시작하며, 끝까지 진행해도 실제 API 호출·저장이 일어나지 않는다.
+const isDemoMode = computed(() => route.query.demo === '1');
 const isLocationPickerOpen = ref(false);
 const isLoading = ref(false);
 const isSaving = ref(false);
@@ -468,6 +549,36 @@ const errorMessage = ref('');
 const isQuickSetupModalOpen = ref(false);
 const activeQuickPreset = ref(null);
 const quickSetupError = ref('');
+// 목데이터 다시보기에서 4단계까지 실제로 다 넘겨본 뒤 '설정 완료'를 누른 시점에만 띄우는 안내.
+const showDemoCompletePrompt = ref(false);
+// 1단계 코치마크 투어가 끝난 직후(건너뛰기 포함) 한 번, 4단계까지 더 볼지 물어보는 안내.
+const showContinuePrompt = ref(false);
+
+function stayOnDemo() {
+  showDemoCompletePrompt.value = false;
+  showContinuePrompt.value = false;
+}
+
+function goToMypage() {
+  showDemoCompletePrompt.value = false;
+  showContinuePrompt.value = false;
+  router.push('/mypage');
+}
+
+const { state: onboardingState } = useOnboardingTour();
+watch(
+  () => onboardingState.activeGroup,
+  (group, previousGroup) => {
+    if (
+      isDemoMode.value &&
+      step.value === 1 &&
+      previousGroup === 'preferences' &&
+      group !== 'preferences'
+    ) {
+      showContinuePrompt.value = true;
+    }
+  },
+);
 
 onMounted(loadPreference);
 
@@ -695,6 +806,8 @@ function toRequestPayload() {
 }
 
 async function savePreference() {
+  if (isDemoMode.value) return;
+
   const requestPayload = toRequestPayload();
   const savedPreference = hasSavedPreference.value
     ? await preferenceApi.update(requestPayload)
@@ -717,6 +830,10 @@ async function applyQuickSetup(presetKey) {
   try {
     applyPreference(createQuickSetupPreference(presetKey));
     await savePreference();
+    if (isDemoMode.value) {
+      isQuickSetupModalOpen.value = false;
+      showDemoCompletePrompt.value = true;
+    }
   } catch (error) {
     const message = getApiErrorMessage(
       error,
@@ -731,10 +848,12 @@ async function applyQuickSetup(presetKey) {
 }
 
 function saveDraft() {
+  if (isDemoMode.value) return;
   localStorage.setItem(PREFERENCE_DRAFT_KEY, JSON.stringify(pref));
 }
 
 function restoreDraft() {
+  if (isDemoMode.value) return;
   const draft = localStorage.getItem(PREFERENCE_DRAFT_KEY);
   if (!draft) return;
 
@@ -753,6 +872,8 @@ function isPreferenceNotFound(error) {
 }
 
 async function loadPreference() {
+  if (isDemoMode.value) return;
+
   isLoading.value = true;
   errorMessage.value = '';
 
@@ -776,12 +897,17 @@ async function loadPreference() {
 
 function go(n) {
   saveDraft();
-  return router.push(`/preferences/${n}`);
+  return router.push({ path: `/preferences/${n}`, query: route.query });
 }
 
 async function onNext() {
   if (step.value < PREFERENCE_STEP_COUNT) {
     await go(step.value + 1);
+    return;
+  }
+
+  if (isDemoMode.value) {
+    showDemoCompletePrompt.value = true;
     return;
   }
 
@@ -812,6 +938,85 @@ async function onNext() {
   min-height: 0;
   overflow: hidden;
   background: var(--white);
+}
+
+.demo-banner {
+  flex-shrink: 0;
+  margin: 12px 16px 0;
+  padding: 9px 12px;
+  background: #f1efea;
+  border: 1px dashed var(--kb-silver);
+  border-radius: 10px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--kb-gray);
+  text-align: center;
+}
+
+.demo-complete-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 320;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(20, 16, 8, 0.5);
+}
+.demo-complete-card {
+  width: 100%;
+  max-width: 300px;
+  padding: 22px 20px 20px;
+  background: var(--white, #fff);
+  border-radius: 20px;
+  text-align: center;
+}
+.demo-complete-title {
+  font-size: 15.5px;
+  font-weight: 800;
+  color: var(--text-primary, #33302a);
+}
+.demo-complete-text {
+  margin-top: 8px;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--kb-gray, #60584c);
+}
+.demo-complete-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 18px;
+}
+.demo-complete-stay {
+  flex: 1;
+  padding: 12px;
+  border: 1px solid var(--border, #e9e7e2);
+  border-radius: 12px;
+  background: var(--white, #fff);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--kb-gray, #60584c);
+}
+.demo-complete-go {
+  flex: 1;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--kb-yellow, #ffbc00);
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text-primary, #33302a);
+}
+.demo-pop-enter-active {
+  transition: opacity 0.18s ease;
+}
+.demo-pop-enter-from {
+  opacity: 0;
+}
+.demo-pop-leave-active {
+  transition: opacity 0.12s ease;
+}
+.demo-pop-leave-to {
+  opacity: 0;
 }
 
 /* 2. 상단 스텝 헤더 고정 */

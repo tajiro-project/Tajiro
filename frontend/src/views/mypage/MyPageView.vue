@@ -73,6 +73,21 @@
         </div>
       </section>
 
+      <section class="replay-card">
+        <p class="section-title">온보딩 다시보기</p>
+        <div class="replay-grid">
+          <button
+            v-for="item in TOUR_REPLAY_ITEMS"
+            :key="item.group"
+            class="replay-btn"
+            type="button"
+            @click="replayTour(item)"
+          >
+            {{ item.label }}
+          </button>
+        </div>
+      </section>
+
       <nav class="menu-list">
         <button
           class="menu-row"
@@ -80,27 +95,6 @@
           @click="router.push('/profile-setup')"
         >
           <span>내 정보 관리 (소득 · 자산 · 직장)</span>
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 16 16"
-            fill="none"
-          >
-            <path
-              d="M6 3.5l5 4.5-5 4.5"
-              stroke="#8a8d8f"
-              stroke-width="1.6"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
-        </button>
-        <button
-          class="menu-row"
-          type="button"
-          @click="router.push('/reports')"
-        >
-          <span>비교 리포트 보관함</span>
           <svg
             width="16"
             height="16"
@@ -149,6 +143,23 @@ import { useRouter } from 'vue-router';
 import simplebar from 'simplebar-vue';
 import client, { getApiErrorMessage, withMock } from '@/api/client';
 import { mockDashboard } from '@/api/mockData';
+import { useOnboardingTour } from '@/composables/useOnboardingTour';
+
+const { startAt } = useOnboardingTour();
+
+// 데이터 없이 언제든 단독으로 들어갈 수 있는 화면(홈)은 실제 경로로 바로 이동.
+// 가치관설정·매물리스트·매물상세·비교함·비교(AI코칭)는 실제 내 데이터를 보여주거나(수정·저장
+// 위험) 실제 데이터 상태에 따라 화면이 비거나(매물리스트: 가치관 미설정 시 /preferences로
+// 튕겨나감) 깨질 수 있어서 ?demo=1로 들어가면 항상 예시 데이터로 보여준다 — 실제 API 호출·저장
+// 없음. 이 다섯은 투어가 끝나면(완료/건너뛰기) 자동으로 마이페이지로 돌아온다.
+const TOUR_REPLAY_ITEMS = [
+  { group: 'home', label: '홈', path: '/home' },
+  { group: 'preferences', label: '가치관 설정', path: '/preferences/1?demo=1' },
+  { group: 'property-list', label: '매물 리스트', path: '/properties?demo=1' },
+  { group: 'compare-box', label: '비교함', path: '/compare-box?demo=1' },
+  { group: 'property-detail', label: '매물 상세', path: '/properties/demo?demo=1' },
+  { group: 'compare', label: '비교 · AI코칭', path: '/compare?demo=1' },
+];
 
 const CRITERION_LABELS = {
   COMMUTE: '직주근접',
@@ -200,6 +211,11 @@ async function loadDashboard() {
 
 function criterionLabel(criterion) {
   return CRITERION_LABELS[criterion] ?? criterion;
+}
+
+function replayTour(item) {
+  startAt(item.group);
+  router.push(item.path);
 }
 
 function calcAge(birthDate) {
@@ -365,6 +381,34 @@ async function handleWithdraw() {
   font-size: 11.5px;
   font-weight: 500;
   color: var(--kb-gray);
+}
+
+.replay-card {
+  padding: 16px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+}
+
+.replay-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.replay-btn {
+  padding: 12px 8px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: center;
+}
+
+.replay-btn:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
 }
 
 .menu-list {
