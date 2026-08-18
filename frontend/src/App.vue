@@ -53,7 +53,11 @@ const showTabBar = computed(() => {
   );
 });
 
-const KEEP_ALIVE_VIEWS = ['PropertyListView', 'BenefitMatchView'];
+const KEEP_ALIVE_VIEWS = [
+  'PropertyListView',
+  'BenefitMatchView',
+  'PropertyDetailView',
+];
 </script>
 
 <template>
@@ -64,18 +68,33 @@ const KEEP_ALIVE_VIEWS = ['PropertyListView', 'BenefitMatchView'];
       :back="headerBack"
       :back-to="headerBackTo"
     >
-      <template v-if="route.name === 'property-list'" #title>
+      <template
+        v-if="route.name === 'property-list'"
+        #title
+      >
         <button
           class="header-location"
           @click="propertyListHeader.requestLocationPicker"
         >
-          <MapPin :size="18" :stroke-width="2" />
+          <MapPin
+            :size="18"
+            :stroke-width="2"
+          />
           <span>{{ propertyListHeader.locationLabel }}</span>
-          <ChevronDown :size="14" :stroke-width="2" />
+          <ChevronDown
+            :size="14"
+            :stroke-width="2"
+          />
         </button>
       </template>
-      <template v-if="route.meta.headerAction === 'edit-profile'" #right>
-        <router-link class="header-action" to="/profile-setup">
+      <template
+        v-if="route.meta.headerAction === 'edit-profile'"
+        #right
+      >
+        <router-link
+          class="header-action"
+          to="/profile-setup"
+        >
           내 정보 수정
         </router-link>
       </template>
@@ -89,7 +108,11 @@ const KEEP_ALIVE_VIEWS = ['PropertyListView', 'BenefitMatchView'];
       </router-view>
     </main>
 
-    <AppTabBar v-if="showTabBar" :active="activeTab" class="global-tab-bar" />
+    <AppTabBar
+      v-if="showTabBar"
+      :active="activeTab"
+      class="global-tab-bar"
+    />
   </div>
 </template>
 

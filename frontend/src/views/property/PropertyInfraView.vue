@@ -131,7 +131,7 @@
 </template>
 
 <script setup>
-import { inject, computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import simplebar from 'simplebar-vue';
 import KakaoMap from '@/components/KakaoMap.vue';
@@ -144,15 +144,15 @@ import { MapPin } from 'lucide-vue-next';
 
 const route = useRoute();
 
+// 💡 1. 쿼리 스트링으로 전달받은 buildingName 우선 사용
+const buildingName = ref(route.query.buildingName || '');
+
 // 상태 관리
 const infras = ref([]);
-const propertyDetail = inject('propertyDetail');
-const propertyName = propertyDetail.value.buildingName;
 const activeDotKey = ref(null);
 
 // 탭 상태 ('infra' | 'amenity')
 const currentTab = ref('infra');
-const buildingName = inject('buildingName');
 
 // 지도 중심 좌표
 const mapCenter = ref({ lat: 36.3320194, lng: 127.4570694 });
@@ -174,6 +174,23 @@ const categoryMap = computed(() => {
 // API 데이터 로드
 onMounted(async () => {
   const propertyId = route.params.id;
+  if (!propertyId) return;
+
+  // 💡 2. buildingName 쿼리가 없는 경우(직접 URL 진입 등) 매물 상세 API로 예외 처리
+  if (!buildingName.value) {
+    try {
+      const pRes = await propertyApi.getPropertyDetail(propertyId);
+      const pData = pRes?.data || pRes;
+      const rawTitle = pData?.title || pData?.buildingName || pData?.name || '';
+      buildingName.value =
+        rawTitle.replace(/\s*\d+호$/, '').trim() || '건물명 정보 없음';
+    } catch (err) {
+      console.error('건물명 조회 실패:', err);
+      buildingName.value = '건물명 정보 없음';
+    }
+  }
+
+  // 3. 인프라 데이터 로드
   try {
     const infraRes = await propertyApi.infrastructures(propertyId);
     const rawData = infraRes?.data || infraRes || {};
@@ -196,7 +213,7 @@ onMounted(async () => {
       }));
     }
   } catch (e) {
-    console.error('데이터 로드 실패:', e);
+    console.error('인프라 데이터 로드 실패:', e);
   }
 });
 

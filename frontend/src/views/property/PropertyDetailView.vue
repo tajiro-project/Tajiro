@@ -3,12 +3,11 @@
     class="pdetail"
     v-if="p"
   >
-    <!-- div -> simplebar로 교체 -->
     <simplebar
+      ref="scrollArea"
       class="scroll-area"
       :auto-hide="true"
     >
-      <!-- 1. 사진 캐러셀 -->
       <div
         class="photo-slider"
         @touchstart="handleTouchStart"
@@ -20,7 +19,6 @@
             :alt="`매물 이미지 ${currentImgIndex + 1}`"
             class="photo-img"
           />
-          <!-- 좌우 화살표 버튼 -->
           <button
             class="slide-btn left"
             @click="prevImage"
@@ -36,7 +34,6 @@
             <ChevronRight :size="20" />
           </button>
 
-          <!-- 슬라이드 인디케이터 (Dots) -->
           <div
             class="dots"
             v-if="p.images.length > 1"
@@ -51,7 +48,6 @@
           </div>
         </template>
 
-        <!-- 이미지가 없을 때 예비 화면 -->
         <div
           v-else
           class="photo-placeholder"
@@ -64,26 +60,22 @@
         </div>
       </div>
 
-      <!-- 2. 가격/요약 -->
       <div class="head">
         <h1 class="price">{{ formattedPrice }}</h1>
         <p class="addr">{{ regionLine }}</p>
       </div>
 
-      <!-- 내 기준 점수 & 시세 문구 통합 카드 -->
       <div class="score-card">
         <div class="score-header">
           <span class="label">주거 가치관 반영 점수</span>
         </div>
 
-        <!-- 게이지 바 & 점수 핀 영역 -->
         <div class="gauge-container">
           <div class="gauge-track">
             <div
               class="gauge-fill"
               :style="{ width: `${p.recommendScore}%` }"
             >
-              <!-- 게이지 끝에 붙는 말풍선 핀 -->
               <div class="score-tooltip">{{ p.recommendScore }}점</div>
             </div>
           </div>
@@ -100,7 +92,6 @@
         </p>
       </div>
 
-      <!-- 3. 매물 정보 -->
       <section class="card">
         <p class="card-head">매물 정보</p>
         <div class="tag-row">
@@ -156,7 +147,6 @@
         <p class="desc">{{ p.propertyDescription }}</p>
       </section>
 
-      <!-- 요약 미니카드 -->
       <div class="mini-row">
         <div class="mini-card">
           <p class="mini-label">
@@ -182,7 +172,6 @@
         </div>
       </div>
 
-      <!-- 인프라 및 편의시설 분리 카드 -->
       <div class="mini-card wide compact">
         <p class="mini-label">
           <Building2
@@ -203,7 +192,6 @@
           </template>
 
           <template v-else>
-            <!-- 1. 인프라 섹션 -->
             <div
               class="infra-row"
               v-if="formattedInfraList.length > 0"
@@ -227,7 +215,6 @@
               </div>
             </div>
 
-            <!-- 구분선 -->
             <hr
               class="compact-divider"
               v-if="
@@ -235,7 +222,6 @@
               "
             />
 
-            <!-- 2. 편의시설 섹션 -->
             <div
               class="infra-row"
               v-if="formattedAmenityList.length > 0"
@@ -262,11 +248,10 @@
         </div>
       </div>
 
-      <!-- 단순 이동 바 -->
       <div class="banner-group">
         <button
           class="simple-banner yellow"
-          @click="$router.push(`/properties/${p.id}/infra`)"
+          @click="goToInfra"
         >
           <span>가장 가까운 인프라 보기</span>
           <span class="arrow">→</span>
@@ -274,14 +259,13 @@
 
         <button
           class="simple-banner green"
-          @click="$router.push(`/properties/${p.id}/safety`)"
+          @click="goToSafety"
         >
           <span>안전 정보 보기</span>
           <span class="arrow">→</span>
         </button>
       </div>
 
-      <!-- 공인중개사 정보 -->
       <section class="card">
         <p class="card-head">이 매물, 어디에 문의할까요?</p>
         <p class="card-sub">이 매물을 등록·관리하는 인근 공인중개사예요</p>
@@ -329,9 +313,7 @@
         </p>
       </section>
 
-      <!-- 혜택/상품 카드 (금융 & 정책 분리) -->
       <section class="card benefit-card">
-        <!-- 1. 금융 상품 영역 (바로 노출) -->
         <div class="benefit-group">
           <div class="group-header">
             <div class="group-title">
@@ -371,7 +353,6 @@
               </div>
             </template>
 
-            <!-- 금융 상품이 없을 때 -->
             <div
               v-else
               class="empty-text"
@@ -381,7 +362,6 @@
           </div>
         </div>
 
-        <!-- 2. 정책 혜택 영역 (미입력 시 잠금 오버레이 노출) -->
         <div class="benefit-group">
           <div class="group-header">
             <div class="group-title">
@@ -398,7 +378,6 @@
             class="policy-wrapper"
             :class="{ locked: !isProfileEntered }"
           >
-            <!-- 잠금 오버레이 (필수 정보 미입력 시 표시) -->
             <div
               v-if="!isProfileEntered"
               class="lock-overlay"
@@ -422,7 +401,6 @@
               </div>
             </div>
 
-            <!-- 정책 리스트 -->
             <div class="benefit-list">
               <template v-if="policyList.length > 0">
                 <div
@@ -443,7 +421,6 @@
                 </div>
               </template>
 
-              <!-- 정책이 없을 때 -->
               <div
                 v-else
                 class="empty-text"
@@ -456,7 +433,6 @@
       </section>
     </simplebar>
 
-    <!-- 4. 하단 액션 바 -->
     <div class="bottom-actions-wrap">
       <div class="bottom-actions">
         <button
@@ -490,10 +466,9 @@
 </template>
 
 <script setup>
-import { watch, inject, computed, onMounted, ref } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { watch, computed, onMounted, ref, onActivated, nextTick } from 'vue';
+import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router';
 import simplebar from 'simplebar-vue';
-import AppTabBar from '@/components/AppTabBar.vue';
 import {
   propertyApi,
   favoriteApi,
@@ -519,33 +494,183 @@ import {
   MessageSquare,
   Info,
   Heart,
-  Coins,
   Landmark,
   Lock,
   Banknote,
 } from 'lucide-vue-next';
 
+// ----------------------------------------------------
+// 1. KeepAlive 캐싱을 위한 컴포넌트 이름 명시
+// ----------------------------------------------------
+defineOptions({
+  name: 'PropertyDetailView',
+});
+
 const route = useRoute();
 const router = useRouter();
+
+// p (매물 상세 정보)를 직접 reactive ref로 정의
+const p = ref(null);
+const isDetailLoading = ref(true);
+
 const compareMsg = ref('');
-const isSubmitting = ref(false); // 버튼 연타 방지용
+const isSubmitting = ref(false);
 
 const market = ref(null);
 const isFavorite = ref(false);
-const profileName = ref('홍길동');
 
-// 사용자 조건 입력 여부
 const isProfileEntered = ref(false);
 const policyList = ref([]);
 const financeList = ref([]);
-const isLoading = ref(false);
+const isRecommendLoading = ref(false);
 
-const p = inject('propertyDetail');
-const buildingName = inject('buildingName');
+// 호수('202호' 등)를 정제한 건물명 Computed
+const buildingName = computed(() => {
+  const rawTitle = p.value?.title || p.value?.buildingName || p.value?.name;
 
-const id = route.params.id;
+  if (!rawTitle) return '건물명 정보 없음';
 
-// 프로필 미입력 시 블러 배경용 프론트엔드 목업 데이터 (3개)
+  return rawTitle.replace(/\s*\d+호$/, '').trim();
+});
+
+// ----------------------------------------------------
+// 2. SimpleBar 스크롤 유지 및 복원 로직
+// ----------------------------------------------------
+const scrollArea = ref(null);
+let savedScrollTop = 0;
+let skipReload = false;
+
+// SimpleBar 스크롤 타겟 HTML Element 추출
+const getScrollElement = () => {
+  if (!scrollArea.value) return null;
+  if (typeof scrollArea.value.getScrollElement === 'function') {
+    return scrollArea.value.getScrollElement();
+  }
+  const el = scrollArea.value.$el || scrollArea.value;
+  return el?.querySelector?.('.simplebar-content-wrapper') || el;
+};
+
+// 라우트 이탈 시 스크롤 위치 및 복원 플래그 저장
+onBeforeRouteLeave((to) => {
+  // 💡 정책, 금융상품, 인프라, 안전정보 라우트 경로 매칭
+  const isRelatedSubPage =
+    /^\/properties\/\d+\/(infra|safety)/.test(to.path) ||
+    /^\/policies\/\d+/.test(to.path) ||
+    /^\/financial-products\/\d+/.test(to.path);
+
+  skipReload = isRelatedSubPage;
+
+  if (isRelatedSubPage) {
+    savedScrollTop = getScrollElement()?.scrollTop ?? 0;
+  } else {
+    savedScrollTop = 0;
+  }
+});
+
+// KeepAlive 캐시 복귀 시 스크롤 위치 적용
+onActivated(async () => {
+  if (skipReload) {
+    skipReload = false;
+    await nextTick();
+
+    const targetEl = getScrollElement();
+    if (targetEl) {
+      targetEl.scrollTo({
+        top: savedScrollTop,
+        behavior: 'auto',
+      });
+    }
+    return;
+  }
+
+  // 매물 리스트나 다른 메뉴 등 완전히 다른 페이지에서 들어왔을 때 최상단 초기화 및 재조회
+  getScrollElement()?.scrollTo({ top: 0, behavior: 'auto' });
+  fetchDetailAndRecommendations();
+});
+
+// ----------------------------------------------------
+// 3. API 데이터 조회 (매물 상세 + 추천 데이터)
+// ----------------------------------------------------
+const fetchDetailAndRecommendations = async () => {
+  const propertyId = route.params.id;
+  if (!propertyId) return;
+
+  // 1) 매물 상세 데이터 직접 조회
+  isDetailLoading.value = true;
+  try {
+    const res = await propertyApi.getPropertyDetail(propertyId);
+    p.value = res?.data || res;
+  } catch (e) {
+    console.error('매물 정보 로드 실패:', e);
+  } finally {
+    isDetailLoading.value = false;
+  }
+
+  // 2) 맞춤 추천 상품 및 정책 조회
+  try {
+    isRecommendLoading.value = true;
+
+    const [profile, financeRes] = await Promise.all([
+      userApi.getProfile(),
+      financeApi.getFinanceRecommendations(propertyId),
+    ]);
+
+    financeList.value = financeRes.data || financeRes || [];
+
+    const hasBirthDate = !!profile?.birthDate?.trim();
+    isProfileEntered.value = hasBirthDate;
+
+    if (isProfileEntered.value) {
+      const policyRes = await policyApi.getPolicyRecommendations(propertyId);
+      policyList.value = policyRes.data || policyRes || [];
+    } else {
+      policyList.value = MOCK_POLICIES;
+    }
+  } catch (err) {
+    console.error('추천 데이터 조회 실패:', err);
+    isProfileEntered.value = false;
+    policyList.value = MOCK_POLICIES;
+  } finally {
+    isRecommendLoading.value = false;
+  }
+};
+
+onMounted(() => {
+  fetchDetailAndRecommendations();
+});
+
+// ----------------------------------------------------
+// 4. 페이지 이동 함수 (Query Parameter 및 Name 기반 이동)
+// ----------------------------------------------------
+const goToInfra = () => {
+  router.push({
+    name: 'property-infra',
+    params: { id: p.value.id },
+    query: { buildingName: buildingName.value },
+  });
+};
+
+const goToSafety = () => {
+  router.push({
+    name: 'property-safety',
+    params: { id: p.value.id },
+    query: { buildingName: buildingName.value },
+  });
+};
+
+const goToFinancialDetail = (id) => {
+  if (!id) return;
+  router.push({ name: 'financial-product-detail', params: { id } });
+};
+
+const goToPolicyDetail = (id) => {
+  if (!id) return;
+  router.push({ name: 'policy-detail', params: { id } });
+};
+
+// ----------------------------------------------------
+// 5. 기타 비즈니스 및 포맷팅 로직
+// ----------------------------------------------------
 const MOCK_POLICIES = [
   {
     id: 'mock-1',
@@ -572,52 +697,7 @@ watch(
   { immediate: true },
 );
 
-// 맞춤 정책 / 금융 상품 추천 조회
-const fetchAllRecommendations = async () => {
-  if (!id) return;
-
-  try {
-    isLoading.value = true;
-
-    // 1. 프로필 정보와 금융 상품 추천을 병렬 요청
-    const [profile, financeRes] = await Promise.all([
-      userApi.getProfile(),
-      financeApi.getFinanceRecommendations(id),
-    ]);
-
-    // 금융 상품 데이터 할당
-    financeList.value = financeRes.data || financeRes || [];
-
-    // 2. 나이 정보 유무 체크
-    const hasBirthDate = !!profile?.birthDate?.trim();
-    isProfileEntered.value = hasBirthDate;
-
-    // 3. 나이 정보 유무에 따른 정책 데이터 할당
-    if (isProfileEntered.value) {
-      // 정보가 있으면: 맞춤 정책 API 호출
-      const policyRes = await policyApi.getPolicyRecommendations(id);
-      policyList.value = policyRes.data || policyRes || [];
-    } else {
-      // 정보가 없으면: API 호출 없이 프론트 목업 데이터 배치
-      policyList.value = MOCK_POLICIES;
-    }
-  } catch (err) {
-    console.error('추천 데이터 조회 실패:', err);
-    isProfileEntered.value = false;
-    // 에러 발생 시에도 UI 깨짐 방지를 위해 목업 데이터 배치
-    policyList.value = MOCK_POLICIES;
-  } finally {
-    isLoading.value = false;
-  }
-};
-
-onMounted(() => {
-  fetchAllRecommendations();
-});
-
-// 금리 텍스트 가공 헬퍼 (JSON 문자열 예외 처리 추가)
 const formatRateText = (item) => {
-  // 1. minRate와 maxRate가 정상적으로 존재하는 경우
   if (item.minRate && item.maxRate) {
     return item.minRate === item.maxRate
       ? `연 ${item.minRate}%`
@@ -626,10 +706,8 @@ const formatRateText = (item) => {
   if (item.minRate) return `연 ${item.minRate}% ~`;
   if (item.maxRate) return `연 ~ ${item.maxRate}%`;
 
-  // 2. min/maxRate가 없어서 rateDescription을 처리해야 하는 경우
   if (item.rateDescription) {
     try {
-      // JSON 객체 형태의 문자열인지 확인 후 파싱
       const parsed =
         typeof item.rateDescription === 'string' &&
         item.rateDescription.trim().startsWith('{')
@@ -637,72 +715,47 @@ const formatRateText = (item) => {
           : item.rateDescription;
 
       if (typeof parsed === 'object' && parsed !== null) {
-        // details 배열 내 금리 정보가 존재하면 사용
         if (parsed.details && parsed.details.length > 0) {
           const rates = parsed.details.map((d) => d.final_rate).filter(Boolean);
           if (rates.length > 0) return rates.join(' / ');
         }
-        // base_type이 존재하면 활용
         if (parsed.base_type) return parsed.base_type;
       } else if (typeof parsed === 'string') {
         return parsed;
       }
     } catch (e) {
-      // JSON 파싱 실패 시 기본값 처리
+      // JSON 파싱 예외 무시
     }
   }
 
   return '변동금리 (상세 확인)';
 };
 
-// 한도 텍스트 괄호 '(' 전까지만 자르는 헬퍼 함수
 const formatLoanLimit = (limitStr) => {
   if (!limitStr) return '';
-  // '(' 기준으로 잘라서 첫 번째 부분만 사용하고 여백 제거
   return limitStr.split('(')[0].trim();
 };
 
-// 1. 금융 상품 상세 이동
-const goToFinancialDetail = (id) => {
-  if (!id) return;
-  router.push({ name: 'financial-product-detail', params: { id } });
-};
-
-// 2. 정책 상세 이동
-const goToPolicyDetail = (id) => {
-  if (!id) return;
-  router.push({ name: 'policy-detail', params: { id } });
-};
-
 const formatCommuteTime = (data) => {
-  // 평균 도보 분속
   const SPEED_PER_MINUTE = 80;
-
-  // 굴곡도 1.25배 적용
   const actualDistance = data * 1.25;
 
-  // 값이 null이나 undefined인 경우 예외 처리
   if (data === null || data === undefined) return '정보 없음';
 
-  // 도보 분속 계산 (올림 처리하여 최소 1분 이상 표시)
   const minutes = Math.ceil(actualDistance / SPEED_PER_MINUTE);
-
   if (minutes === 0) return '1분 미만';
 
   return `약 ${minutes}분`;
 };
 
-// 이미지 캐러셀 상태
 const currentImgIndex = ref(0);
 let touchStartX = 0;
 
-// 다음 이미지
 function nextImage() {
   if (!p.value?.images?.length) return;
   currentImgIndex.value = (currentImgIndex.value + 1) % p.value.images.length;
 }
 
-// 이전 이미지
 function prevImage() {
   if (!p.value?.images?.length) return;
   currentImgIndex.value =
@@ -722,7 +775,6 @@ function handleTouchEnd(e) {
   }
 }
 
-// 숫자를 억/만 단위로 분리해 주는 헬퍼 함수
 const formatKoreanMoney = (value) => {
   if (value === undefined || value === null || isNaN(value)) return '';
 
@@ -741,7 +793,6 @@ const formatKoreanMoney = (value) => {
   }
 };
 
-// 거래 유형별 가격 포맷팅
 const formattedPrice = computed(() => {
   if (!p.value) return '';
   const type = p.value.tradeType;
@@ -760,7 +811,6 @@ const formattedPrice = computed(() => {
   return `${type} ${formatKoreanMoney(p.value.deposit)}`;
 });
 
-// 거래 유형별 가격 상세 포맷팅
 const formattedPriceDetail = computed(() => {
   if (!p.value) return '';
   const type = p.value.tradeType;
@@ -780,7 +830,6 @@ const formattedPriceDetail = computed(() => {
   return `${type} · ${formatKoreanMoney(p.value.deposit)}`;
 });
 
-// 층수 포맷팅
 const formatFloorInfo = (floorStr) => {
   if (!floorStr) return '';
   const parts = floorStr.split('/').map((item) => item.trim());
@@ -799,7 +848,6 @@ const pyeong = computed(() =>
   p.value?.areaM2 ? Math.round(p.value.areaM2 / 3.3) : 0,
 );
 
-// 주소/동 정보 기반 라인
 const regionLine = computed(() => {
   if (!p.value) return '';
   const addrPart = p.value.address
@@ -815,7 +863,6 @@ const formatDateStr = (dateStr, delimiter = '.') => {
   return dateOnly.replaceAll('-', delimiter);
 };
 
-// 입주 가능일 및 협의 가능 여부 처리
 const moveInLine = computed(() => {
   if (!p.value?.moveInDate) return '협의 가능';
   const formattedDate = formatDateStr(p.value.moveInDate);
@@ -825,19 +872,16 @@ const moveInLine = computed(() => {
   return `${formattedDate} (${statusStr})`;
 });
 
-// 사용 승인일
 const availableLine = computed(() => {
   return formatDateStr(p.value?.availableDate);
 });
 
 const medianPrice = computed(() => market.value?.medianPrice ?? 47);
 
-// 인프라 데이터 및 분류 처리
 const infraData = computed(
   () => p.value?.infraSummary || p.value?.infraList || [],
 );
 
-// 카테고리 Key -> 한글 이름(label) 매핑 맵 생성
 const infraCategoryMap = new Map(
   INFRA_CATEGORIES.map((item) => [item.key, item.label]),
 );
@@ -845,7 +889,6 @@ const amenityCategoryMap = new Map(
   AMENITY_CATEGORIES.map((item) => [item.key, item.label]),
 );
 
-// 1. 주요 인프라 항목 필터링
 const formattedInfraList = computed(() => {
   return infraData.value
     .filter((item) => infraCategoryMap.has(item.category))
@@ -856,7 +899,6 @@ const formattedInfraList = computed(() => {
     }));
 });
 
-// 2. 편의시설 항목 필터링
 const formattedAmenityList = computed(() => {
   return infraData.value
     .filter((item) => amenityCategoryMap.has(item.category))
@@ -867,11 +909,6 @@ const formattedAmenityList = computed(() => {
     }));
 });
 
-const openProfileModal = () => {
-  router.push('/profile-setup');
-};
-
-// 찜 상태 토글
 async function toggleFavorite() {
   if (!p.value?.id) return;
   try {
@@ -887,14 +924,12 @@ async function toggleFavorite() {
   }
 }
 
-// Pinia 없이 직접 API 호출하는 비교함 담기 기능
 async function addToCompare() {
   if (!p.value?.id || isSubmitting.value) return;
 
   try {
     isSubmitting.value = true;
 
-    // 백엔드 API 직접 호출
     await comparisonApi.addToBox(p.value.id);
     compareMsg.value = '비교함에 담았어요.';
 

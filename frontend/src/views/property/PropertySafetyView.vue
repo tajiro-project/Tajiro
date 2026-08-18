@@ -95,7 +95,7 @@
 </template>
 
 <script setup>
-import { inject, ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import SimpleBar from 'simplebar-vue';
 import KakaoMap from '@/components/KakaoMap.vue';
@@ -103,6 +103,9 @@ import { propertyApi } from '@/api/services';
 import { SAFETY_CATEGORIES } from '@/constants/preferenceOptions';
 
 const route = useRoute();
+
+// 💡 1. 쿼리 스트링으로 전달받은 buildingName 우선 사용
+const buildingName = ref(route.query.buildingName || '');
 
 const CATEGORY_KEY_MAP = {
   POLICE_CENTER: 'POLICE',
@@ -119,7 +122,6 @@ const isLoading = ref(true);
 const currentTab = ref('crime');
 const selectedItemKey = ref(null);
 const rawSafetyData = ref(null);
-const buildingName = inject('buildingName');
 const updateDate = ref(null);
 
 const propertyCenter = ref({ lat: 36.3273128, lng: 127.4647872 });
@@ -145,6 +147,23 @@ const tabs = ref([
 
 onMounted(async () => {
   const propertyId = route.params.id;
+  if (!propertyId) return;
+
+  // 💡 2. buildingName 쿼리가 없는 경우(직접 URL 진입 등) 매물 상세 API로 예외 처리
+  if (!buildingName.value) {
+    try {
+      const pRes = await propertyApi.getPropertyDetail(propertyId);
+      const pData = pRes?.data || pRes;
+      const rawTitle = pData?.title || pData?.buildingName || pData?.name || '';
+      buildingName.value =
+        rawTitle.replace(/\s*\d+호$/, '').trim() || '건물명 정보 없음';
+    } catch (err) {
+      console.error('건물명 조회 실패:', err);
+      buildingName.value = '건물명 정보 없음';
+    }
+  }
+
+  // 3. 안전 정보 데이터 로드
   try {
     isLoading.value = true;
     const res = await propertyApi.safety(propertyId);
