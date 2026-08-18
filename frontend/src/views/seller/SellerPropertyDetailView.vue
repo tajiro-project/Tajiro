@@ -121,7 +121,7 @@ import simplebar from 'simplebar-vue';
 import { ChevronLeft, ChevronRight, Image as ImageIcon } from 'lucide-vue-next';
 import { getApiErrorMessage } from '@/api/client';
 import { sellerApi } from '@/api/services';
-import { manwon, priceLabel } from '@/utils/sellerProperty';
+import { manwon as manwonPlain } from '@/utils/sellerProperty';
 
 const PYEONG = 3.3058;
 
@@ -250,6 +250,17 @@ function countLabel(rooms, bathrooms) {
   if (rooms != null) parts.push(`${rooms}개`);
   if (bathrooms != null) parts.push(`${bathrooms}개`);
   return parts.length ? parts.join(' / ') : null;
+}
+
+function manwon(value) {
+  const label = manwonPlain(value);
+  return label === '-' ? label : `${label}만원`;
+}
+
+function priceLabel(item) {
+  return item.tradeType === '월세'
+    ? `월세 ${manwon(item.deposit)}/${manwon(item.monthlyRent)}`
+    : `${item.tradeType} ${manwon(item.deposit)}`;
 }
 
 function transactionPriceLabel(item) {
