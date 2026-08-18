@@ -25,7 +25,10 @@ const headerBack = computed(() => {
   const value = route.meta.headerBack;
   return typeof value === 'function' ? value(route) : (value ?? true);
 });
-const headerBackTo = computed(() => route.meta.headerBackTo ?? null);
+const headerBackTo = computed(() => {
+  const value = route.meta.headerBackTo;
+  return typeof value === 'function' ? value(route) : (value ?? null);
+});
 
 const activeTab = computed(() => {
   if (route.path === '/favorites') return 'scrap';

@@ -158,6 +158,16 @@ const routes = [
     meta: { headerTitle: '내 매물 관리', headerBackTo: '/seller/home' },
   },
   {
+    path: '/seller/properties/:id',
+    name: 'seller-property-detail',
+    component: () => import('@/views/seller/SellerPropertyDetailView.vue'),
+    meta: {
+      headerTitle: '내 매물 상세',
+      headerBackTo: (route) =>
+        route.query.from === 'home' ? '/seller/home' : '/seller/properties',
+    },
+  },
+  {
     path: '/seller/profile',
     name: 'seller-profile',
     component: () => import('@/views/seller/SellerProfileEditView.vue'),
