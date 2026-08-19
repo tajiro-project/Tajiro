@@ -73,10 +73,17 @@
           </div>
         </div>
 
-        <p class="sub-text">
-          비슷한 매물에 대한 매물가 평균은
-          <strong>{{ medianPrice }}만원</strong>입니다.
-        </p>
+        <div :class="['price-eval-box', priceDiffInfo.type]">
+          <component
+            :is="priceDiffInfo.icon"
+            :size="16"
+            class="eval-icon"
+          />
+          <span class="eval-text">
+            {{ priceDiffInfo.prefix }}
+            <strong>{{ priceDiffInfo.highlight }}</strong>
+          </span>
+        </div>
       </div>
 
       <section class="card">
@@ -237,25 +244,30 @@
             <span class="realtor-icon">
               <Building2 :size="18" color="#a8842c" />
             </span>
+            <!-- agencyName 연결 (null 시 기본값 처리) -->
             <p class="realtor-name">
-              {{ p.realtorPreview?.name ?? 'KB부동산공인중개사' }}
+              {{ p.agencyName ?? 'KB부동산공인중개사' }}
             </p>
           </div>
           <p class="realtor-addr">
-            <MapPin :size="12" color="#8a8d8f" />
-            {{
-              p.address
-                ? p.address.split(' ')[0] + ' ' + p.address.split(' ')[1]
-                : ''
-            }}
-            · 매물 인근
+            <MapPin
+              :size="12"
+              color="#8a8d8f"
+            />
+            {{ shortAddress ? `${shortAddress} · 매물 인근` : '매물 인근' }}
           </p>
           <div class="realtor-actions">
-            <button class="rt-btn outline">
+            <button
+              :class="['rt-btn', 'outline', { disabled: !p.agentPhone }]"
+              @click="handlePhoneClick"
+            >
               <Phone :size="14" />
               전화
             </button>
-            <button class="rt-btn yellow">
+            <button
+              :class="['rt-btn', 'yellow', { disabled: !p.agentPhone }]"
+              @click="handleChatClick"
+            >
               <MessageSquare :size="14" />
               채팅 문의
             </button>
@@ -430,6 +442,10 @@ import {
   Landmark,
   Lock,
   Banknote,
+  TrendingDown,
+  TrendingUp,
+  Minus,
+  HelpCircle,
 } from 'lucide-vue-next';
 
 // ----------------------------------------------------
@@ -449,7 +465,6 @@ const isDetailLoading = ref(true);
 const compareMsg = ref('');
 const isSubmitting = ref(false);
 
-const market = ref(null);
 const isFavorite = ref(false);
 
 const isProfileEntered = ref(false);
@@ -544,6 +559,9 @@ const fetchDetailAndRecommendations = async () => {
   try {
     const res = await propertyApi.getPropertyDetail(propertyId);
     p.value = res?.data || res;
+
+    p.value.agencyName = '강남 프라임 공인중개사사무소';
+    p.value.agentPhone = '010-1234-5678';
   } catch (e) {
     console.error('매물 정보 로드 실패:', e);
   } finally {
@@ -764,6 +782,26 @@ function handleTouchEnd(e) {
   }
 }
 
+// 전화 문의 클릭 핸들러
+const handlePhoneClick = () => {
+  const phone = p.value?.agentPhone;
+  if (phone) {
+    alert(`[테스트] ${phone} 번호로 전화 연결됩니다.`);
+  } else {
+    alert('등록된 중개사 전화번호가 없습니다.');
+  }
+};
+
+// 채팅 문의 클릭 핸들러
+const handleChatClick = () => {
+  const phone = p.value?.agentPhone;
+  if (phone) {
+    alert(`[테스트] ${phone} 번호로 문자(채팅) 연결됩니다.`);
+  } else {
+    alert('등록된 중개사 전화번호가 없습니다.');
+  }
+};
+
 const formatKoreanMoney = (value) => {
   if (value === undefined || value === null || isNaN(value)) return '';
 
@@ -880,7 +918,57 @@ const availableLine = computed(() => {
   return formatDateStr(p.value?.availableDate);
 });
 
-const medianPrice = computed(() => market.value?.medianPrice ?? 47);
+// 주변 매물 시세 비교 문구
+const priceDiffInfo = computed(() => {
+  const score = p.value?.evaluationScore;
+
+  // 1. 데이터 없음
+  if (score === null || score === undefined || isNaN(score)) {
+    return {
+      prefix: '주변에 ',
+      highlight: '비교할 수 있는 매물이 없어요',
+      type: 'none',
+      icon: HelpCircle,
+    };
+  }
+
+  const absScore = Math.abs(Math.round(score));
+
+  // 2. 평균보다 저렴함
+  if (score < 0) {
+    return {
+      prefix: '주변 비슷한 매물 평균보다 ',
+      highlight: `${absScore}% 저렴해요`,
+      type: 'cheaper',
+      icon: TrendingDown,
+    };
+  }
+
+  // 3. 평균보다 높음
+  if (score > 0) {
+    return {
+      prefix: '주변 비슷한 매물 평균보다 ',
+      highlight: `${absScore}% 높아요`,
+      type: 'expensive',
+      icon: TrendingUp,
+    };
+  }
+
+  // 4. 비슷함
+  return {
+    prefix: '주변 비슷한 매물과 ',
+    highlight: '시세가 비슷해요',
+    type: 'neutral',
+    icon: Minus,
+  };
+});
+
+// 시/도 + 구/군 단위를 조합하는 Computed
+const shortAddress = computed(() => {
+  if (!p.value?.address) return '';
+  const parts = p.value.address.split(' ');
+  return parts.slice(0, 2).join(' '); // 앞에서부터 2개 항목만 가져와 조합
+});
 
 const infraData = computed(
   () => p.value?.infraSummary || p.value?.infraList || [],
@@ -1179,15 +1267,57 @@ async function addToCompare() {
   padding: 0 2px;
 }
 
-.sub-text {
-  font-size: 12.5px;
-  color: #666666;
-  margin: 0;
+/* 시세 평가 콜아웃 박스 레이아웃 */
+.price-eval-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 11px 14px;
+  border-radius: 10px;
+  font-size: 13px;
   line-height: 1.4;
+  border: 1px solid transparent;
 }
 
-.sub-text strong {
-  color: #222222;
+/* 내부 아이콘 고정 */
+.eval-icon {
+  flex-shrink: 0;
+}
+
+/* 1. 저렴함 (선명한 블루 톤) */
+.price-eval-box.cheaper {
+  background-color: #ebf5ff;
+  border-color: #d0e7ff;
+  color: #1e40af;
+}
+.price-eval-box.cheaper strong {
+  color: #1d4ed8;
+  font-weight: 800;
+}
+
+/* 2. 비쌈 (흰 배경 대비를 높인 레드/핑크 톤) */
+.price-eval-box.expensive {
+  background-color: #fff1f2;
+  border-color: #ffe4e6;
+  color: #9f1239;
+}
+.price-eval-box.expensive strong {
+  color: #be123c;
+  font-weight: 800;
+}
+
+/* 3. 비슷함 & 4. 비교 매물 없음 (가독성을 높인 슬레이트 그레이 톤) */
+.price-eval-box.neutral,
+.price-eval-box.none {
+  background-color: #f1f5f9;
+  border-color: #e2e8f0;
+  color: #334155;
+}
+
+.price-eval-box.neutral strong,
+.price-eval-box.none strong {
+  color: #0f172a;
   font-weight: 700;
 }
 
@@ -1444,6 +1574,7 @@ async function addToCompare() {
 .realtor-name {
   font-size: 14px;
   font-weight: 800;
+  color: #222222;
 }
 
 .realtor-addr {
@@ -1452,7 +1583,7 @@ async function addToCompare() {
   gap: 5px;
   margin-top: 8px;
   font-size: 12px;
-  color: #666;
+  color: #666666;
 }
 
 .realtor-actions {
@@ -1468,16 +1599,36 @@ async function addToCompare() {
   font-size: 13px;
   font-weight: 700;
   border: 1px solid #ddd;
-  background: #fff;
+  background: #ffffff;
+  color: #222222;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
+  text-decoration: none; /* a 태그 밑줄 제거 */
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
+.rt-btn.outline {
+  background: #ffffff;
+  border: 1px solid #ddd;
+  color: #222222;
+}
+
+/* 전화번호가 없을 때 비활성화 스타일 */
+.rt-btn.disabled {
+  opacity: 0.5;
+  background-color: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+  color: #94a3b8 !important;
+  cursor: not-allowed;
 }
 
 .rt-btn.yellow {
   background: #ffbc00;
   border: none;
+  color: #222222;
 }
 
 .kb-note {
@@ -1489,7 +1640,7 @@ async function addToCompare() {
   background: #fdf8eb;
   border-radius: 10px;
   font-size: 11.5px;
-  color: #666;
+  color: #666666;
 }
 
 /* ==========================================================================
