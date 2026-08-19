@@ -83,8 +83,8 @@ public class ComparisonAiServiceImpl implements ComparisonAiService {
                 request.getPriorities());
 
         String propertyIdsJson = toLongJson(propertyIds);
-        LocalDateTime latestMarketSyncAt =
-                comparisonReportMapper.findLatestMarketSyncAtByJson(propertyIdsJson);
+        LocalDateTime latestMarketCalculatedAt =
+                comparisonReportMapper.findLatestMarketCalculatedAtByJson(propertyIdsJson);
         String prioritiesJson = toStringJson(buildComparisonContext(
                 priorities,
                 workplaceLat,
@@ -111,7 +111,7 @@ public class ComparisonAiServiceImpl implements ComparisonAiService {
                 reusableReport,
                 propertyIds,
                 maxPropertyUpdateDate,
-                latestMarketSyncAt)) {
+                latestMarketCalculatedAt)) {
             comparisonReportMapper.updateCreatedAt(reusableReport.getReportId(), userId);
             return toAnalysisResponse(reusableReport);
         }
@@ -141,7 +141,7 @@ public class ComparisonAiServiceImpl implements ComparisonAiService {
                     latestReport,
                     propertyIds,
                     maxPropertyUpdateDate,
-                    latestMarketSyncAt)) {
+                    latestMarketCalculatedAt)) {
                 reportToRefresh = latestReport;
             }
         }
@@ -205,7 +205,7 @@ public class ComparisonAiServiceImpl implements ComparisonAiService {
             ComparisonReportVO report,
             List<Long> propertyIds,
             LocalDateTime maxPropertyUpdateDate,
-            LocalDateTime latestMarketSyncAt) {
+            LocalDateTime latestMarketCalculatedAt) {
         if (report == null
                 || !hasText(report.getAiPropertySummaryText())
                 || !hasText(report.getAiSummary())
@@ -222,8 +222,8 @@ public class ComparisonAiServiceImpl implements ComparisonAiService {
             }
         }
 
-        if (latestMarketSyncAt != null && report.getCreatedAt() != null) {
-            if (report.getCreatedAt().isBefore(latestMarketSyncAt)) {
+        if (latestMarketCalculatedAt != null && report.getCreatedAt() != null) {
+            if (report.getCreatedAt().isBefore(latestMarketCalculatedAt)) {
                 return false;
             }
         }

@@ -25,5 +25,5 @@ public class ComparisonReportResponse {
     private Double workplaceLng;
     private List<String> priorities;
     private LocalDateTime createdAt;
-    private LocalDateTime latestMarketSyncAt;
+    private LocalDateTime latestMarketCalculatedAt;
 }

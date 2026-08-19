@@ -36,7 +36,7 @@ public interface ComparisonReportMapper {
     List<ComparisonReportPropertyDTO> findPropertiesByJson(
             @Param("propertyIdsJson") String propertyIdsJson);
 
-    LocalDateTime findLatestMarketSyncAtByJson(
+    LocalDateTime findLatestMarketCalculatedAtByJson(
             @Param("propertyIdsJson") String propertyIdsJson);
 
     int markUnsaved(@Param("reportId") Long reportId,

@@ -1163,11 +1163,11 @@ function hasUpdatedReportProperty(report) {
 
 function hasUpdatedMarketData(report) {
   const savedAt = new Date(report?.createdAt);
-  const syncedAt = new Date(report?.latestMarketSyncAt);
+  const calculatedAt = new Date(report?.latestMarketCalculatedAt);
   return (
     !Number.isNaN(savedAt.getTime()) &&
-    !Number.isNaN(syncedAt.getTime()) &&
-    syncedAt > savedAt
+    !Number.isNaN(calculatedAt.getTime()) &&
+    calculatedAt > savedAt
   );
 }
 
