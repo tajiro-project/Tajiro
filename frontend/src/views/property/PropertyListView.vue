@@ -1,6 +1,6 @@
 <template>
   <div class="property-list">
-    <div class="map-area">
+    <div class="map-area" data-tour="property-map">
       <KakaoMap
         :markers="markers"
         :dots="dots"
@@ -65,7 +65,7 @@
           />
         </svg>
       </button>
-      <div class="filter-chips">
+      <div class="filter-chips" data-tour="property-filter-chips">
         <SlidersHorizontal
           class="filter-icon"
           :size="16"
@@ -101,7 +101,7 @@
             조건에 맞는 매물 <b>{{ totalCount }}건</b>
           </template>
         </p>
-        <button class="sort-btn" @click="openSheet('sort')">
+        <button class="sort-btn" data-tour="property-sort" @click="openSheet('sort')">
           {{ sortLabel }}
           <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
             <path
@@ -118,6 +118,7 @@
       <div
         v-if="filter.sort === 'recommend'"
         class="priority-row"
+        data-tour="property-priority"
         @click="openSheet('priority')"
         @wheel="onWheelX"
       >
@@ -150,6 +151,9 @@
       </div>
     </div>
     <sidebar ref="scrollArea" class="scroll-area">
+      <p v-if="isDemoMode" class="demo-banner">
+        예시 화면이에요 · 실제 검색 결과가 아니에요
+      </p>
       <div v-if="isLoading" class="loading">
         <span class="spinner" />
         <p class="loading-text">매물을 불러오는 중이에요</p>
@@ -601,6 +605,12 @@
     @close="closeLocationPicker"
     @select="handleLocationSelect"
   />
+
+  <OnboardingSpotlight
+    group-name="property-list"
+    :steps="ONBOARDING_STEPS['property-list']"
+    return-to="/mypage"
+  />
 </template>
 
 <script setup>
@@ -611,6 +621,8 @@ import DualSlider from '@/components/DualSlider.vue';
 import SingleSlider from '@/components/SingleSlider.vue';
 import KakaoLocation from '@/components/KakaoLocation.vue';
 import InfraTogglePanel from '@/components/InfraTogglePanel.vue';
+import OnboardingSpotlight from '@/components/OnboardingSpotlight.vue';
+import { ONBOARDING_STEPS } from '@/constants/onboardingSteps';
 import medalGold from '@/assets/img/medals/medal_gold_ribbon.svg';
 import medalSilver from '@/assets/img/medals/medal_silver_ribbon.svg';
 import medalBronze from '@/assets/img/medals/medal_bronze_ribbon.svg';
@@ -677,6 +689,46 @@ const preference = ref(null);
 const isLoading = ref(false);
 const loadError = ref('');
 
+// 마이페이지 "다시보기"(?demo=1) 전용 — 가치관 미설정 계정은 실제 목록 조회가 404로 실패해서
+// /preferences/1로 튕겨나가버리므로, 실제 API를 안 타고 항상 예시 매물 2건을 보여준다.
+const isDemoMode = computed(() => route.query.demo === '1');
+const DEMO_ITEMS = [
+  {
+    propertyId: 'demo-1',
+    buildingId: 'demo-building-1',
+    title: 'e편한세상대전에코포레 2101호',
+    propertyType: '아파트',
+    buildingName: 'e편한세상대전에코포레',
+    tradeType: '전세',
+    deposit: 35400,
+    monthlyRent: 0,
+    maintenanceFee: 13,
+    areaM2: 84.97,
+    floorInfo: '21/34층',
+    recommendScore: 82,
+    thumbnailUrl: null,
+    latitude: 36.3283,
+    longitude: 127.4347,
+  },
+  {
+    propertyId: 'demo-2',
+    buildingId: 'demo-building-2',
+    title: '대전한신휴플러스 1502호',
+    propertyType: '오피스텔',
+    buildingName: '대전한신휴플러스',
+    tradeType: '월세',
+    deposit: 2000,
+    monthlyRent: 55,
+    maintenanceFee: 8,
+    areaM2: 46.2,
+    floorInfo: '15/22층',
+    recommendScore: 74,
+    thumbnailUrl: null,
+    latitude: 36.3504,
+    longitude: 127.3845,
+  },
+];
+
 const nullIfMin = (v, min) => (v <= min ? null : v);
 const nullIfMax = (v, max) => (v >= max ? null : v);
 
@@ -722,11 +774,17 @@ onActivated(async () => {
     });
     return;
   }
-  
+
   filter.sort = 'recommend';
   clearSelection();
   closePanel();
   sheetOffset.value = 0;
+
+  if (isDemoMode.value) {
+    items.value = DEMO_ITEMS;
+    isLoading.value = false;
+    return;
+  }
 
   await loadPreference();
   await fetchProperties();
@@ -1507,9 +1565,11 @@ function priceLabel(p) {
 }
 
 function goDetail(p) {
-  const query = route.query.returnTo === 'compare-box'
-    ? { returnTo: 'compare-box' }
-    : {};
+  const query = isDemoMode.value
+    ? { demo: '1' }
+    : route.query.returnTo === 'compare-box'
+      ? { returnTo: 'compare-box' }
+      : {};
 
   router.push({
     path: `/properties/${p.propertyId}`,
@@ -1923,6 +1983,18 @@ watch(filter, scrollToTop);
 .filter-icon {
   flex-shrink: 0;
   color: #545045;
+}
+
+.demo-banner {
+  margin: 12px 16px 0;
+  padding: 9px 12px;
+  background: #f1efea;
+  border: 1px dashed var(--kb-silver);
+  border-radius: 10px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--kb-gray);
+  text-align: center;
 }
 
 .fchip {

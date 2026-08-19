@@ -16,6 +16,7 @@
       <button
         class="menu-card primary"
         type="button"
+        data-tour="home-property-search"
         @click="router.push('/preferences/1')"
       >
         <span class="menu-icon primary">
@@ -66,6 +67,7 @@
           <button
             class="menu-card"
             type="button"
+            data-tour="home-benefit"
             @click="router.push('/benefits/policies')"
           >
             <span class="menu-icon">
@@ -99,6 +101,7 @@
           <button
             class="menu-card"
             type="button"
+            data-tour="home-safety-guide"
             @click="router.push('/safety-guide')"
           >
             <span class="menu-icon">
@@ -256,6 +259,8 @@
         </ul>
       </section>
     </simplebar>
+
+    <OnboardingSpotlight group-name="home" :steps="ONBOARDING_STEPS.home" />
   </div>
 </template>
 
@@ -263,6 +268,8 @@
 import { useRouter } from 'vue-router';
 import simplebar from 'simplebar-vue';
 import logoImg from '@/assets/img/logo.png';
+import OnboardingSpotlight from '@/components/OnboardingSpotlight.vue';
+import { ONBOARDING_STEPS } from '@/constants/onboardingSteps';
 
 const router = useRouter();
 

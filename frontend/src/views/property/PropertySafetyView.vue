@@ -17,6 +17,9 @@
       <div class="scroll-wrapper">
         <div class="scroll-content">
           <div class="title-area">
+            <p v-if="route.query.demo === '1'" class="demo-banner">
+              예시 화면이에요 · 실제 안전 데이터가 아니에요
+            </p>
             <h1 class="main-title">{{ buildingName }} 기준 안전 지표예요</h1>
             <p
               v-if="isLoading"
@@ -163,7 +166,64 @@ const tabs = ref([
   },
 ]);
 
+// 온보딩 다시보기(?demo=1) — 실제 API를 안 타고 바로 예시 데이터로 채운다.
+const DEMO_CENTER = { lat: 36.3273128, lng: 127.4647872 };
+const DEMO_SAFETY_DATA = {
+  crimeSafetyCount: 4,
+  trafficSafetyCount: 1,
+  updatedAt: '2026-06-01T00:00:00',
+  latitude: DEMO_CENTER.lat,
+  longitude: DEMO_CENTER.lng,
+  safetyList: [
+    {
+      safeCategory: 'POLICE_CENTER',
+      countWithin500m: 1,
+      details: [
+        { safeDetailId: 'demo-police-1', latitude: 36.3281, longitude: 127.4655, safeName: '용운지구대' },
+      ],
+    },
+    {
+      safeCategory: 'CCTV',
+      countWithin500m: 6,
+      details: [
+        { safeDetailId: 'demo-cctv-1', latitude: 36.3276, longitude: 127.4650, safeName: '방범 CCTV' },
+        { safeDetailId: 'demo-cctv-2', latitude: 36.3270, longitude: 127.4645, safeName: '방범 CCTV' },
+      ],
+    },
+    {
+      safeCategory: 'SAFETY_BELL',
+      countWithin500m: 2,
+      details: [
+        { safeDetailId: 'demo-bell-1', latitude: 36.3274, longitude: 127.4652, safeName: '안전 비상벨' },
+      ],
+    },
+    {
+      safeCategory: 'SECURITY_LIGHT',
+      countWithin500m: 9,
+      details: [
+        { safeDetailId: 'demo-light-1', latitude: 36.3272, longitude: 127.4648, safeName: '보안등' },
+      ],
+    },
+    {
+      safeCategory: 'CHILD_ACCIDENT_ZONE',
+      countWithin500m: 1,
+      details: [
+        { safeDetailId: 'demo-accident-1', latitude: 36.3279, longitude: 127.4642, safeName: '어린이 보호구역' },
+      ],
+    },
+  ],
+};
+
 onMounted(async () => {
+  if (route.query.demo === '1') {
+    buildingName.value = 'e편한세상대전에코포레';
+    propertyCenter.value = DEMO_CENTER;
+    rawSafetyData.value = DEMO_SAFETY_DATA;
+    updateDate.value = DEMO_SAFETY_DATA.updatedAt;
+    isLoading.value = false;
+    return;
+  }
+
   const propertyId = route.params.id;
   if (!propertyId) return;
 
@@ -424,6 +484,17 @@ const toggleItemSelection = (item) => {
 
 .title-area {
   margin-bottom: 2px;
+}
+.demo-banner {
+  margin: 0 0 10px;
+  padding: 9px 12px;
+  background: #f1efea;
+  border: 1px dashed var(--kb-silver);
+  border-radius: 10px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--kb-gray);
+  text-align: center;
 }
 .main-title {
   font-size: 18px;

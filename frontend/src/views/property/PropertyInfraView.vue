@@ -18,6 +18,9 @@
 
     <!-- 2. 제목 및 탭 고정 -->
     <div class="title-area">
+      <p v-if="route.query.demo === '1'" class="demo-banner">
+        예시 화면이에요 · 실제 인프라 데이터가 아니에요
+      </p>
       <h1 class="main-title">{{ buildingName }} 기준 도보 거리예요</h1>
       <p class="sub-title">반경 2km 공공데이터 기준</p>
     </div>
@@ -176,7 +179,25 @@ const categoryMap = computed(() => {
   return map;
 });
 
+// 온보딩 다시보기(?demo=1) — 실제 API를 안 타고 바로 예시 데이터로 채운다.
+const DEMO_CENTER = { lat: 36.3273128, lng: 127.4647872 };
+const DEMO_INFRAS = [
+  { category: 'SUBWAY', name: '용운역', distanceMeters: 420, walkMinutes: 6, lat: 36.3283, lng: 127.4652 },
+  { category: 'HOSPITAL', name: '대전대학교병원', distanceMeters: 680, walkMinutes: 9, lat: 36.3265, lng: 127.4638 },
+  { category: 'SCHOOL', name: '용운초등학교', distanceMeters: 350, walkMinutes: 5, lat: 36.3278, lng: 127.4655 },
+  { category: 'CONVENIENCE', name: 'GS25 용운점', distanceMeters: 150, walkMinutes: 2, lat: 36.3274, lng: 127.4649 },
+  { category: 'MART', name: '하나로마트 대전동구점', distanceMeters: 520, walkMinutes: 7, lat: 36.3268, lng: 127.4644 },
+  { category: 'CAFE', name: '스타벅스 대전대점', distanceMeters: 280, walkMinutes: 4, lat: 36.3276, lng: 127.4651 },
+];
+
 onMounted(async () => {
+  if (route.query.demo === '1') {
+    buildingName.value = 'e편한세상대전에코포레';
+    mapCenter.value = DEMO_CENTER;
+    infras.value = DEMO_INFRAS;
+    return;
+  }
+
   const propertyId = route.params.id;
   if (!propertyId) return;
 
@@ -366,6 +387,17 @@ const onBoundsChange = () => {};
 .title-area {
   margin-bottom: 2px;
   padding: 16px;
+}
+.demo-banner {
+  margin: 0 0 10px;
+  padding: 9px 12px;
+  background: #f1efea;
+  border: 1px dashed var(--kb-silver);
+  border-radius: 10px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--kb-gray);
+  text-align: center;
 }
 .main-title {
   font-size: 18px;
