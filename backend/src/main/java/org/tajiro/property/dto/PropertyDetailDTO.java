@@ -16,6 +16,7 @@ import java.util.List;
 @Data
 public class PropertyDetailDTO {
 
+    // 1. 기존 매물 정보 필드 (유지)
     private Long id;
     private String title;
     private String propertyType;
@@ -35,23 +36,29 @@ public class PropertyDetailDTO {
     private LocalDateTime availableDate;
     private Boolean discussionStatus;
 
+    // ✨ [추가 1] 신규 데이터 3가지
+    private BigDecimal evaluationScore; // property.evaluation_score
+    private String agentPhone;          // users.phone
+    private String agencyName;          // users.agency_name
+
+    // 2. 분석 및 상태 정보 (유지)
     private Integer recommendScore;         // API 응답 데이터 (추천 점수)
-    private Integer workplaceDistanceMeters; // ✨ API 응답 데이터 (직장 거리 - 미터)
+    private Integer workplaceDistanceMeters; // API 응답 데이터 (직장 거리 - 미터)
     private Boolean isFavorite;             // API 응답 데이터
 
+    // 3. 연관 목록 및 기타 정보 (유지)
     private List<String> images;
     private List<InfraSummaryDTO> infraSummary;
-
     private String sigunguCd;
 
-    // ✨ recommendScore를 파라미터로 추가 수용
+    // 팩토리 메서드 (of)
     public static PropertyDetailDTO of(
             PropertyDetailVO vo,
             List<String> images,
             List<InfraSummaryDTO> infraSummary,
             Boolean isFavorite,
             Integer recommendScore,
-            Integer workplaceDistanceMeters // ✨ 파라미터 추가
+            Integer workplaceDistanceMeters
     ) {
         if (vo == null) {
             return null;
@@ -76,8 +83,11 @@ public class PropertyDetailDTO {
                 .moveInDate(vo.getMoveInDate())
                 .availableDate(vo.getAvailableDate())
                 .discussionStatus(vo.getDiscussionStatus())
+                .evaluationScore(vo.getEvaluationScore())
+                .agentPhone(vo.getAgentPhone())
+                .agencyName(vo.getAgencyName())
                 .recommendScore(recommendScore)
-                .workplaceDistanceMeters(workplaceDistanceMeters) // ✨ 바인딩 추가
+                .workplaceDistanceMeters(workplaceDistanceMeters)
                 .isFavorite(isFavorite)
                 .images(images)
                 .infraSummary(infraSummary)
