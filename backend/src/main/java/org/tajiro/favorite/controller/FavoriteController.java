@@ -22,7 +22,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/users/me/favorites")
 @RequiredArgsConstructor
-@Api(tags = "찜한 매물")
+@Api(tags = "07. 관심 매물", description = "관심 매물 목록 조회, 등록 및 해제 API")
 public class FavoriteController {
 
     private final FavoriteService favoriteService;

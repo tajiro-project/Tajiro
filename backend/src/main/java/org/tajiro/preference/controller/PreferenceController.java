@@ -21,7 +21,7 @@ import springfox.documentation.annotations.ApiIgnore;
 @RestController
 @RequestMapping("/api/users/me/preferences")
 @RequiredArgsConstructor
-@Api(tags = "주거 선호 조건")
+@Api(tags = "04. 주거 선호 조건", description = "사용자의 주거 선호 조건 조회 및 저장 API")
 public class PreferenceController {
 
     private final PreferenceService preferenceService;

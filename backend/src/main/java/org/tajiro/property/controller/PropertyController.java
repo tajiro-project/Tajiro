@@ -21,7 +21,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/properties")
 @RequiredArgsConstructor
-@Api(tags = "매물")
+@Api(tags = "06. 매물 탐색", description = "주거 선호 조건에 맞는 매물 목록 조회 API")
 public class PropertyController {
     private final PropertyService propertyService;
 

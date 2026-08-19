@@ -20,7 +20,7 @@ import springfox.documentation.annotations.ApiIgnore;
 @RestController
 @RequestMapping("/api/users/me/dashboard")
 @RequiredArgsConstructor
-@Api(tags = "마이페이지 대시보드")
+@Api(tags = "12. 마이페이지", description = "사용자의 활동 현황을 확인하는 대시보드 조회 API")
 public class DashboardController {
 
     private final DashboardService dashboardService;

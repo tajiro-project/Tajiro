@@ -21,7 +21,7 @@ import org.tajiro.exception.BusinessException;
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
-@Api(tags = "인증")
+@Api(tags = "02. 인증", description = "회원가입, 로그인, 로그아웃 API")
 public class AuthController {
 
     private final AuthService authService;

@@ -22,7 +22,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/buildings")
 @RequiredArgsConstructor
-@Api(tags = "건물")
+@Api(tags = "06. 매물 탐색", description = "건물 주변 인프라 지도 정보 조회 API")
 public class BuildingInfraController {
 
     private final BuildingInfraService buildingInfraService;

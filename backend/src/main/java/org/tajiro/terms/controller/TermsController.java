@@ -17,7 +17,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/terms")
 @RequiredArgsConstructor
-@Api(tags = "약관")
+@Api(tags = "01. 약관", description = "회원가입에 필요한 약관 조회 API")
 public class TermsController {
 
     private final TermsService termsService;

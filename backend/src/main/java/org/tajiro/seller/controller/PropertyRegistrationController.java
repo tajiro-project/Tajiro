@@ -18,7 +18,7 @@ import springfox.documentation.annotations.ApiIgnore;
 @RestController
 @RequestMapping("/api/seller/properties")
 @RequiredArgsConstructor
-@Api(tags = "판매자 매물")
+@Api(tags = "13. 판매자 매물", description = "판매자 매물 등록, 조회, 상태 변경 및 삭제 API")
 public class PropertyRegistrationController {
 
     private final PropertyRegistrationService propertyRegistrationService;
