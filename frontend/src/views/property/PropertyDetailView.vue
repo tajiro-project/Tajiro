@@ -1,17 +1,7 @@
 <template>
-  <div
-    class="pdetail"
-    v-if="p"
-  >
-    <simplebar
-      ref="scrollArea"
-      class="scroll-area"
-      :auto-hide="true"
-    >
-      <p
-        v-if="route.query.demo === '1'"
-        class="demo-banner"
-      >
+  <div class="pdetail" v-if="p">
+    <simplebar ref="scrollArea" class="scroll-area" :auto-hide="true">
+      <p v-if="route.query.demo === '1'" class="demo-banner">
         예시 화면이에요 · 실제 매물이 아니에요
       </p>
 
@@ -42,10 +32,7 @@
             <ChevronRight :size="20" />
           </button>
 
-          <div
-            class="dots"
-            v-if="p.images.length > 1"
-          >
+          <div class="dots" v-if="p.images.length > 1">
             <span
               v-for="(_, idx) in p.images"
               :key="idx"
@@ -56,14 +43,8 @@
           </div>
         </template>
 
-        <div
-          v-else
-          class="photo-placeholder"
-        >
-          <ImageIcon
-            :size="44"
-            color="#8a8477"
-          />
+        <div v-else class="photo-placeholder">
+          <ImageIcon :size="44" color="#8a8477" />
           <p>등록된 이미지가 없습니다.</p>
         </div>
       </div>
@@ -74,20 +55,14 @@
       </div>
 
       <!-- 내 기준 점수 & 시세 문구 통합 카드 -->
-      <div
-        class="score-card"
-        data-tour="detail-score"
-      >
+      <div class="score-card" data-tour="detail-score">
         <div class="score-header">
           <span class="label">주거 가치관 반영 점수</span>
         </div>
 
         <div class="gauge-container">
           <div class="gauge-track">
-            <div
-              class="gauge-fill"
-              :style="{ width: `${p.recommendScore}%` }"
-            >
+            <div class="gauge-fill" :style="{ width: `${p.recommendScore}%` }">
               <div class="score-tooltip">{{ p.recommendScore }}점</div>
             </div>
           </div>
@@ -169,20 +144,14 @@
       <div class="mini-row">
         <div class="mini-card">
           <p class="mini-label">
-            <Receipt
-              :size="14"
-              color="#8a8d8f"
-            />
+            <Receipt :size="14" color="#8a8d8f" />
             관리비
           </p>
           <p class="mini-value">월 {{ p.maintenanceFee ?? 0 }}만원</p>
         </div>
         <div class="mini-card">
           <p class="mini-label">
-            <Clock
-              :size="14"
-              color="#8a8d8f"
-            />
+            <Clock :size="14" color="#8a8d8f" />
             통근 거리
           </p>
           <p class="mini-value">
@@ -193,10 +162,7 @@
 
       <div class="mini-card wide compact">
         <p class="mini-label">
-          <Building2
-            :size="14"
-            color="#8a8d8f"
-          />
+          <Building2 :size="14" color="#8a8d8f" />
           인프라 및 편의시설
         </p>
 
@@ -211,10 +177,7 @@
           </template>
 
           <template v-else>
-            <div
-              class="infra-row"
-              v-if="formattedInfraList.length > 0"
-            >
+            <div class="infra-row" v-if="formattedInfraList.length > 0">
               <span class="group-badge">인프라</span>
               <div class="inline-list">
                 <template
@@ -225,9 +188,7 @@
                     <span class="name">{{ item.name }}</span>
                     <span class="count">{{ item.count }}</span>
                   </span>
-                  <span
-                    v-if="idx < formattedInfraList.length - 1"
-                    class="sep"
+                  <span v-if="idx < formattedInfraList.length - 1" class="sep"
                     >·</span
                   >
                 </template>
@@ -241,10 +202,7 @@
               "
             />
 
-            <div
-              class="infra-row"
-              v-if="formattedAmenityList.length > 0"
-            >
+            <div class="infra-row" v-if="formattedAmenityList.length > 0">
               <span class="group-badge amenity">편의시설</span>
               <div class="inline-list">
                 <template
@@ -255,9 +213,7 @@
                     <span class="name">{{ item.name }}</span>
                     <span class="count">{{ item.count }}</span>
                   </span>
-                  <span
-                    v-if="idx < formattedAmenityList.length - 1"
-                    class="sep"
+                  <span v-if="idx < formattedAmenityList.length - 1" class="sep"
                     >·</span
                   >
                 </template>
@@ -268,22 +224,13 @@
       </div>
 
       <!-- 단순 이동 바 -->
-      <div
-        class="banner-group"
-        data-tour="detail-banners"
-      >
-        <button
-          class="simple-banner yellow"
-          @click="goToInfra"
-        >
+      <div class="banner-group" data-tour="detail-banners">
+        <button class="simple-banner yellow" @click="goToInfra">
           <span>가장 가까운 인프라 보기</span>
           <span class="arrow">→</span>
         </button>
 
-        <button
-          class="simple-banner green"
-          @click="goToSafety"
-        >
+        <button class="simple-banner green" @click="goToSafety">
           <span>안전 정보 보기</span>
           <span class="arrow">→</span>
         </button>
@@ -295,10 +242,7 @@
         <div class="realtor-card">
           <div class="realtor-head">
             <span class="realtor-icon">
-              <Building2
-                :size="18"
-                color="#a8842c"
-              />
+              <Building2 :size="18" color="#a8842c" />
             </span>
             <!-- agencyName 연결 (null 시 기본값 처리) -->
             <p class="realtor-name">
@@ -330,10 +274,7 @@
           </div>
         </div>
         <p class="kb-note">
-          <Info
-            :size="13"
-            color="#8a8d8f"
-          />
+          <Info :size="13" color="#8a8d8f" />
           KB 인증 중개사예요. 계약 전 등록번호를 꼭 확인하세요.
         </p>
       </section>
@@ -342,10 +283,7 @@
         <div class="benefit-group">
           <div class="group-header">
             <div class="group-title">
-              <Banknote
-                :size="19"
-                color="#a8842c"
-              />
+              <Banknote :size="19" color="#a8842c" />
               <span>매물 맞춤 금융 상품</span>
             </div>
             <span class="badge">최대 {{ financeList?.length || 0 }}건</span>
@@ -367,10 +305,7 @@
 
                   <div class="item-info-row">
                     <span class="rate-badge">{{ formatRateText(item) }}</span>
-                    <span
-                      v-if="item.loanLimit"
-                      class="limit-text"
-                    >
+                    <span v-if="item.loanLimit" class="limit-text">
                       {{ formatLoanLimit(item.loanLimit) }}
                     </span>
                   </div>
@@ -378,41 +313,24 @@
               </div>
             </template>
 
-            <div
-              v-else
-              class="empty-text"
-            >
-              추천 금융 상품이 없습니다.
-            </div>
+            <div v-else class="empty-text">추천 금융 상품이 없습니다.</div>
           </div>
         </div>
 
         <div class="benefit-group">
           <div class="group-header">
             <div class="group-title">
-              <Landmark
-                :size="19"
-                color="#a8842c"
-              />
+              <Landmark :size="19" color="#a8842c" />
               <span>청년 · 정부 지원 정책</span>
             </div>
             <span class="badge">최대 {{ policyList?.length || 0 }}건</span>
           </div>
 
-          <div
-            class="policy-wrapper"
-            :class="{ locked: !isProfileEntered }"
-          >
-            <div
-              v-if="!isProfileEntered"
-              class="lock-overlay"
-            >
+          <div class="policy-wrapper" :class="{ locked: !isProfileEntered }">
+            <div v-if="!isProfileEntered" class="lock-overlay">
               <div class="lock-box">
                 <div class="lock-icon-wrap">
-                  <Lock
-                    :size="15"
-                    color="#222"
-                  />
+                  <Lock :size="15" color="#222" />
                 </div>
                 <p class="lock-text">
                   내 정보 입력 시 <strong>맞춤 정책 혜택</strong> 확인 가능
@@ -446,12 +364,7 @@
                 </div>
               </template>
 
-              <div
-                v-else
-                class="empty-text"
-              >
-                조회된 지원 정책이 없습니다.
-              </div>
+              <div v-else class="empty-text">조회된 지원 정책이 없습니다.</div>
             </div>
           </div>
         </div>
@@ -481,10 +394,7 @@
           비교함 담기
         </button>
       </div>
-      <p
-        v-if="compareMsg"
-        class="compare-msg"
-      >
+      <p v-if="compareMsg" class="compare-msg">
         {{ compareMsg }}
       </p>
     </div>
@@ -511,6 +421,7 @@ import {
   policyApi,
   userApi,
 } from '@/api/services';
+import { getApiErrorCode, getApiErrorMessage } from '@/api/client';
 import {
   INFRA_CATEGORIES,
   AMENITY_CATEGORIES,
@@ -1133,10 +1044,17 @@ async function addToCompare() {
   } catch (error) {
     console.error('비교함 담기 실패:', error);
 
-    if (error.code === 'COMPARE_409_1') {
-      compareMsg.value = error.message;
-    } else if (error.code === 'COMPARE_409_2') {
-      compareMsg.value = error.message;
+    const errorCode = getApiErrorCode(error);
+    if (errorCode === 'COMPARE_409_1') {
+      compareMsg.value = getApiErrorMessage(
+        error,
+        '이미 비교함에 담긴 매물입니다.',
+      );
+    } else if (errorCode === 'COMPARE_409_2') {
+      compareMsg.value = getApiErrorMessage(
+        error,
+        '비교함에 담을 수 있는 매물 수를 초과했습니다.',
+      );
     } else {
       compareMsg.value = '비교함 추가 중 오류가 발생했습니다.';
     }

@@ -30,4 +30,8 @@ export function getApiErrorMessage(
   return error?.response?.data?.message ?? error?.response?.data?.error ?? fallback;
 }
 
+export function getApiErrorCode(error) {
+  return error?.response?.data?.code ?? null;
+}
+
 export default client;
