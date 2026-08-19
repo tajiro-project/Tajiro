@@ -16,7 +16,7 @@ import java.util.List;
 @Data
 public class PropertyDetailDTO {
 
-    // 1. 기존 매물 정보 필드 (유지)
+    // 1. 기존 매물 정보 필드
     private Long id;
     private String title;
     private String propertyType;
@@ -36,17 +36,21 @@ public class PropertyDetailDTO {
     private LocalDateTime availableDate;
     private Boolean discussionStatus;
 
-    // ✨ [추가 1] 신규 데이터 3가지
-    private BigDecimal evaluationScore; // property.evaluation_score
-    private String agentPhone;          // users.phone
-    private String agencyName;          // users.agency_name
+    // ✨ [수정] 1/0 DB 값을 Boolean(true/false)으로 받도록 변경
+    private Boolean transactionStatus; // property.transaction_status (1: true, 0: false)
+    private LocalDateTime deletedAt;    // property.deleted_at
 
-    // 2. 분석 및 상태 정보 (유지)
-    private Integer recommendScore;         // API 응답 데이터 (추천 점수)
-    private Integer workplaceDistanceMeters; // API 응답 데이터 (직장 거리 - 미터)
-    private Boolean isFavorite;             // API 응답 데이터
+    // 중개사 정보
+    private BigDecimal evaluationScore;
+    private String agentPhone;
+    private String agencyName;
 
-    // 3. 연관 목록 및 기타 정보 (유지)
+    // 2. 분석 및 상태 정보
+    private Integer recommendScore;
+    private Integer workplaceDistanceMeters;
+    private Boolean isFavorite;
+
+    // 3. 연관 목록 및 기타 정보
     private List<String> images;
     private List<InfraSummaryDTO> infraSummary;
     private String sigunguCd;
@@ -83,6 +87,8 @@ public class PropertyDetailDTO {
                 .moveInDate(vo.getMoveInDate())
                 .availableDate(vo.getAvailableDate())
                 .discussionStatus(vo.getDiscussionStatus())
+                .transactionStatus(vo.getTransactionStatus()) // Boolean 값 매핑
+                .deletedAt(vo.getDeletedAt())
                 .evaluationScore(vo.getEvaluationScore())
                 .agentPhone(vo.getAgentPhone())
                 .agencyName(vo.getAgencyName())

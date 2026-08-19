@@ -25,6 +25,7 @@
         p.bathroom_num         AS bathroomNum,
         p.park_availability    AS parkAvailability,
         p.transaction_status   AS transactionStatus,
+        p.deleted_at           AS deletedAt,          <!-- ✨ 추가 -->
         p.property_description AS propertyDescription,
         p.available_date       AS availableDate,
         p.move_in_date         AS moveInDate,
