@@ -20,6 +20,20 @@ import {
   SAFETY_CATEGORIES,
 } from '@/constants/preferenceOptions';
 import { MapPin } from 'lucide-vue-next';
+import iconApartment from '@/assets/img/pin/apartment.svg?raw';
+import iconOfficetel from '@/assets/img/pin/officetel.svg?raw';
+import iconOneroom from '@/assets/img/pin/oneroom.svg?raw';
+import iconHouse from '@/assets/img/pin/house.svg?raw';
+
+// 매물 유형별 핀 배경(fill)과 아이콘 색(ink)
+const PIN_TYPES = {
+  아파트: { fill: '#1f9d95', ink: '#fff', icon: iconApartment },
+  오피스텔: { fill: '#3f72c9', ink: '#fff', icon: iconOfficetel },
+  원룸: { fill: '#f0899f', ink: '#fff', icon: iconOneroom },
+  '주택/빌라': { fill: '#62b14e', ink: '#fff', icon: iconHouse },
+};
+
+const PIN_FALLBACK = { fill: '#8a8477', ink: '#fff', icon: iconApartment };
 
 const props = defineProps({
   mode: {
@@ -72,50 +86,44 @@ ALL_CATEGORIES.forEach((cat) => {
   }
 });
 
-function pinSvg(count, hasMedal) {
-  const showCount = props.mode === 'list' && count > 1 && !hasMedal;
-
-  const label = showCount
-    ? `
-      <text
-        x="9"
-        y="16"
-        text-anchor="middle"
-        font-size="7"
-        font-weight="500"
-        fill="#8a8477"
-      >+</text>
-      <text
-        x="15"
-        y="16"
-        text-anchor="middle"
-        font-size="10"
-        font-weight="700"
-        fill="#545045"
-      >${count}</text>
-    `
-    : '';
-
-  const fill = hasMedal ? '#fe7b00' : '#ffbc00';
-
-  return `<svg width="30" height="37" viewBox="0 0 26 32" fill="none">
+function pinSvg(fill) {
+  // paint-order="stroke" 로 테두리를 면 뒤에 깔아야 핀이 가늘어지지 않는다
+  return `<svg width="32" height="38" viewBox="0 0 44 52" fill="none">
     <path
-      d="M13 0C5.8 0 0 5.7 0 12.8C0 22.4 13 32 13 32s13-9.6 13-19.2C26 5.7 20.2 0 13 0z"
+      d="M22 51.5C15 41 3.5 33 3.5 21.5a18.5 18.5 0 1 1 37 0C40.5 33 29 41 22 51.5z"
       fill="${fill}"
+      stroke="#fff"
+      stroke-width="5"
+      stroke-linejoin="round"
+      paint-order="stroke"
     />
-    <circle cx="13" cy="12.5" r="7" fill="#fff"/>
-    ${label}
   </svg>`;
 }
 
+/**
+ * 순위 안에 들면 메달, 아니면 매물 개수. 둘 다 아니면 배지 없음.
+ * 배지는 흰 바탕이라 글자에 핀 배경색(fill)을 쓴다
+ */
+function badgeHtml(marker, fill) {
+  if (marker.medalUrl) {
+    return `<img class="pin-badge medal" src="${marker.medalUrl}" alt="">`;
+  }
+  if (props.mode === 'list' && marker.count > 1) {
+    return `<span class="pin-badge" style="color:${fill}">${marker.count}+</span>`;
+  }
+  return '';
+}
+
 function createPinElement(marker) {
+  const type = PIN_TYPES[marker.propertyType] ?? PIN_FALLBACK;
+
   const element = document.createElement('div');
-  element.className = 'property-pin';
+  element.className = marker.selected ? 'property-pin selected' : 'property-pin';
   element.innerHTML =
-    pinSvg(marker.count, !!marker.medalUrl) +
-    (marker.medalUrl
-      ? `<img class="pin-medal" src="${marker.medalUrl}" alt="">`
-      : '');
+    pinSvg(type.fill) +
+    `<span class="pin-icon" style="color:${type.ink}">${type.icon}</span>` +
+    badgeHtml(marker, type.fill);
+
   element.addEventListener('click', (e) => {
     e.stopPropagation();
     emit('marker-click', marker);
@@ -608,12 +616,39 @@ onUnmounted(() => {
 :deep(.property-pin) {
   position: relative;
   display: block;
+  width: 32px;
+  height: 38px;
   cursor: pointer;
-  filter: drop-shadow(0 2px 3px rgba(102, 77, 0, 0.35));
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.22));
 }
 
-:deep(.property-pin svg) {
+/* 흰 테두리가 viewBox 밖으로 1.5px 나가므로 잘리지 않게 한다 */
+:deep(.property-pin > svg) {
   display: block;
+  overflow: visible;
+}
+
+:deep(.property-pin.selected) {
+  transform: scale(1.12);
+  transform-origin: bottom center;
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.32));
+}
+
+:deep(.pin-icon) {
+  position: absolute;
+  top: 5px;
+  left: 50%;
+  width: 19px;
+  height: 19px;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+/* SVG 안의 fill="currentColor" 가 부모 color 를 따라간다 */
+:deep(.pin-icon svg) {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 :deep(.reference-location-marker) {
@@ -647,16 +682,30 @@ onUnmounted(() => {
   clip-path: polygon(0 0, 100% 50%, 0 100%);
 }
 
-:deep(.pin-medal) {
+/* 배지는 박스 밖으로 나가지만 요소 너비는 44px 그대로라 핀 끝점이 안 밀린다 */
+:deep(.pin-badge) {
   position: absolute;
-  top: 14.5px;
-  left: 15px;
-  transform: translate(-50%, -50%);
-  width: 16.2px;
-  height: 16.2px;
-  pointer-events: none;
+  top: -1px;
+  right: -5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  box-sizing: border-box;
+  background: #fff;
   border-radius: 50%;
-  box-shadow: 0 0 0 1px #ffffff;
+  font-size: 9px;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+:deep(.pin-badge.medal) {
+  padding: 0;
+  background: transparent;
+  object-fit: contain;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px #fff;
 }
 
 :deep(.infra-dot) {
