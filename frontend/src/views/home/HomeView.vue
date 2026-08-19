@@ -258,7 +258,7 @@
               class="banner-cta"
               @click="router.push('/benefits/policies')"
             >
-              내 정보 입력하고 맞춤 혜택 받기
+              내 선호 지역 맞춤 혜택 보기
             </button>
           </section>
           </div>
