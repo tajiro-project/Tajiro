@@ -106,6 +106,33 @@
           </p>
         </div>
 
+        <div class="field">
+          <label
+            class="field-label"
+            for="targetRegion"
+            >선호 지역</label
+          >
+          <input
+            id="targetRegion"
+            class="field-input"
+            type="text"
+            readonly
+            :value="targetRegion"
+            placeholder="예) 서울특별시 강남구"
+            required
+            @click="isLocationPickerOpen = true"
+            @keydown.enter.prevent="isLocationPickerOpen = true"
+          />
+        </div>
+        <div class="field">
+          <label
+            class="field-label"
+            for="birthDate"
+            >생년월일</label
+          >
+          <BirthDatePicker v-model="birthDate" />
+        </div>
+
         <template v-if="accountType === 'SELLER'">
           <div class="field">
             <label
@@ -287,6 +314,12 @@
         </button>
       </div>
     </div>
+
+    <KakaoLocation
+      :open="isLocationPickerOpen"
+      @close="isLocationPickerOpen = false"
+      @select="selectRegion"
+    />
   </div>
 </template>
 
@@ -296,6 +329,8 @@ import { useRouter } from 'vue-router';
 import client, { getApiErrorMessage, withMock } from '@/api/client';
 import { mockTerms } from '@/api/mockData';
 import simplebar from 'simplebar-vue';
+import KakaoLocation from '@/components/KakaoLocation.vue';
+import BirthDatePicker from '@/components/BirthDatePicker.vue';
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PASSWORD_PATTERN = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
@@ -315,6 +350,10 @@ const password = ref('');
 const passwordConfirm = ref('');
 const phone = ref('');
 const agencyName = ref('');
+const targetRegion = ref('');
+const targetSggCode = ref('');
+const birthDate = ref('');
+const isLocationPickerOpen = ref(false);
 const accountType = ref('USER'); // 'USER' | 'SELLER'
 const loading = ref(false);
 const errorMessage = ref('');
@@ -355,11 +394,19 @@ const canSubmit = computed(() => {
     EMAIL_PATTERN.test(email.value) &&
     PASSWORD_PATTERN.test(password.value) &&
     password.value === passwordConfirm.value &&
+    targetRegion.value.trim() !== '' &&
+    birthDate.value !== '' &&
     requiredAgreed.value &&
     (accountType.value !== 'SELLER' ||
       (phone.value.trim() !== '' && agencyName.value.trim() !== ''))
   );
 });
+
+function selectRegion(location) {
+  targetRegion.value = location.name || location.address;
+  targetSggCode.value = location.sggCode ?? '';
+  isLocationPickerOpen.value = false;
+}
 
 onMounted(loadTerms);
 
@@ -441,6 +488,9 @@ async function handleRegister() {
         isSeller,
         phone: isSeller ? phone.value : undefined,
         agencyName: isSeller ? agencyName.value : undefined,
+        targetRegion: targetRegion.value,
+        target_sgg_code: targetSggCode.value,
+        birthDate: birthDate.value,
         agreements: termsList.value.map((term) => ({
           termsId: term.id,
           agreed: isAgreed(term.id),
