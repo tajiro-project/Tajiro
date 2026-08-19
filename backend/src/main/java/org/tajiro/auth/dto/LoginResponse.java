@@ -32,6 +32,7 @@ public class LoginResponse {
         private String email;
         private String role;
         private boolean hasListings;
+        private String onboardingSeen;
 
         public static UserSummary of(UserVO vo, boolean hasListings) {
             if (vo == null) {
@@ -43,6 +44,7 @@ public class LoginResponse {
                     .email(vo.getEmail())
                     .role(vo.getRole())
                     .hasListings(hasListings)
+                    .onboardingSeen(vo.getOnboardingSeen())
                     .build();
         }
     }

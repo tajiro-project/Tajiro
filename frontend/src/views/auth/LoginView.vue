@@ -55,6 +55,9 @@ import { useRoute, useRouter } from 'vue-router';
 import client, { withMock } from '@/api/client';
 import logoImg from '@/assets/img/logo.png';
 import simplebar from 'simplebar-vue';
+import { useOnboardingTour } from '@/composables/useOnboardingTour';
+
+const { setSeenMask } = useOnboardingTour();
 
 const MOCK_EMAIL = 'test@tajiro.com';
 const MOCK_PASSWORD = 'test1234';
@@ -84,6 +87,7 @@ async function handleLogin() {
     if (payload.user?.role) {
       localStorage.setItem('userRole', payload.user.role);
     }
+    setSeenMask(payload.user?.onboardingSeen);
 
     const redirect = route.query.redirect;
 
@@ -113,6 +117,7 @@ function mockLogin() {
         email: email.value,
         role: 'USER',
         hasListings: false,
+        onboardingSeen: '000000',
       },
     };
   }

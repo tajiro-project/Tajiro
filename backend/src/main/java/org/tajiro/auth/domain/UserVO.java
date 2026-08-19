@@ -23,4 +23,5 @@ public class UserVO {
     private String status;
     private LocalDateTime createdAt;
     private LocalDateTime deletedAt;
+    private String onboardingSeen;
 }
