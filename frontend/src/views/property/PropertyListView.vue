@@ -783,6 +783,7 @@ onActivated(async () => {
   if (isDemoMode.value) {
     items.value = DEMO_ITEMS;
     isLoading.value = false;
+    loadError.value = '';
     return;
   }
 
@@ -827,6 +828,7 @@ function applyPreferenceToFilter(p) {
 }
 
 async function commitFilter({ preserveSelection = false } = {}) {
+  if (isDemoMode.value) return;
   if (!preference.value) return;
   if (!preserveSelection) clearSelection();
 
@@ -1361,6 +1363,7 @@ async function handleLocationSelect(location) {
 }
 
 async function updateWorkplace(location) {
+  if (isDemoMode.value) return;
   if (!preference.value) return;
 
   const workplace = {
