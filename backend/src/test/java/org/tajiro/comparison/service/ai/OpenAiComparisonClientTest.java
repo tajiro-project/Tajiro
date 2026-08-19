@@ -10,6 +10,7 @@ import org.tajiro.common.api.ErrorCode;
 import org.tajiro.comparison.dto.ComparisonAnalysisResponseDTO;
 import org.tajiro.comparison.dto.ComparisonMetricDTO;
 import org.tajiro.exception.BusinessException;
+import org.tajiro.preference.domain.HousingPreferenceVO;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -60,7 +61,8 @@ class OpenAiComparisonClientTest {
 
         ComparisonAnalysisResponseDTO result = clientWith("test-key").generate(
                 metrics(),
-                Arrays.asList("COMMUTE", "COST"));
+                Arrays.asList("COMMUTE", "COST"),
+                preference());
 
         assertEquals(119L, result.getAiRecommendedPropertyId());
         assertEquals("두 매물을 비교했어요.", result.getAiPropertySummaryText());
@@ -74,7 +76,10 @@ class OpenAiComparisonClientTest {
     void generateFailsClearlyWhenApiKeyIsMissing() {
         BusinessException exception = assertThrows(
                 BusinessException.class,
-                () -> clientWith("").generate(metrics(), Collections.emptyList()));
+                () -> clientWith("").generate(
+                        metrics(),
+                        Collections.emptyList(),
+                        preference()));
 
         assertEquals(ErrorCode.AI_API_KEY_NOT_CONFIGURED, exception.getResponseCode());
     }
@@ -93,7 +98,8 @@ class OpenAiComparisonClientTest {
                 BusinessException.class,
                 () -> clientWith("test-key").generate(
                         metrics(),
-                        Collections.emptyList()));
+                        Collections.emptyList(),
+                        preference()));
 
         assertEquals(ErrorCode.AI_COACHING_UNAVAILABLE, exception.getResponseCode());
         server.verify();
@@ -106,6 +112,14 @@ class OpenAiComparisonClientTest {
                 "",
                 "gpt-4o-mini",
                 "");
+    }
+
+    private HousingPreferenceVO preference() {
+        return HousingPreferenceVO.builder()
+                .maxMonthlyRent(60)
+                .maxWorkplaceDistanceMeters(5000)
+                .hasCar(false)
+                .build();
     }
 
     private List<ComparisonMetricDTO> metrics() {

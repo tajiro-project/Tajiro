@@ -415,7 +415,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import client, { getApiErrorMessage } from '@/api/client';
-import { comparisonApi } from '@/api/services';
+import { comparisonApi, preferenceApi } from '@/api/services';
 import simplebar from 'simplebar-vue';
 import OnboardingSpotlight from '@/components/OnboardingSpotlight.vue';
 import { ONBOARDING_STEPS } from '@/constants/onboardingSteps';
@@ -494,32 +494,6 @@ const selectedIds = computed(() =>
     .sort((a, b) => a - b)
     .slice(0, 3),
 );
-const comparisonWorkplace = computed(() => {
-  const lat = Number(firstQueryValue(route.query.workplaceLat));
-  const lng = Number(firstQueryValue(route.query.workplaceLng));
-
-  if (
-    !Number.isFinite(lat) ||
-    !Number.isFinite(lng) ||
-    lat < -90 ||
-    lat > 90 ||
-    lng < -180 ||
-    lng > 180
-  ) {
-    return null;
-  }
-
-  return {
-    lat,
-    lng,
-    name: firstQueryValue(route.query.workplaceName),
-  };
-});
-const comparisonPriorities = computed(() => {
-  return normalizePriorityKeys(
-    String(firstQueryValue(route.query.priorities) ?? '').split(','),
-  );
-});
 const reportId = computed(() =>
   String(route.params.reportId ?? route.query.reportId ?? ''),
 );
@@ -1049,11 +1023,15 @@ async function loadComparison() {
     const savedReport = isReportMode.value
       ? await getReportDetail(reportId.value)
       : null;
-    const workplace =
-      comparisonWorkplace.value ?? getSavedReportWorkplace(savedReport);
+    const savedPreference = isReportMode.value
+      ? null
+      : await preferenceApi.get();
+    const workplace = isReportMode.value
+      ? getSavedReportWorkplace(savedReport)
+      : getPreferenceWorkplace(savedPreference);
     const priorities = isReportMode.value
       ? getSavedReportPriorities(savedReport)
-      : comparisonPriorities.value;
+      : getPreferencePriorities(savedPreference);
     const propertyIds = (
       savedReport?.comparedPropertyIds ?? selectedIds.value
     ).slice(0, 3);
@@ -1085,12 +1063,12 @@ async function loadComparison() {
       }
     } else {
       try {
-        coachingDto = await getCoaching(propertyIds, workplace, priorities);
+        coachingDto = await getCoaching(propertyIds);
       } catch (error) {
         coachingError.value = error.message;
       }
       loadingStage.value = LOADING_STEPS.length - 1;
-      metricsResult = await getMetrics(propertyIds, workplace, false);
+      metricsResult = await getMetrics(propertyIds, null, false);
     }
 
     applyComparisonResult({
@@ -1144,6 +1122,25 @@ function getSavedReportWorkplace(report) {
 
 function getSavedReportPriorities(report) {
   return normalizePriorityKeys(report?.priorities);
+}
+
+function getPreferenceWorkplace(preference) {
+  const lat = Number(preference?.workplace?.lat);
+  const lng = Number(preference?.workplace?.lng);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  return {
+    lat,
+    lng,
+    name: preference?.workplace?.name ?? preference?.workplace?.address,
+  };
+}
+
+function getPreferencePriorities(preference) {
+  return normalizePriorityKeys(
+    [...(preference?.priorities ?? [])]
+      .sort((a, b) => Number(a?.priorityOrder) - Number(b?.priorityOrder))
+      .map((priority) => priority?.criterion),
+  );
 }
 
 function shouldShowAiRefreshModal(report) {
@@ -1231,10 +1228,6 @@ async function getCoaching(propertyIds, workplace, priorities) {
   }
 }
 
-function firstQueryValue(value) {
-  return Array.isArray(value) ? value[0] : value;
-}
-
 // 서버에서 받아온 비교 결과를 화면에 적용하는 함수
 function applyComparisonResult(dto) {
   const rawMetrics = Array.isArray(dto?.metrics?.items)
@@ -1296,8 +1289,8 @@ function formatSignedPercent(value) {
 function commuteDescription() {
   const hasCar = metrics.value.some((metric) => metric.hasCar === true);
   return hasCar
-    ? '출근지까지 차량 왕복 기준으로 계산한 시간이에요.'
-    : '출근지까지 도보 왕복 기준으로 계산한 시간이에요.';
+    ? '출근지까지 차량 편도 기준으로 계산한 시간이에요.'
+    : '출근지까지 도보 편도 기준으로 계산한 시간이에요.';
 }
 
 function moneyLabel(value) {
