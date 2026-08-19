@@ -424,36 +424,33 @@
 
     <div class="field">
       <p class="field-name">자차 보유 여부</p>
-      <div class="check-row">
-        <label class="check-item" @click="draft.hasCar = true">
-          <span class="checkbox" :class="{ on: draft.hasCar }">
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-              <path
-                d="M2 6.5L4.7 9L10 3.5"
-                stroke="#545045"
-                stroke-width="1.8"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </svg>
-          </span>
-          자차 보유 O
-        </label>
-        <label class="check-item" @click="draft.hasCar = false">
-          <span class="checkbox" :class="{ on: !draft.hasCar }">
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-              <path
-                d="M2 6.5L4.7 9L10 3.5"
-                stroke="#545045"
-                stroke-width="1.8"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </svg>
-          </span>
-          자차 보유 X
-        </label>
-      </div>
+        <div class="check-row">
+          <label
+            class="check-item"
+            @click="draft.hasCar = !draft.hasCar"
+          >
+            <span
+              class="checkbox"
+              :class="{ on: draft.hasCar }"
+            >
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 12 12"
+                fill="none"
+              >
+                <path
+                  d="M2 6.5L4.7 9L10 3.5"
+                  stroke="#545045"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </span>
+            자차 보유 여부
+          </label>
+        </div>
     </div>
 
     <template #footer>
