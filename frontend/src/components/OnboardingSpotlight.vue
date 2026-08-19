@@ -45,7 +45,7 @@
 </template>
 
 <script setup>
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onDeactivated, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useOnboardingTour } from '@/composables/useOnboardingTour';
 
@@ -189,7 +189,22 @@ onMounted(() => {
   window.addEventListener('scroll', onWindowChange, true);
 });
 
+// 투어를 끝내지 않은 채 화면을 벗어나면(예: 가치관 미설정 상태로 매물 리스트에 들어왔다가
+// 404로 가치관 설정 화면으로 튕겨나가는 경우) state.activeGroup이 이 그룹으로 남아있게 되고,
+// 그러면 다음 화면의 maybeStart가 "이미 다른 투어가 진행 중"이라고 판단해 조용히 무시해버린다.
+// PropertyListView처럼 KeepAlive로 감싸인 화면은 onBeforeUnmount가 아니라 onDeactivated로 벗어나므로
+// 두 훅 모두에서 정리한다.
+function resetIfStillActive() {
+  if (state.activeGroup === props.groupName) {
+    state.activeGroup = null;
+    state.stepIndex = 0;
+  }
+}
+
+onDeactivated(resetIfStillActive);
+
 onBeforeUnmount(() => {
+  resetIfStillActive();
   observer?.disconnect();
   window.removeEventListener('resize', onWindowChange);
   window.removeEventListener('scroll', onWindowChange, true);
