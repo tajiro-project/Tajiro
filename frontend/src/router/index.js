@@ -106,12 +106,6 @@ const routes = [
     meta: { headerTitle: '스크랩한 매물' },
   },
   {
-    path: '/profile-setup',
-    name: 'profile-setup',
-    component: () => import('@/views/profile/ProfileSetupView.vue'),
-    meta: { headerTitle: '내 정보 입력', headerBack: true },
-  },
-  {
     path: '/register',
     name: 'register',
     component: () => import('@/views/auth/RegisterView.vue'),
