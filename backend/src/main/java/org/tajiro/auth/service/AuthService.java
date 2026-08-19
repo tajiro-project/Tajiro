@@ -12,4 +12,8 @@ public interface AuthService {
     RegisterResponse register(RegisterRequest request);
 
     void withdraw(Long userId);
+
+    String markOnboardingTourSeen(Long userId, String group);
+
+    String getOnboardingSeen(Long userId);
 }

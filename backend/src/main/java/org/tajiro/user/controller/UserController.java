@@ -12,6 +12,8 @@ import org.tajiro.auth.service.AuthService;
 import org.tajiro.common.api.ApiResponse;
 import org.tajiro.common.api.ErrorCode;
 import org.tajiro.exception.BusinessException;
+import org.tajiro.user.dto.OnboardingTourRequest;
+import org.tajiro.user.dto.OnboardingTourResponse;
 import org.tajiro.user.dto.ProfileUpdateResponse;
 import org.tajiro.user.dto.UserProfileDTO;
 import org.tajiro.user.dto.UserProfileRequest;
@@ -58,5 +60,30 @@ public class UserController {
 
         authService.withdraw(userId);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/onboarding-tour")
+    public ResponseEntity<ApiResponse<OnboardingTourResponse>> getOnboardingTour(
+            @ApiIgnore @AuthenticationPrincipal Long userId) {
+        if (userId == null) {
+            throw new BusinessException(ErrorCode.AUTH_REQUIRED);
+        }
+
+        String onboardingSeen = authService.getOnboardingSeen(userId);
+        return ResponseEntity.ok(ApiResponse.success(
+                OnboardingTourResponse.builder().onboardingSeen(onboardingSeen).build()));
+    }
+
+    @PatchMapping("/onboarding-tour")
+    public ResponseEntity<ApiResponse<OnboardingTourResponse>> markOnboardingTourSeen(
+            @ApiIgnore @AuthenticationPrincipal Long userId,
+            @RequestBody OnboardingTourRequest request) {
+        if (userId == null) {
+            throw new BusinessException(ErrorCode.AUTH_REQUIRED);
+        }
+
+        String onboardingSeen = authService.markOnboardingTourSeen(userId, request.getGroup());
+        return ResponseEntity.ok(ApiResponse.success(
+                OnboardingTourResponse.builder().onboardingSeen(onboardingSeen).build()));
     }
 }

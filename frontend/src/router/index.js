@@ -1,4 +1,5 @@
 ﻿import { createRouter, createWebHistory } from 'vue-router';
+import { useOnboardingTour } from '@/composables/useOnboardingTour';
 
 const routes = [
   {
@@ -184,12 +185,19 @@ const router = createRouter({
 });
 
 const PUBLIC_PATHS = ['/', '/login', '/register'];
+const { syncFromServer } = useOnboardingTour();
 
-router.beforeEach((to) => {
+router.beforeEach(async (to) => {
   const isLoggedIn = !!localStorage.getItem('accessToken');
 
   if (!PUBLIC_PATHS.includes(to.path) && !isLoggedIn) {
     return { path: '/login', query: { redirect: to.fullPath } };
+  }
+
+  // 로그인 응답을 거치지 않고 세션이 이어지는 경우(새로고침 등) 온보딩 완료 여부를 서버에서 동기화.
+  // 이미 로그인 시점에 받아온 세션이면 syncFromServer가 알아서 스킵한다.
+  if (isLoggedIn) {
+    await syncFromServer();
   }
 
   if (to.path.startsWith('/seller') && isLoggedIn) {

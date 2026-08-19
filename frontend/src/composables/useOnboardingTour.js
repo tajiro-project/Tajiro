@@ -1,61 +1,61 @@
 import { reactive } from 'vue';
 import { TOUR_GROUPS } from '@/constants/onboardingSteps';
-
-const SEEN_KEY_PREFIX = 'tajiro:onboarding-tour-seen-groups';
+import client from '@/api/client';
 
 const state = reactive({
   activeGroup: null,
   stepIndex: 0,
 });
 
-// JWT는 base64url이라 atob 전에 표준 base64로 바꿔줘야 한다.
-function base64UrlDecode(value) {
-  const base64 = value.replace(/-/g, '+').replace(/_/g, '/');
-  const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), '=');
-  return atob(padded);
-}
+// 서버(users.onboarding_seen)에서 받아온 비트열을 세션 동안 메모리에 들고 있는다.
+// localStorage가 아니라 서버가 기준이라, 캐시를 지워도/다른 기기에서 로그인해도 유지된다.
+let seenMask = '0'.repeat(TOUR_GROUPS.length);
+let synced = false;
 
-// "본 화면" 기록을 로그인한 유저 기준으로 나눈다 — 이게 없으면 같은 브라우저에서
-// 계정을 바꿔가며 로그인할 때 다른 사람이 이미 본 걸로 취급돼버린다.
-function getCurrentUserId() {
-  try {
-    const token = localStorage.getItem('accessToken');
-    if (!token) return 'guest';
-    const payload = JSON.parse(base64UrlDecode(token.split('.')[1]));
-    return payload.sub ?? 'guest';
-  } catch {
-    return 'guest';
+function setSeenMask(mask) {
+  if (typeof mask === 'string' && mask.length === TOUR_GROUPS.length) {
+    seenMask = mask;
   }
+  synced = true;
 }
 
-function seenKey() {
-  return `${SEEN_KEY_PREFIX}:${getCurrentUserId()}`;
-}
-
-function loadSeen() {
+// 페이지 새로고침 등으로 로그인 응답을 거치지 않고 세션이 이어질 때, 서버에서 현재 값을 한 번 받아온다.
+// 로그인 직후에는 setSeenMask가 이미 synced를 true로 만들어두므로 여기서 다시 호출하지 않는다.
+async function syncFromServer() {
+  if (synced) return;
+  synced = true;
   try {
-    const raw = localStorage.getItem(seenKey());
-    return new Set(raw ? JSON.parse(raw) : []);
+    const res = await client.get('/users/me/onboarding-tour');
+    const data = res.data?.data ?? res.data;
+    if (typeof data?.onboardingSeen === 'string' && data.onboardingSeen.length === TOUR_GROUPS.length) {
+      seenMask = data.onboardingSeen;
+    }
   } catch {
-    return new Set();
+    // 실패하면 기본값(전부 안 봄)으로 남는다 — 온보딩이 다시 뜨는 정도라 안전한 폴백.
   }
-}
-
-function saveSeen(seen) {
-  localStorage.setItem(seenKey(), JSON.stringify([...seen]));
 }
 
 function hasSeen(group) {
-  return loadSeen().has(group);
+  const index = TOUR_GROUPS.indexOf(group);
+  return index !== -1 && seenMask[index] === '1';
 }
 
-function markSeen(group) {
-  const seen = loadSeen();
-  seen.add(group);
-  saveSeen(seen);
+// 서버에 "이 그룹 봤음"을 저장한다. 실패해도 로컬 표시(seenMask)는 유지 — 다음 로그인 때 서버 값
+// 기준으로 다시 맞춰진다. "다시보기"(startAt)는 이 함수를 호출하지 않는다 — 이미 본 걸 다시 보여주는
+// 것뿐이라 서버에 새로 쓸 내용이 없다.
+async function markSeen(group) {
+  const index = TOUR_GROUPS.indexOf(group);
+  if (index === -1 || seenMask[index] === '1') return;
+
+  seenMask = seenMask.slice(0, index) + '1' + seenMask.slice(index + 1);
+  try {
+    await client.patch('/users/me/onboarding-tour', { group });
+  } catch {
+    // 무시 — 위 주석 참고.
+  }
 }
 
-// 화면에 들어올 때마다 호출됨(OnboardingSpotlight가 자기 mount 시점에 알아서 호출).
+// 화면에 들어올 때마다 호출됨(OnboardingSpotlight가 자기 mount/activate 시점에 알아서 호출).
 // 아직 안 본 화면이고, 지금 다른 투어가 진행 중이 아닐 때만 자동으로 시작함.
 // 탭을 어떤 순서로 눌러도 각 화면이 독립적으로 자기 차례를 스스로 챙긴다.
 function maybeStart(group) {
@@ -103,5 +103,7 @@ export function useOnboardingTour() {
     skip,
     next,
     isCurrentGroup,
+    setSeenMask,
+    syncFromServer,
   };
 }

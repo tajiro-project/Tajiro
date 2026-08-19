@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.tajiro.auth.domain.OnboardingTourGroups;
 import org.tajiro.auth.domain.UserVO;
 import org.tajiro.auth.dto.LoginRequest;
 import org.tajiro.auth.dto.LoginResponse;
@@ -91,6 +92,36 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     public void withdraw(Long userId) {
         authMapper.softDeleteUser(userId);
+    }
+
+    @Override
+    @Transactional
+    public String markOnboardingTourSeen(Long userId, String group) {
+        int index = OnboardingTourGroups.ORDER.indexOf(group);
+        if (index == -1) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
+        }
+
+        String current = authMapper.findOnboardingSeenByUserId(userId);
+        if (current == null || current.length() != OnboardingTourGroups.ORDER.size()) {
+            current = OnboardingTourGroups.DEFAULT_SEEN;
+        }
+
+        StringBuilder updated = new StringBuilder(current);
+        updated.setCharAt(index, '1');
+
+        authMapper.updateOnboardingSeen(userId, updated.toString());
+        return updated.toString();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public String getOnboardingSeen(Long userId) {
+        String current = authMapper.findOnboardingSeenByUserId(userId);
+        if (current == null || current.length() != OnboardingTourGroups.ORDER.size()) {
+            return OnboardingTourGroups.DEFAULT_SEEN;
+        }
+        return current;
     }
 
     private void validateRegisterRequest(RegisterRequest request) {

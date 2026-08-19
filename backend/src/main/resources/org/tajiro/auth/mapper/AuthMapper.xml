@@ -17,7 +17,8 @@
             provider,
             status,
             created_at    AS createdAt,
-            deleted_at    AS deletedAt
+            deleted_at    AS deletedAt,
+            onboarding_seen AS onboardingSeen
         FROM users
         WHERE email = #{email}
     </select>
@@ -65,5 +66,19 @@
             SELECT 1 FROM property WHERE seller_id = #{userId}
         )
     </select>
+
+    <!-- 8. 온보딩 투어 완료 여부(비트열) 조회 -->
+    <select id="findOnboardingSeenByUserId" resultType="string">
+        SELECT onboarding_seen
+        FROM users
+        WHERE id = #{userId}
+    </select>
+
+    <!-- 9. 온보딩 투어 완료 여부(비트열) 갱신 -->
+    <update id="updateOnboardingSeen">
+        UPDATE users
+        SET onboarding_seen = #{onboardingSeen}
+        WHERE id = #{userId}
+    </update>
 
 </mapper>

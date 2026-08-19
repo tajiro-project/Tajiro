@@ -31,4 +31,10 @@ public interface AuthMapper {
 
     // 7. 매도자가 등록한 매물이 하나라도 있는지 (로그인 후 등록/목록 이동 분기용)
     boolean existsPropertyBySellerId(@Param("userId") Long userId);
+
+    // 8. 온보딩 투어 완료 여부(비트열) 조회
+    String findOnboardingSeenByUserId(@Param("userId") Long userId);
+
+    // 9. 온보딩 투어 완료 여부(비트열) 갱신
+    void updateOnboardingSeen(@Param("userId") Long userId, @Param("onboardingSeen") String onboardingSeen);
 }
