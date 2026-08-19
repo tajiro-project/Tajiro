@@ -1,409 +1,556 @@
 <template>
-  <div class="pdetail" v-if="p">
-    <simplebar ref="scrollArea" class="scroll-area" :auto-hide="true">
-      <p v-if="route.query.demo === '1'" class="demo-banner">
-        예시 화면이에요 · 실제 매물이 아니에요
-      </p>
-
-      <!-- 1. 사진 캐러셀 -->
-      <div
-        class="photo-slider"
-        @touchstart="handleTouchStart"
-        @touchend="handleTouchEnd"
-      >
-        <template v-if="p.images && p.images.length > 0">
-          <img
-            :src="p.images[currentImgIndex]"
-            :alt="`매물 이미지 ${currentImgIndex + 1}`"
-            class="photo-img"
+  <div
+    class="pdetail"
+    v-if="p"
+  >
+    <!-- 🌟 1. 삭제된 매물일 경우 전체 화면으로 표시 -->
+    <div
+      v-if="p.deletedAt"
+      class="deleted-property-container"
+    >
+      <div class="deleted-content">
+        <div class="deleted-icon-box">
+          <Building2
+            :size="36"
+            color="#94a3b8"
           />
-          <button
-            class="slide-btn left"
-            @click="prevImage"
-            v-if="p.images.length > 1"
-          >
-            <ChevronLeft :size="20" />
-          </button>
-          <button
-            class="slide-btn right"
-            @click="nextImage"
-            v-if="p.images.length > 1"
-          >
-            <ChevronRight :size="20" />
-          </button>
-
-          <div class="dots" v-if="p.images.length > 1">
-            <span
-              v-for="(_, idx) in p.images"
-              :key="idx"
-              class="d"
-              :class="{ on: idx === currentImgIndex }"
-              @click="currentImgIndex = idx"
-            />
-          </div>
-        </template>
-
-        <div v-else class="photo-placeholder">
-          <ImageIcon :size="44" color="#8a8477" />
-          <p>등록된 이미지가 없습니다.</p>
-        </div>
-      </div>
-
-      <div class="head">
-        <h1 class="price">{{ formattedPrice }}</h1>
-        <p class="addr">{{ regionLine }}</p>
-      </div>
-
-      <!-- 내 기준 점수 & 시세 문구 통합 카드 -->
-      <div class="score-card" data-tour="detail-score">
-        <div class="score-header">
-          <span class="label">주거 가치관 반영 점수</span>
+          <span class="deleted-badge">삭제됨</span>
         </div>
 
-        <div class="gauge-container">
-          <div class="gauge-track">
-            <div class="gauge-fill" :style="{ width: `${p.recommendScore}%` }">
-              <div class="score-tooltip">{{ p.recommendScore }}점</div>
-            </div>
-          </div>
-          <div class="gauge-ticks">
-            <span>0</span>
-            <span>50</span>
-            <span>100</span>
-          </div>
-        </div>
-
-        <div :class="['price-eval-box', priceDiffInfo.type]">
-          <component
-            :is="priceDiffInfo.icon"
-            :size="16"
-            class="eval-icon"
-          />
-          <span class="eval-text">
-            {{ priceDiffInfo.prefix }}
-            <strong>{{ priceDiffInfo.highlight }}</strong>
-          </span>
-        </div>
-      </div>
-
-      <section class="card">
-        <p class="card-head">매물 정보</p>
-        <div class="tag-row">
-          <span class="tag yellow">{{ p.propertyType }}</span>
-          <span class="tag yellow">{{ p.tradeType }}</span>
-        </div>
-        <dl class="info-list">
-          <div class="info-row">
-            <dt>건물명</dt>
-            <dd>{{ buildingName }}</dd>
-          </div>
-          <div class="info-row">
-            <dt>거래 · 가격</dt>
-            <dd>{{ formattedPriceDetail }}</dd>
-          </div>
-          <div class="info-row">
-            <dt>관리비</dt>
-            <dd>월 {{ p.maintenanceFee ?? 0 }}만원</dd>
-          </div>
-          <div class="info-row">
-            <dt>도로명 주소</dt>
-            <dd>{{ p.address }}</dd>
-          </div>
-          <div class="info-row">
-            <dt>층수</dt>
-            <dd>{{ formattedFloor }}</dd>
-          </div>
-          <div class="info-row">
-            <dt>면적</dt>
-            <dd>{{ p.areaM2 }}㎡ (약 {{ pyeong }}평)</dd>
-          </div>
-          <div class="info-row">
-            <dt>방 · 욕실</dt>
-            <dd>{{ p.roomNum ?? 0 }}개 · {{ p.bathroomNum ?? 0 }}개</dd>
-          </div>
-          <div class="info-row">
-            <dt>주차</dt>
-            <dd>{{ p.parkAvailability ? '가능' : '불가' }}</dd>
-          </div>
-          <div class="info-row">
-            <dt>입주 가능일</dt>
-            <dd>{{ moveInLine }}</dd>
-          </div>
-          <div class="info-row">
-            <dt>사용 승인일</dt>
-            <dd>{{ availableLine ?? '정보 없음' }}</dd>
-          </div>
-        </dl>
-
-        <hr class="section-divider" />
-
-        <p class="desc-head">매물 상세 설명</p>
-        <p class="desc">{{ p.propertyDescription }}</p>
-      </section>
-
-      <div class="mini-row">
-        <div class="mini-card">
-          <p class="mini-label">
-            <Receipt :size="14" color="#8a8d8f" />
-            관리비
-          </p>
-          <p class="mini-value">월 {{ p.maintenanceFee ?? 0 }}만원</p>
-        </div>
-        <div class="mini-card">
-          <p class="mini-label">
-            <Clock :size="14" color="#8a8d8f" />
-            통근 거리
-          </p>
-          <p class="mini-value">
-            {{ formatDistance(p.workplaceDistanceMeters) }}
-          </p>
-        </div>
-      </div>
-
-      <div class="mini-card wide compact">
-        <p class="mini-label">
-          <Building2 :size="14" color="#8a8d8f" />
-          인프라 및 편의시설
+        <h2 class="deleted-title">존재하지 않거나 삭제된 매물입니다</h2>
+        <p class="deleted-sub">
+          요청하신 매물 정보가 삭제되었거나 관리자에 의해 내려갔습니다.<br />
+          다른 추천 매물을 확인해보세요.
         </p>
 
-        <div class="infra-wrapper">
-          <template
-            v-if="
-              formattedInfraList.length === 0 &&
-              formattedAmenityList.length === 0
-            "
+        <div class="deleted-actions">
+          <button
+            class="action-btn outline"
+            @click="router.back()"
           >
-            <p class="empty-text">주변 인프라 정보가 없습니다.</p>
-          </template>
-
-          <template v-else>
-            <div class="infra-row" v-if="formattedInfraList.length > 0">
-              <span class="group-badge">인프라</span>
-              <div class="inline-list">
-                <template
-                  v-for="(item, idx) in formattedInfraList"
-                  :key="item.category"
-                >
-                  <span class="item">
-                    <span class="name">{{ item.name }}</span>
-                    <span class="count">{{ item.count }}</span>
-                  </span>
-                  <span v-if="idx < formattedInfraList.length - 1" class="sep"
-                    >·</span
-                  >
-                </template>
-              </div>
-            </div>
-
-            <hr
-              class="compact-divider"
-              v-if="
-                formattedInfraList.length > 0 && formattedAmenityList.length > 0
-              "
-            />
-
-            <div class="infra-row" v-if="formattedAmenityList.length > 0">
-              <span class="group-badge amenity">편의시설</span>
-              <div class="inline-list">
-                <template
-                  v-for="(item, idx) in formattedAmenityList"
-                  :key="item.category"
-                >
-                  <span class="item">
-                    <span class="name">{{ item.name }}</span>
-                    <span class="count">{{ item.count }}</span>
-                  </span>
-                  <span v-if="idx < formattedAmenityList.length - 1" class="sep"
-                    >·</span
-                  >
-                </template>
-              </div>
-            </div>
-          </template>
+            이전 페이지
+          </button>
+          <button
+            class="action-btn primary"
+            @click="router.push('/properties')"
+          >
+            매물 목록 보기
+          </button>
         </div>
       </div>
+    </div>
 
-      <!-- 단순 이동 바 -->
-      <div class="banner-group" data-tour="detail-banners">
-        <button class="simple-banner yellow" @click="goToInfra">
-          <span>가장 가까운 인프라 보기</span>
-          <span class="arrow">→</span>
-        </button>
+    <!-- 🌟 2. 정상 매물일 경우 (p.deletedAt이 없음) -->
+    <template v-else>
+      <simplebar
+        ref="scrollArea"
+        class="scroll-area"
+        :auto-hide="true"
+      >
+        <p
+          v-if="route.query.demo === '1'"
+          class="demo-banner"
+        >
+          예시 화면이에요 · 실제 매물이 아니에요
+        </p>
 
-        <button class="simple-banner green" @click="goToSafety">
-          <span>안전 정보 보기</span>
-          <span class="arrow">→</span>
-        </button>
-      </div>
+        <!-- 1. 사진 캐러셀 -->
+        <div
+          class="photo-slider"
+          @touchstart="handleTouchStart"
+          @touchend="handleTouchEnd"
+        >
+          <template v-if="p.images && p.images.length > 0">
+            <img
+              :src="p.images[currentImgIndex]"
+              :alt="`매물 이미지 ${currentImgIndex + 1}`"
+              class="photo-img"
+            />
+            <button
+              class="slide-btn left"
+              @click="prevImage"
+              v-if="p.images.length > 1 && p.transactionStatus !== false"
+            >
+              <ChevronLeft :size="20" />
+            </button>
+            <button
+              class="slide-btn right"
+              @click="nextImage"
+              v-if="p.images.length > 1 && p.transactionStatus !== false"
+            >
+              <ChevronRight :size="20" />
+            </button>
 
-      <section class="card">
-        <p class="card-head">이 매물, 어디에 문의할까요?</p>
-        <p class="card-sub">이 매물을 등록·관리하는 인근 공인중개사예요</p>
-        <div class="realtor-card">
-          <div class="realtor-head">
-            <span class="realtor-icon">
-              <Building2 :size="18" color="#a8842c" />
+            <div
+              class="dots"
+              v-if="p.images.length > 1 && p.transactionStatus !== false"
+            >
+              <span
+                v-for="(_, idx) in p.images"
+                :key="idx"
+                class="d"
+                :class="{ on: idx === currentImgIndex }"
+                @click="currentImgIndex = idx"
+              />
+            </div>
+          </template>
+
+          <div
+            v-else
+            class="photo-placeholder"
+          >
+            <ImageIcon
+              :size="44"
+              color="#8a8477"
+            />
+            <p>등록된 이미지가 없습니다.</p>
+          </div>
+
+          <!-- 거래 완료 오버레이 (p.transactionStatus가 false일 때 표시) -->
+          <div
+            v-if="p.transactionStatus === false"
+            class="completed-overlay"
+          >
+            <div class="completed-badge">
+              <CheckCircle
+                :size="18"
+                stroke-width="2.5"
+              />
+              <span>거래 완료</span>
+            </div>
+            <p class="completed-text">계약이 완료된 매물입니다</p>
+          </div>
+        </div>
+
+        <div class="head">
+          <h1 class="price">{{ formattedPrice }}</h1>
+          <p class="addr">{{ regionLine }}</p>
+        </div>
+
+        <!-- 내 기준 점수 & 시세 문구 통합 카드 -->
+        <div
+          class="score-card"
+          data-tour="detail-score"
+        >
+          <div class="score-header">
+            <span class="label">주거 가치관 반영 점수</span>
+          </div>
+
+          <div class="gauge-container">
+            <div class="gauge-track">
+              <div
+                class="gauge-fill"
+                :style="{ width: `${p.recommendScore}%` }"
+              >
+                <div class="score-tooltip">{{ p.recommendScore }}점</div>
+              </div>
+            </div>
+            <div class="gauge-ticks">
+              <span>0</span>
+              <span>50</span>
+              <span>100</span>
+            </div>
+          </div>
+
+          <div :class="['price-eval-box', priceDiffInfo.type]">
+            <component
+              :is="priceDiffInfo.icon"
+              :size="16"
+              class="eval-icon"
+            />
+            <span class="eval-text">
+              {{ priceDiffInfo.prefix }}
+              <strong>{{ priceDiffInfo.highlight }}</strong>
             </span>
-            <!-- agencyName 연결 (null 시 기본값 처리) -->
-            <p class="realtor-name">
-              {{ p.agencyName ?? 'KB부동산공인중개사' }}
+          </div>
+        </div>
+
+        <!-- 매물 상세 카드 -->
+        <section class="card">
+          <p class="card-head">매물 정보</p>
+          <div class="tag-row">
+            <span class="tag yellow">{{ p.propertyType }}</span>
+            <span class="tag yellow">{{ p.tradeType }}</span>
+          </div>
+          <dl class="info-list">
+            <div class="info-row">
+              <dt>건물명</dt>
+              <dd>{{ buildingName }}</dd>
+            </div>
+            <div class="info-row">
+              <dt>거래 · 가격</dt>
+              <dd>{{ formattedPriceDetail }}</dd>
+            </div>
+            <div class="info-row">
+              <dt>관리비</dt>
+              <dd>월 {{ p.maintenanceFee ?? 0 }}만원</dd>
+            </div>
+            <div class="info-row">
+              <dt>도로명 주소</dt>
+              <dd>{{ p.address }}</dd>
+            </div>
+            <div class="info-row">
+              <dt>층수</dt>
+              <dd>{{ formattedFloor }}</dd>
+            </div>
+            <div class="info-row">
+              <dt>면적</dt>
+              <dd>{{ p.areaM2 }}㎡ (약 {{ pyeong }}평)</dd>
+            </div>
+            <div class="info-row">
+              <dt>방 · 욕실</dt>
+              <dd>{{ p.roomNum ?? 0 }}개 · {{ p.bathroomNum ?? 0 }}개</dd>
+            </div>
+            <div class="info-row">
+              <dt>주차</dt>
+              <dd>{{ p.parkAvailability ? '가능' : '불가' }}</dd>
+            </div>
+            <div class="info-row">
+              <dt>입주 가능일</dt>
+              <dd>{{ moveInLine }}</dd>
+            </div>
+            <div class="info-row">
+              <dt>사용 승인일</dt>
+              <dd>{{ availableLine ?? '정보 없음' }}</dd>
+            </div>
+          </dl>
+
+          <hr class="section-divider" />
+
+          <p class="desc-head">매물 상세 설명</p>
+          <p class="desc">{{ p.propertyDescription }}</p>
+        </section>
+
+        <div class="mini-row">
+          <div class="mini-card">
+            <p class="mini-label">
+              <Receipt
+                :size="14"
+                color="#8a8d8f"
+              />
+              관리비
+            </p>
+            <p class="mini-value">월 {{ p.maintenanceFee ?? 0 }}만원</p>
+          </div>
+          <div class="mini-card">
+            <p class="mini-label">
+              <Clock
+                :size="14"
+                color="#8a8d8f"
+              />
+              통근 거리
+            </p>
+            <p class="mini-value">
+              {{ formatDistance(p.workplaceDistanceMeters) }}
             </p>
           </div>
-          <p class="realtor-addr">
-            <MapPin
-              :size="12"
+        </div>
+
+        <div class="mini-card wide compact">
+          <p class="mini-label">
+            <Building2
+              :size="14"
               color="#8a8d8f"
             />
-            {{ shortAddress ? `${shortAddress} · 매물 인근` : '매물 인근' }}
+            인프라 및 편의시설
           </p>
-          <div class="realtor-actions">
-            <button
-              :class="['rt-btn', 'outline', { disabled: !p.agentPhone }]"
-              @click="handlePhoneClick"
-            >
-              <Phone :size="14" />
-              전화
-            </button>
-            <button
-              :class="['rt-btn', 'yellow', { disabled: !p.agentPhone }]"
-              @click="handleChatClick"
-            >
-              <MessageSquare :size="14" />
-              채팅 문의
-            </button>
-          </div>
-        </div>
-        <p class="kb-note">
-          <Info :size="13" color="#8a8d8f" />
-          KB 인증 중개사예요. 계약 전 등록번호를 꼭 확인하세요.
-        </p>
-      </section>
 
-      <section class="card benefit-card">
-        <div class="benefit-group">
-          <div class="group-header">
-            <div class="group-title">
-              <Banknote :size="19" color="#a8842c" />
-              <span>매물 맞춤 금융 상품</span>
-            </div>
-            <span class="badge">최대 {{ financeList?.length || 0 }}건</span>
-          </div>
+          <div class="infra-wrapper">
+            <template
+              v-if="
+                formattedInfraList.length === 0 &&
+                formattedAmenityList.length === 0
+              "
+            >
+              <p class="empty-text">주변 인프라 정보가 없습니다.</p>
+            </template>
 
-          <div class="benefit-list">
-            <template v-if="financeList.length > 0">
+            <template v-else>
               <div
-                v-for="item in financeList"
-                :key="item.id"
-                class="benefit-item"
-                :class="{ clickable: !!item.applicationUrl }"
-                @click="goToFinancialDetail(item.id)"
+                class="infra-row"
+                v-if="formattedInfraList.length > 0"
               >
-                <div class="item-content">
-                  <div class="item-header">
-                    <span class="item-title">{{ item.productName }}</span>
-                  </div>
-
-                  <div class="item-info-row">
-                    <span class="rate-badge">{{ formatRateText(item) }}</span>
-                    <span v-if="item.loanLimit" class="limit-text">
-                      {{ formatLoanLimit(item.loanLimit) }}
+                <span class="group-badge">인프라</span>
+                <div class="inline-list">
+                  <template
+                    v-for="(item, idx) in formattedInfraList"
+                    :key="item.category"
+                  >
+                    <span class="item">
+                      <span class="name">{{ item.name }}</span>
+                      <span class="count">{{ item.count }}</span>
                     </span>
-                  </div>
+                    <span
+                      v-if="idx < formattedInfraList.length - 1"
+                      class="sep"
+                      >·</span
+                    >
+                  </template>
+                </div>
+              </div>
+
+              <hr
+                class="compact-divider"
+                v-if="
+                  formattedInfraList.length > 0 &&
+                  formattedAmenityList.length > 0
+                "
+              />
+
+              <div
+                class="infra-row"
+                v-if="formattedAmenityList.length > 0"
+              >
+                <span class="group-badge amenity">편의시설</span>
+                <div class="inline-list">
+                  <template
+                    v-for="(item, idx) in formattedAmenityList"
+                    :key="item.category"
+                  >
+                    <span class="item">
+                      <span class="name">{{ item.name }}</span>
+                      <span class="count">{{ item.count }}</span>
+                    </span>
+                    <span
+                      v-if="idx < formattedAmenityList.length - 1"
+                      class="sep"
+                      >·</span
+                    >
+                  </template>
                 </div>
               </div>
             </template>
-
-            <div v-else class="empty-text">추천 금융 상품이 없습니다.</div>
           </div>
         </div>
 
-        <div class="benefit-group">
-          <div class="group-header">
-            <div class="group-title">
-              <Landmark :size="19" color="#a8842c" />
-              <span>청년 · 정부 지원 정책</span>
-            </div>
-            <span class="badge">최대 {{ policyList?.length || 0 }}건</span>
-          </div>
+        <!-- 단순 이동 바 -->
+        <div
+          class="banner-group"
+          data-tour="detail-banners"
+        >
+          <button
+            class="simple-banner yellow"
+            @click="goToInfra"
+          >
+            <span>가장 가까운 인프라 보기</span>
+            <span class="arrow">→</span>
+          </button>
 
-          <div class="policy-wrapper" :class="{ locked: !isProfileEntered }">
-            <div v-if="!isProfileEntered" class="lock-overlay">
-              <div class="lock-box">
-                <div class="lock-icon-wrap">
-                  <Lock :size="15" color="#222" />
-                </div>
-                <p class="lock-text">
-                  내 정보 입력 시 <strong>맞춤 정책 혜택</strong> 확인 가능
-                </p>
-                <button
-                  class="btn-input-profile"
-                  @click="router.push('/profile-setup')"
-                >
-                  내 조건 입력하고 확인하기
-                </button>
+          <button
+            class="simple-banner green"
+            @click="goToSafety"
+          >
+            <span>안전 정보 보기</span>
+            <span class="arrow">→</span>
+          </button>
+        </div>
+
+        <section class="card">
+          <p class="card-head">이 매물, 어디에 문의할까요?</p>
+          <p class="card-sub">이 매물을 등록·관리하는 인근 공인중개사예요</p>
+          <div class="realtor-card">
+            <div class="realtor-head">
+              <span class="realtor-icon">
+                <Building2
+                  :size="18"
+                  color="#a8842c"
+                />
+              </span>
+              <p class="realtor-name">
+                {{ p.agencyName ?? 'KB부동산공인중개사' }}
+              </p>
+            </div>
+            <p class="realtor-addr">
+              <MapPin
+                :size="12"
+                color="#8a8d8f"
+              />
+              {{ shortAddress ? `${shortAddress} · 매물 인근` : '매물 인근' }}
+            </p>
+            <div class="realtor-actions">
+              <button
+                :class="['rt-btn', 'outline', { disabled: !p.agentPhone }]"
+                @click="handlePhoneClick"
+              >
+                <Phone :size="14" />
+                전화
+              </button>
+              <button
+                :class="['rt-btn', 'yellow', { disabled: !p.agentPhone }]"
+                @click="handleChatClick"
+              >
+                <MessageSquare :size="14" />
+                채팅 문의
+              </button>
+            </div>
+          </div>
+          <p class="kb-note">
+            <Info
+              :size="13"
+              color="#8a8d8f"
+            />
+            KB 인증 중개사예요. 계약 전 등록번호를 꼭 확인하세요.
+          </p>
+        </section>
+
+        <section class="card benefit-card">
+          <div class="benefit-group">
+            <div class="group-header">
+              <div class="group-title">
+                <Banknote
+                  :size="19"
+                  color="#a8842c"
+                />
+                <span>매물 맞춤 금융 상품</span>
               </div>
+              <span class="badge">최대 {{ financeList?.length || 0 }}건</span>
             </div>
 
             <div class="benefit-list">
-              <template v-if="policyList.length > 0">
+              <template v-if="financeList.length > 0">
                 <div
-                  v-for="item in policyList"
+                  v-for="item in financeList"
                   :key="item.id"
                   class="benefit-item"
-                  :class="{ clickable: isProfileEntered }"
-                  @click="isProfileEntered && goToPolicyDetail(item.id)"
+                  :class="{ clickable: !!item.applicationUrl }"
+                  @click="goToFinancialDetail(item.id)"
                 >
                   <div class="item-content">
-                    <span class="item-title">
-                      {{ item.title || item.polyBizSjnm }}
-                    </span>
-                    <p class="item-sub">
-                      {{ item.sumDescription }}
-                    </p>
+                    <div class="item-header">
+                      <span class="item-title">{{ item.productName }}</span>
+                    </div>
+
+                    <!-- 💡 info-row를 item-info-row로 변경 -->
+                    <div class="item-info-row">
+                      <span class="rate-badge">{{ formatRateText(item) }}</span>
+                      <span
+                        v-if="item.loanLimit"
+                        class="limit-text"
+                      >
+                        {{ formatLoanLimit(item.loanLimit) }}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </template>
 
-              <div v-else class="empty-text">조회된 지원 정책이 없습니다.</div>
+              <div
+                v-else
+                class="empty-text"
+              >
+                추천 금융 상품이 없습니다.
+              </div>
             </div>
           </div>
+
+          <div class="benefit-group">
+            <div class="group-header">
+              <div class="group-title">
+                <Landmark
+                  :size="19"
+                  color="#a8842c"
+                />
+                <span>청년 · 정부 지원 정책</span>
+              </div>
+              <span class="badge">최대 {{ policyList?.length || 0 }}건</span>
+            </div>
+
+            <div
+              class="policy-wrapper"
+              :class="{ locked: !isProfileEntered }"
+            >
+              <div
+                v-if="!isProfileEntered"
+                class="lock-overlay"
+              >
+                <div class="lock-box">
+                  <div class="lock-icon-wrap">
+                    <Lock
+                      :size="15"
+                      color="#222"
+                    />
+                  </div>
+                  <p class="lock-text">
+                    내 정보 입력 시 <strong>맞춤 정책 혜택</strong> 확인 가능
+                  </p>
+                  <button
+                    class="btn-input-profile"
+                    @click="router.push('/profile-setup')"
+                  >
+                    내 조건 입력하고 확인하기
+                  </button>
+                </div>
+              </div>
+
+              <div class="benefit-list">
+                <template v-if="policyList.length > 0">
+                  <div
+                    v-for="item in policyList"
+                    :key="item.id"
+                    class="benefit-item"
+                    :class="{ clickable: isProfileEntered }"
+                    @click="isProfileEntered && goToPolicyDetail(item.id)"
+                  >
+                    <div class="item-content">
+                      <span class="item-title">
+                        {{ item.title || item.polyBizSjnm }}
+                      </span>
+                      <p class="item-sub">
+                        {{ item.sumDescription }}
+                      </p>
+                    </div>
+                  </div>
+                </template>
+
+                <div
+                  v-else
+                  class="empty-text"
+                >
+                  조회된 지원 정책이 없습니다.
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </simplebar>
+
+      <div class="bottom-actions-wrap">
+        <div class="bottom-actions">
+          <button
+            class="fav-btn"
+            :class="{ on: isFavorite }"
+            aria-label="찜"
+            @click="toggleFavorite"
+          >
+            <Heart
+              :size="20"
+              :fill="isFavorite ? '#ffbc00' : 'none'"
+              :color="isFavorite ? '#ffbc00' : '#8a8d8f'"
+            />
+          </button>
+          <button
+            class="compare-btn"
+            data-tour="detail-compare-btn"
+            :disabled="isSubmitting"
+            @click="addToCompare"
+          >
+            비교함 담기
+          </button>
         </div>
-      </section>
-    </simplebar>
-
-    <div class="bottom-actions-wrap">
-      <div class="bottom-actions">
-        <button
-          class="fav-btn"
-          :class="{ on: isFavorite }"
-          aria-label="찜"
-          @click="toggleFavorite"
+        <p
+          v-if="compareMsg"
+          class="compare-msg"
         >
-          <Heart
-            :size="20"
-            :fill="isFavorite ? '#ffbc00' : 'none'"
-            :color="isFavorite ? '#ffbc00' : '#8a8d8f'"
-          />
-        </button>
-        <button
-          class="compare-btn"
-          data-tour="detail-compare-btn"
-          :disabled="isSubmitting"
-          @click="addToCompare"
-        >
-          비교함 담기
-        </button>
+          {{ compareMsg }}
+        </p>
       </div>
-      <p v-if="compareMsg" class="compare-msg">
-        {{ compareMsg }}
-      </p>
-    </div>
 
-    <OnboardingSpotlight
-      group-name="property-detail"
-      :steps="ONBOARDING_STEPS['property-detail']"
-      return-to="/mypage"
-    />
+      <OnboardingSpotlight
+        group-name="property-detail"
+        :steps="ONBOARDING_STEPS['property-detail']"
+        return-to="/mypage"
+      />
+    </template>
   </div>
 </template>
 
@@ -446,6 +593,7 @@ import {
   TrendingUp,
   Minus,
   HelpCircle,
+  CheckCircle,
 } from 'lucide-vue-next';
 
 // ----------------------------------------------------
@@ -1042,8 +1190,6 @@ async function addToCompare() {
       return;
     }
   } catch (error) {
-    console.error('비교함 담기 실패:', error);
-
     const errorCode = getApiErrorCode(error);
     if (errorCode === 'COMPARE_409_1') {
       compareMsg.value = getApiErrorMessage(
@@ -1069,6 +1215,102 @@ async function addToCompare() {
 </script>
 
 <style scoped>
+/* ==========================================================================
+   0. 삭제된 매물 안내 화면 스타일
+   ========================================================================== */
+.deleted-property-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 80vh;
+  padding: 24px;
+  background-color: var(--bg, #f8fafc);
+}
+
+.deleted-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 360px;
+  width: 100%;
+}
+
+.deleted-icon-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 80px;
+  background-color: #f1f5f9;
+  border-radius: 50%;
+  margin-bottom: 20px;
+}
+
+.deleted-badge {
+  position: absolute;
+  bottom: -2px;
+  background-color: #ef4444;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 100px;
+  border: 2px solid #ffffff;
+}
+
+.deleted-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: #1e293b;
+  margin-bottom: 10px;
+}
+
+.deleted-sub {
+  font-size: 13.5px;
+  color: #64748b;
+  line-height: 1.5;
+  margin-bottom: 28px;
+}
+
+.deleted-actions {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+
+.action-btn {
+  flex: 1;
+  height: 44px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.action-btn.outline {
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #475569;
+}
+
+.action-btn.outline:hover {
+  background-color: #f8fafc;
+}
+
+.action-btn.primary {
+  background-color: #ffbc00;
+  color: #1e293b;
+}
+
+.action-btn.primary:hover {
+  background-color: #e6a900;
+}
+
 /* ==========================================================================
    1. 전체 레이아웃 & 스크롤 영역
    ========================================================================== */
@@ -1097,7 +1339,7 @@ async function addToCompare() {
 }
 
 /* ==========================================================================
-   2. 포토 슬라이더
+   2. 포토 슬라이더 & 거래 완료 오버레이
    ========================================================================== */
 .photo-slider {
   position: relative;
@@ -1168,6 +1410,41 @@ async function addToCompare() {
   background: #ffbc00;
   width: 14px;
   border-radius: 4px;
+}
+
+/* 거래 완료 상태 오버레이 (p.transactionStatus === false) */
+.completed-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(2px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  z-index: 5;
+}
+
+.completed-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  color: #222222;
+  padding: 8px 20px;
+  border-radius: 100px;
+  font-size: 15px;
+  font-weight: 800;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.completed-text {
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: -0.3px;
+  margin: 0;
 }
 
 /* ==========================================================================

@@ -38,6 +38,7 @@ public class PropertyDetailVO {
     private Boolean discussionStatus;
     private String dong;
     private BigDecimal evaluationScore;
+    private LocalDateTime deletedAt;
 
     private String agentPhone;
     private String agencyName;
