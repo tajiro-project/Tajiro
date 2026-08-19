@@ -14,7 +14,10 @@ import org.tajiro.auth.mapper.AuthMapper;
 import org.tajiro.common.api.ErrorCode;
 import org.tajiro.exception.BusinessException;
 import org.tajiro.security.jwt.JwtProvider;
+import org.tajiro.user.domain.UserProfileVO;
+import org.tajiro.user.mapper.UserProfileMapper;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -26,6 +29,7 @@ public class AuthServiceImpl implements AuthService {
     private static final Pattern PASSWORD_PATTERN = Pattern.compile("^(?=.*[A-Za-z])(?=.*\\d).{8,}$");
 
     private final AuthMapper authMapper;
+    private final UserProfileMapper userProfileMapper;
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
 
@@ -77,6 +81,18 @@ public class AuthServiceImpl implements AuthService {
                 .build();
         authMapper.insertUser(user);
 
+        UserProfileVO profile = UserProfileVO.builder()
+                .userId(user.getId())
+                .targetRegion(request.getTargetRegion())
+                .birthDate(request.getBirthDate())
+                .monthlyIncome(0)
+                .assetAmount(0)
+                .jobStatus("")
+                .targetSggCode(request.getTargetSggCode() != null ? request.getTargetSggCode() : "")
+                .updatedAt(LocalDateTime.now())
+                .build();
+        userProfileMapper.upsertProfile(profile);
+
         for (RegisterRequest.AgreementRequest agreement : request.getAgreements()) {
             authMapper.insertTermsConsent(user.getId(), agreement.getTermsId(), Boolean.TRUE.equals(agreement.getAgreed()));
         }
@@ -127,7 +143,9 @@ public class AuthServiceImpl implements AuthService {
     private void validateRegisterRequest(RegisterRequest request) {
         if (request.getName() == null || request.getName().isBlank()
                 || request.getEmail() == null || !EMAIL_PATTERN.matcher(request.getEmail()).matches()
-                || request.getPassword() == null || !PASSWORD_PATTERN.matcher(request.getPassword()).matches()) {
+                || request.getPassword() == null || !PASSWORD_PATTERN.matcher(request.getPassword()).matches()
+                || request.getTargetRegion() == null || request.getTargetRegion().isBlank()
+                || request.getBirthDate() == null) {
             throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
         }
     }
