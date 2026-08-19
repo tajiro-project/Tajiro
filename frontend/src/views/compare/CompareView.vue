@@ -1450,6 +1450,11 @@ function goBack() {
   justify-content: center;
   text-align: center;
 }
+@property --loading-progress {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
 .loading-progress {
   --loading-progress: 0deg;
   position: relative;
@@ -1463,7 +1468,7 @@ function goBack() {
     var(--kb-yellow) 0deg var(--loading-progress),
     #e9e8e5 var(--loading-progress) 360deg
   );
-  transition: background 0.4s ease;
+  transition: --loading-progress 0.8s ease;
 }
 .loading-progress::before {
   position: absolute;
@@ -1480,6 +1485,10 @@ function goBack() {
   letter-spacing: -0.5px;
 }
 .loading-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 50px;
   max-width: 310px;
   margin: 0 0 7px;
   color: #24211d;
