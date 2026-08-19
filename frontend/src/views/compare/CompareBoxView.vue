@@ -12,84 +12,6 @@
         >
       </p>
 
-      <section class="comparison-settings-card" data-tour="comparebox-settings">
-        <button class="location-row" type="button" @click="openLocationPicker">
-          <span class="location-marker" aria-hidden="true">
-            <span class="location-marker-dot" />
-          </span>
-          <span class="location-texts">
-            <span class="location-label">선호 위치</span>
-            <span
-              class="location-address"
-              :class="{ placeholder: !comparisonWorkplace }"
-            >
-              {{
-                comparisonWorkplace?.name ||
-                comparisonWorkplace?.address ||
-                '선호 위치를 선택해주세요'
-              }}
-            </span>
-          </span>
-          <ChevronRight
-            class="location-arrow"
-            :size="22"
-            :stroke-width="2.2"
-            aria-hidden="true"
-          />
-        </button>
-
-        <button class="priority-row" type="button" @click="openPrioritySheet">
-          <svg
-            class="priority-row-icon"
-            width="18"
-            height="18"
-            viewBox="0 0 18 18"
-            fill="none"
-            aria-hidden="true"
-          >
-            <path
-              d="M2 5.5h3M8.5 5.5H16M2 12.5h7.5M13 12.5H16"
-              stroke="#33302a"
-              stroke-width="1.6"
-              stroke-linecap="round"
-            />
-            <circle
-              cx="6.75"
-              cy="5.5"
-              r="1.9"
-              stroke="#33302a"
-              stroke-width="1.6"
-            />
-            <circle
-              cx="11.25"
-              cy="12.5"
-              r="1.9"
-              stroke="#33302a"
-              stroke-width="1.6"
-            />
-          </svg>
-
-          <template v-if="comparisonPriorities.length">
-            <span
-              v-for="priority in comparisonPriorities"
-              :key="priority.criterion"
-              class="priority-chip"
-            >
-              <b class="priority-number">{{ priority.priorityOrder }}</b>
-              {{ criterionLabel(priority.criterion) }}
-            </span>
-          </template>
-          <span v-else class="priority-placeholder">가치관 미선택 시 동일 가중치로 비교해요</span>
-        </button>
-      </section>
-
-      <p v-if="locationMessage" class="location-message">
-        {{ locationMessage }}
-      </p>
-      <p v-if="priorityMessage" class="priority-message">
-        {{ priorityMessage }}
-      </p>
-
       <div v-if="loading" class="state">비교함을 불러오는 중이에요.</div>
       <div v-else-if="errorMessage" class="state error">
         {{ errorMessage }}
@@ -206,12 +128,20 @@
             stroke-linecap="round"
           />
         </svg>
-        2~3개를 담으면 선택한 가치관 기준으로 비교 코칭을 해드려요.
+        담긴 매물은 내 가치관 기준으로 비교 코칭해드려요.
       </p>
 
     </simplebar>
 
     <div class="compare-actions">
+      <button
+        class="btn-cta preference-edit-btn"
+        type="button"
+        data-tour="comparebox-settings"
+        @click="goPreferenceEdit"
+      >
+        가치관 설정 수정
+      </button>
       <button
         class="btn-cta"
         type="button"
@@ -227,55 +157,6 @@
       </button>
     </div>
 
-    <KakaoLocation
-      :open="isLocationPickerOpen"
-      :initial-location="comparisonWorkplace"
-      @close="isLocationPickerOpen = false"
-      @select="selectWorkplace"
-    />
-
-    <BottomSheet
-      :model-value="isPrioritySheetOpen"
-      title="비교 가치관 설정"
-      @update:model-value="closePrioritySheet"
-    >
-      <p class="sheet-note">
-        중요한 순서대로 최대 3개까지 선택하세요.<br />
-        이 값은 비교 리포트에만 적용되며 내 가치관에는 저장되지 않아요.
-      </p>
-      <div class="priority-list">
-        <button
-          v-for="option in PRIORITY_OPTIONS"
-          :key="option.criterion"
-          class="priority-card"
-          :class="{ on: priorityRank(option.criterion) != null }"
-          type="button"
-          @click="togglePriority(option.criterion)"
-        >
-          <span class="priority-option-icon" v-html="option.icon" />
-          <span class="priority-texts">
-            <span class="priority-title">{{ option.title }}</span>
-            <span class="priority-sub">{{ option.sub }}</span>
-          </span>
-          <span v-if="priorityRank(option.criterion)" class="priority-badge">
-            {{ priorityRank(option.criterion) }}
-          </span>
-        </button>
-      </div>
-      <div class="sheet-actions">
-        <button class="btn-ghost" type="button" @click="draftPriorities = []">
-          초기화
-        </button>
-        <button
-          class="btn-primary"
-          type="button"
-          @click="applyPriorities"
-        >
-          이 순서로 적용
-        </button>
-      </div>
-    </BottomSheet>
-
     <OnboardingSpotlight group-name="compare-box" :steps="ONBOARDING_STEPS['compare-box']" return-to="/mypage" />
   </div>
 </template>
@@ -284,21 +165,13 @@
 import { onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import simplebar from 'simplebar-vue';
-import { ChevronRight } from 'lucide-vue-next';
-import KakaoLocation from '@/components/KakaoLocation.vue';
-import BottomSheet from '@/components/BottomSheet.vue';
 import OnboardingSpotlight from '@/components/OnboardingSpotlight.vue';
 import { ONBOARDING_STEPS } from '@/constants/onboardingSteps';
 import { getApiErrorMessage } from '@/api/client';
-import { comparisonApi, preferenceApi } from '@/api/services';
-import {
-  MAX_PRIORITY_SELECTIONS,
-  PRIORITY_OPTIONS,
-} from '@/constants/preferenceOptions';
+import { comparisonApi } from '@/api/services';
 
 const route = useRoute();
 const router = useRouter();
-const COMPARISON_DRAFT_KEY = 'tajiro:compare-box:draft';
 
 const DEMO_ITEMS = [
   {
@@ -332,25 +205,8 @@ const items = ref([]);
 const usingDemoItems = ref(false);
 const imageErrorIds = ref([]);
 const startingComparison = ref(false);
-const comparisonWorkplace = ref(null);
-const isLocationPickerOpen = ref(false);
-const locationMessage = ref('');
-const comparisonPriorities = ref([]);
-const draftPriorities = ref([]);
-const isPrioritySheetOpen = ref(false);
-const priorityMessage = ref('');
-const hasEditedPriorities = ref(false);
 
-onMounted(() => {
-  loadCompareBox();
-
-  // 온보딩 다시보기(?demo=1)는 예시 매물만 보여줘야 하므로, 실제 저장된 가치관이나
-  // 세션에 남아있던 실제 비교 기준 draft를 불러와 섞지 않는다.
-  if (route.query.demo === '1') return;
-
-  const restoredDraft = restoreComparisonDraft();
-  loadDefaultComparisonSettings(restoredDraft);
-});
+onMounted(loadCompareBox);
 
 async function loadCompareBox() {
   // 온보딩 다시보기(?demo=1)는 실제 상태와 무관하게 항상 예시로 보여준다 —
@@ -412,29 +268,14 @@ async function startCompare() {
     return;
   }
 
-  if (!hasDesiredLocation(comparisonWorkplace.value)) {
-    locationMessage.value = '직주근접 비교 기준이 될 위치를 선택해주세요.';
-    isLocationPickerOpen.value = true;
-    return;
-  }
-
   startingComparison.value = true;
   errorMessage.value = '';
 
   try {
-    saveComparisonDraft();
-
     await router.push({
       path: '/compare',
       query: {
         propertyIds: items.value.map((item) => item.propertyId),
-        workplaceLat: comparisonWorkplace.value.lat,
-        workplaceLng: comparisonWorkplace.value.lng,
-        workplaceName:
-          comparisonWorkplace.value.name || comparisonWorkplace.value.address,
-        priorities: comparisonPriorities.value
-          .map((priority) => priority.criterion)
-          .join(','),
       },
     });
   } catch (error) {
@@ -447,165 +288,11 @@ async function startCompare() {
   }
 }
 
-async function loadDefaultComparisonSettings(restoredDraft = {}) {
-  try {
-    const preference = await preferenceApi.get();
-    if (
-      !restoredDraft.hasWorkplace &&
-      !comparisonWorkplace.value &&
-      hasDesiredLocation(preference?.workplace)
-    ) {
-      comparisonWorkplace.value = { ...preference.workplace };
-    }
-
-    if (
-      !restoredDraft.hasPriorities &&
-      !hasEditedPriorities.value &&
-      Array.isArray(preference?.priorities)
-    ) {
-      comparisonPriorities.value = normalizePriorities(preference.priorities);
-    }
-  } catch (error) {
-    if (error.response?.status !== 404 && import.meta.env.DEV) {
-      console.warn('[api] comparison settings default failed:', error);
-    }
-  }
-}
-
-function normalizePriorities(priorities) {
-  const validCriteria = new Set(
-    PRIORITY_OPTIONS.map((option) => option.criterion),
-  );
-  const seen = new Set();
-
-  return [...priorities]
-    .sort((a, b) => Number(a?.priorityOrder) - Number(b?.priorityOrder))
-    .filter((priority) => {
-      const criterion = priority?.criterion;
-      if (!validCriteria.has(criterion) || seen.has(criterion)) return false;
-      seen.add(criterion);
-      return true;
-    })
-    .slice(0, MAX_PRIORITY_SELECTIONS)
-    .map((priority, index) => ({
-      criterion: priority.criterion,
-      priorityOrder: index + 1,
-    }));
-}
-
-function restoreComparisonDraft() {
-  if (typeof sessionStorage === 'undefined') {
-    return { hasWorkplace: false, hasPriorities: false };
-  }
-
-  try {
-    const rawDraft = sessionStorage.getItem(COMPARISON_DRAFT_KEY);
-    if (!rawDraft) {
-      return { hasWorkplace: false, hasPriorities: false };
-    }
-
-    const draft = JSON.parse(rawDraft);
-    const restored = { hasWorkplace: false, hasPriorities: false };
-
-    if (hasDesiredLocation(draft?.workplace)) {
-      comparisonWorkplace.value = { ...draft.workplace };
-      restored.hasWorkplace = true;
-    }
-
-    if (Array.isArray(draft?.priorities)) {
-      comparisonPriorities.value = normalizePriorities(draft.priorities);
-      hasEditedPriorities.value = true;
-      restored.hasPriorities = true;
-    }
-
-    return restored;
-  } catch (error) {
-    sessionStorage.removeItem(COMPARISON_DRAFT_KEY);
-    return { hasWorkplace: false, hasPriorities: false };
-  }
-}
-
-function saveComparisonDraft() {
-  if (typeof sessionStorage === 'undefined') return;
-
-  sessionStorage.setItem(
-    COMPARISON_DRAFT_KEY,
-    JSON.stringify({
-      workplace: comparisonWorkplace.value,
-      priorities: comparisonPriorities.value,
-    }),
-  );
-}
-
-function criterionLabel(criterion) {
-  return (
-    PRIORITY_OPTIONS.find((option) => option.criterion === criterion)?.title ??
-    criterion
-  );
-}
-
-function openPrioritySheet() {
-  draftPriorities.value = comparisonPriorities.value.map(
-    (priority) => priority.criterion,
-  );
-  isPrioritySheetOpen.value = true;
-}
-
-function closePrioritySheet() {
-  isPrioritySheetOpen.value = false;
-}
-
-function togglePriority(criterion) {
-  const index = draftPriorities.value.indexOf(criterion);
-  if (index >= 0) {
-    draftPriorities.value.splice(index, 1);
-  } else if (draftPriorities.value.length < MAX_PRIORITY_SELECTIONS) {
-    draftPriorities.value.push(criterion);
-  }
-}
-
-function priorityRank(criterion) {
-  const index = draftPriorities.value.indexOf(criterion);
-  return index < 0 ? null : index + 1;
-}
-
-function applyPriorities() {
-  comparisonPriorities.value = draftPriorities.value.map(
-    (criterion, index) => ({
-      criterion,
-      priorityOrder: index + 1,
-    }),
-  );
-  hasEditedPriorities.value = true;
-  priorityMessage.value = '';
-  saveComparisonDraft();
-  closePrioritySheet();
-}
-
-function hasDesiredLocation(workplace) {
-  if (!workplace) return false;
-
-  const hasLatitude =
-    workplace.lat !== null &&
-    workplace.lat !== undefined &&
-    Number.isFinite(Number(workplace.lat));
-  const hasLongitude =
-    workplace.lng !== null &&
-    workplace.lng !== undefined &&
-    Number.isFinite(Number(workplace.lng));
-
-  return hasLatitude && hasLongitude;
-}
-
-function openLocationPicker() {
-  locationMessage.value = '';
-  isLocationPickerOpen.value = true;
-}
-
-function selectWorkplace(location) {
-  comparisonWorkplace.value = location;
-  locationMessage.value = '';
-  saveComparisonDraft();
+function goPreferenceEdit() {
+  router.push({
+    path: '/preferences/1',
+    query: { returnTo: 'compare-box' },
+  });
 }
 
 function goPropertyListForAdd() {
@@ -703,12 +390,12 @@ function formatFloorInfo(floorInfo) {
 .scroll-area {
   flex: 1;
   overflow-y: auto;
-  padding: 16px;
+  padding: 16px 12px;
 }
 .scroll-area :deep(.simplebar-content) {
   display: flex;
   flex-direction: column;
-  padding: 0 16px;
+  padding: 0;
 }
 .demo-banner {
   margin-bottom: 12px;
@@ -849,234 +536,13 @@ function formatFloorInfo(floorInfo) {
   font-weight: 700;
   color: var(--kb-gold);
 }
+.state + .add-btn {
+  height: 64px;
+  margin-top: 12px;
+}
 .add-btn svg {
   width: 18px;
   height: 18px;
-}
-.comparison-settings-card {
-  overflow: hidden;
-  margin-top: 16px;
-  border: 1px solid #e5e5e5;
-  border-radius: 18px;
-  background: var(--white);
-  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.1);
-}
-.location-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-  min-height: 76px;
-  padding: 12px 16px;
-  text-align: left;
-}
-.location-marker {
-  position: relative;
-  width: 20px;
-  height: 20px;
-  border-radius: 50% 50% 50% 0;
-  background: #ffbc00;
-  flex-shrink: 0;
-  transform: rotate(-45deg);
-}
-.location-marker-dot {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--white);
-  transform: translate(-50%, -50%);
-}
-.location-texts {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-.location-label {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--kb-silver);
-}
-.location-address {
-  overflow: hidden;
-  font-size: 16px;
-  font-weight: 800;
-  line-height: 1.35;
-  color: #1a1a1a;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.location-address.placeholder {
-  font-size: 15px;
-  font-weight: 600;
-  color: #b4b0a8;
-}
-.location-arrow {
-  flex-shrink: 0;
-  width: 18px;
-  height: 18px;
-  color: #9b9b9b;
-}
-.location-message {
-  margin-top: 8px;
-  font-size: 11.5px;
-  color: var(--danger);
-}
-.priority-row {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  width: 100%;
-  min-height: 46px;
-  padding: 8px 16px;
-  border-top: 1px solid #e5e5e5;
-  overflow-x: auto;
-  text-align: left;
-  scrollbar-width: none;
-}
-.priority-row::-webkit-scrollbar {
-  display: none;
-}
-.priority-row-icon {
-  flex-shrink: 0;
-  width: 14px;
-  height: 14px;
-}
-.priority-row-icon path,
-.priority-row-icon circle {
-  stroke: #8c7950;
-}
-.priority-chip {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  height: 27px;
-  padding: 4px 9px 4px 5px;
-  border-radius: 100px;
-  background: #fff6dc;
-  flex-shrink: 0;
-  font-size: 12.5px;
-  font-weight: 700;
-  color: #5e5547;
-  white-space: nowrap;
-}
-.priority-number {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 19px;
-  height: 19px;
-  border-radius: 50%;
-  background: var(--kb-yellow);
-  flex-shrink: 0;
-  font-size: 11px;
-  font-weight: 800;
-  color: #3f392f;
-}
-.priority-placeholder {
-  font-size: 13px;
-  color: var(--kb-silver);
-  white-space: nowrap;
-}
-.priority-message {
-  margin-top: 6px;
-  font-size: 11.5px;
-  color: var(--danger);
-}
-.sheet-note {
-  margin-bottom: 12px;
-  font-size: 11.5px;
-  color: #8a8d8f;
-}
-.priority-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.priority-card {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-  padding: 12px 14px;
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  background: var(--white);
-  text-align: left;
-}
-.priority-card.on {
-  padding: 11px 13px;
-  border: 2px solid #ffdd80;
-  background: var(--yellow-tint);
-}
-.priority-option-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 100px;
-  background: rgba(255, 188, 0, 0.14);
-  flex-shrink: 0;
-}
-.priority-texts {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-.priority-title {
-  font-size: 14px;
-  font-weight: 800;
-}
-.priority-sub {
-  font-size: 11.5px;
-  color: var(--kb-silver);
-}
-.priority-badge {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: #ffdd80;
-  flex-shrink: 0;
-  font-size: 12.5px;
-  font-weight: 800;
-}
-.sheet-actions {
-  display: flex;
-  gap: 8px;
-  padding-top: 18px;
-}
-.btn-ghost {
-  flex-shrink: 0;
-  padding: 13px 18px;
-  border: 1px solid #e9e7e2;
-  border-radius: 12px;
-  background: #fff;
-  font-size: 13.5px;
-  color: #60584c;
-}
-.btn-primary {
-  flex: 1;
-  padding: 13px;
-  border: 0;
-  border-radius: 12px;
-  background: #ffdd80;
-  font-size: 14px;
-  font-weight: 700;
-  color: #33302a;
-}
-.btn-primary:disabled {
-  background: #eceae5;
-  color: #b4b0a8;
 }
 .tip {
   display: flex;
@@ -1094,10 +560,17 @@ function formatFloorInfo(floorInfo) {
   flex-shrink: 0;
   margin-top: 2px;
 }
+.preference-edit-btn {
+  border: 1px solid var(--border);
+  background: var(--white);
+}
 .btn-cta {
   color: var(--kb-dark-gray);
 }
 .compare-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
   flex-shrink: 0;
   padding: 12px 16px 16px;
   background: transparent;

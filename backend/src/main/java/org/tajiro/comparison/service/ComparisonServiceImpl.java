@@ -11,6 +11,8 @@ import org.tajiro.comparison.dto.ComparisonMetricsResponseDTO;
 import org.tajiro.comparison.mapper.ComparisonMapper;
 import org.tajiro.exception.BusinessException;
 import org.tajiro.market.service.MarketEvaluationService;
+import org.tajiro.preference.domain.HousingPreferenceVO;
+import org.tajiro.preference.mapper.PreferenceMapper;
 import org.tajiro.property.dto.PropertyComparisonScoreDTO;
 import org.tajiro.property.service.PropertyScoreService;
 
@@ -29,6 +31,7 @@ public class ComparisonServiceImpl implements ComparisonService {
     private final ComparisonMapper comparisonMapper;
     private final MarketEvaluationService marketEvaluationService;
     private final PropertyScoreService propertyScoreService;
+    private final PreferenceMapper preferenceMapper;
 
     @Override
     @Transactional(readOnly = true)
@@ -82,6 +85,17 @@ public class ComparisonServiceImpl implements ComparisonService {
         }
 
         validateWorkplace(workplaceLat, workplaceLng);
+        HousingPreferenceVO preference = preferenceMapper.findByUserId(userId);
+        if (preference == null) {
+            throw new BusinessException(ErrorCode.PREFERENCE_NOT_FOUND);
+        }
+        Double effectiveWorkplaceLat = workplaceLat == null
+                ? toDouble(preference.getWorkplaceLatitude())
+                : workplaceLat;
+        Double effectiveWorkplaceLng = workplaceLng == null
+                ? toDouble(preference.getWorkplaceLongitude())
+                : workplaceLng;
+        validateWorkplace(effectiveWorkplaceLat, effectiveWorkplaceLng);
 
         // 외부 API를 호출하지 않고, 이미 수집된 실거래 데이터로 최신 시세 차이율을 계산한다.
         if (refreshMarketScore) {
@@ -92,8 +106,8 @@ public class ComparisonServiceImpl implements ComparisonService {
         List<ComparisonMetricDTO> items = comparisonMapper.findMetrics(
                 userId,
                 propertyIds,
-                workplaceLat,
-                workplaceLng);
+                effectiveWorkplaceLat,
+                effectiveWorkplaceLng);
 
         if (items.size() != propertyIds.size()) {
             throw new BusinessException(ErrorCode.PROPERTY_NOT_FOUND);
@@ -103,8 +117,8 @@ public class ComparisonServiceImpl implements ComparisonService {
                 propertyScoreService.calculateComparisonScores(
                         userId,
                         propertyIds,
-                        toBigDecimal(workplaceLat),
-                        toBigDecimal(workplaceLng));
+                        toBigDecimal(effectiveWorkplaceLat),
+                        toBigDecimal(effectiveWorkplaceLng));
         for (ComparisonMetricDTO item : items) {
             PropertyComparisonScoreDTO score = scores.get(item.getPropertyId());
             if (score == null) {
@@ -124,6 +138,10 @@ public class ComparisonServiceImpl implements ComparisonService {
 
     private BigDecimal toBigDecimal(Double value) {
         return value == null ? null : BigDecimal.valueOf(value);
+    }
+
+    private Double toDouble(BigDecimal value) {
+        return value == null ? null : value.doubleValue();
     }
 
     private void validateWorkplace(Double workplaceLat, Double workplaceLng) {

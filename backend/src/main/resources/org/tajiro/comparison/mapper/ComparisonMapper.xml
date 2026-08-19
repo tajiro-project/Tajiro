@@ -93,10 +93,10 @@
                                    + SIN(RADIANS(#{workplaceLat}))
                                    * SIN(RADIANS(b.latitude))
                                ))
-                           ) * 2 / CASE WHEN COALESCE(pref.has_car, FALSE) THEN 250.0 ELSE 67.0 END
+                           ) / CASE WHEN COALESCE(pref.has_car, FALSE) THEN 250.0 ELSE 67.0 END
                        )
                    WHEN pvar.workplace_distance_meters IS NULL THEN NULL
-                   ELSE CEIL(pvar.workplace_distance_meters * 2 / CASE WHEN COALESCE(pref.has_car, FALSE) THEN 250.0 ELSE 67.0 END)
+                   ELSE CEIL(pvar.workplace_distance_meters / CASE WHEN COALESCE(pref.has_car, FALSE) THEN 250.0 ELSE 67.0 END)
                END AS commute_minutes,
                COALESCE(infra.infra_count, 0) AS infra_count,
                COALESCE(infra.amenity_count, 0) AS amenity_count,

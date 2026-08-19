@@ -36,7 +36,7 @@ public class ComparisonAiServiceImpl implements ComparisonAiService {
 
     private static final String COMPARISON_WORKPLACE_PREFIX = "__COMPARE_WORKPLACE__:";
     private static final String SCORE_CONTEXT_PREFIX = "__PREFERENCE_SCORE_CONTEXT__:";
-    private static final String SCORE_CONTEXT_VERSION = "preference-score-v1";
+    private static final String SCORE_CONTEXT_VERSION = "preference-score-v2";
     private static final Set<String> SUPPORTED_PRIORITIES = Set.of(
             "COMMUTE",
             "COST",
@@ -56,10 +56,22 @@ public class ComparisonAiServiceImpl implements ComparisonAiService {
         if (request == null
                 || request.getPropertyIds() == null
                 || request.getPropertyIds().isEmpty()
-                || request.getWorkplaceLat() == null
-                || request.getWorkplaceLng() == null) {
+                || (request.getWorkplaceLat() == null)
+                    != (request.getWorkplaceLng() == null)) {
             throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
         }
+
+        HousingPreferenceVO preference = preferenceMapper.findByUserId(userId);
+        if (preference == null) {
+            throw new BusinessException(ErrorCode.PREFERENCE_NOT_FOUND);
+        }
+        Double workplaceLat = request.getWorkplaceLat() == null
+                ? toDouble(preference.getWorkplaceLatitude())
+                : request.getWorkplaceLat();
+        Double workplaceLng = request.getWorkplaceLng() == null
+                ? toDouble(preference.getWorkplaceLongitude())
+                : request.getWorkplaceLng();
+        validateWorkplace(workplaceLat, workplaceLng);
 
         List<Long> propertyIds = request.getPropertyIds().stream()
                 .filter(Objects::nonNull)
@@ -69,26 +81,22 @@ public class ComparisonAiServiceImpl implements ComparisonAiService {
         List<String> priorities = resolvePriorities(
                 userId,
                 request.getPriorities());
-        HousingPreferenceVO preference = preferenceMapper.findByUserId(userId);
-        if (preference == null) {
-            throw new BusinessException(ErrorCode.PREFERENCE_NOT_FOUND);
-        }
 
         String propertyIdsJson = toLongJson(propertyIds);
         LocalDateTime latestMarketSyncAt =
                 comparisonReportMapper.findLatestMarketSyncAtByJson(propertyIdsJson);
         String prioritiesJson = toStringJson(buildComparisonContext(
                 priorities,
-                request.getWorkplaceLat(),
-                request.getWorkplaceLng(),
+                workplaceLat,
+                workplaceLng,
                 buildScoreContextHash(preference)));
 
         // 시세 점수를 새로 계산하지 않고 현재 DB 값만 조회해 기존 리포트 재사용 가능 여부를 먼저 판단한다.
         ComparisonMetricsResponseDTO metrics = comparisonService.getComparisonMetrics(
                 userId,
                 propertyIds,
-                request.getWorkplaceLat(),
-                request.getWorkplaceLng(),
+                workplaceLat,
+                workplaceLng,
                 false);
         LocalDateTime maxPropertyUpdateDate = getMaxPropertyUpdateDate(metrics.getItems());
 
@@ -112,15 +120,16 @@ public class ComparisonAiServiceImpl implements ComparisonAiService {
         metrics = comparisonService.getComparisonMetrics(
                 userId,
                 propertyIds,
-                request.getWorkplaceLat(),
-                request.getWorkplaceLng(),
+                workplaceLat,
+                workplaceLng,
                 true);
         maxPropertyUpdateDate = getMaxPropertyUpdateDate(metrics.getItems());
 
         // 비교 지표 조회 단계에서 계산된 매물별 맞춤 점수를 전달하고, 최종 추천은 AI가 판단한다.
         ComparisonAnalysisResponseDTO generated = comparisonAiClient.generate(
                 metrics.getItems(),
-                priorities);
+                priorities,
+                preference);
         //기존 리포트 있는지 확인
         ComparisonReportVO reportToRefresh = reusableReport;
         if (reportToRefresh == null) {
@@ -309,6 +318,23 @@ public class ComparisonAiServiceImpl implements ComparisonAiService {
 
     private String valueOf(Object value) {
         return value == null ? "" : String.valueOf(value);
+    }
+
+    private Double toDouble(java.math.BigDecimal value) {
+        return value == null ? null : value.doubleValue();
+    }
+
+    private void validateWorkplace(Double latitude, Double longitude) {
+        if (latitude == null
+                || longitude == null
+                || !Double.isFinite(latitude)
+                || !Double.isFinite(longitude)
+                || latitude < -90
+                || latitude > 90
+                || longitude < -180
+                || longitude > 180) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
+        }
     }
 
     private List<String> validatePriorities(List<String> priorities) {
