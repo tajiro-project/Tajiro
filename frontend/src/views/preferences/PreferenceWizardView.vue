@@ -769,7 +769,9 @@ async function savePreference() {
   applyPreference(savedPreference);
   hasSavedPreference.value = true;
   localStorage.removeItem(PREFERENCE_DRAFT_KEY);
-  await router.push('/properties');
+  await router.push(
+    route.query.returnTo === 'compare-box' ? '/compare-box' : '/properties',
+  );
 }
 
 async function applyQuickSetup(presetKey) {

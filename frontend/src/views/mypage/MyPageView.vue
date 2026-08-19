@@ -92,9 +92,9 @@
         <button
           class="menu-row"
           type="button"
-          @click="router.push('/profile-setup')"
+          @click="isLocationPickerOpen = true"
         >
-          <span>내 정보 관리 (소득 · 자산 · 직장)</span>
+          <span>선호 위치</span>
           <svg
             width="16"
             height="16"
@@ -134,6 +134,12 @@
         탈퇴하기
       </button>
     </simplebar>
+
+    <KakaoLocation
+      :open="isLocationPickerOpen"
+      @close="isLocationPickerOpen = false"
+      @select="selectRegion"
+    />
   </div>
 </template>
 
@@ -144,6 +150,7 @@ import simplebar from 'simplebar-vue';
 import client, { getApiErrorMessage, withMock } from '@/api/client';
 import { mockDashboard } from '@/api/mockData';
 import { useOnboardingTour } from '@/composables/useOnboardingTour';
+import KakaoLocation from '@/components/KakaoLocation.vue';
 
 const { startAt } = useOnboardingTour();
 
@@ -171,6 +178,7 @@ const CRITERION_LABELS = {
 
 const router = useRouter();
 const errorMessage = ref('');
+const isLocationPickerOpen = ref(false);
 const dashboard = ref({
   name: '',
   targetRegion: '',
@@ -206,6 +214,23 @@ async function loadDashboard() {
     dashboard.value = { ...dashboard.value, ...payload };
   } catch {
     dashboard.value = { ...mockDashboard };
+  }
+}
+
+async function selectRegion(location) {
+  isLocationPickerOpen.value = false;
+
+  try {
+    await client.put('/users/me/profile', {
+      targetRegion: location.name || location.address,
+      target_sgg_code: location.sggCode ?? '',
+    });
+    dashboard.value.targetRegion = location.name || location.address;
+  } catch (error) {
+    errorMessage.value = getApiErrorMessage(
+      error,
+      '선호 위치 저장에 실패했어요. 잠시 후 다시 시도해주세요.',
+    );
   }
 }
 

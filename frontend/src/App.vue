@@ -1,11 +1,79 @@
 <script setup>
-import { computed, provide, reactive } from 'vue';
+import { computed, provide, reactive, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import AppTabBar from '@/components/AppTabBar.vue';
 import PageHeader from '@/components/PageHeader.vue';
+import KakaoLocation from '@/components/KakaoLocation.vue';
+import BirthDatePicker from '@/components/BirthDatePicker.vue';
+import client, { getApiErrorMessage } from '@/api/client';
 import { ChevronDown, MapPin } from 'lucide-vue-next';
 
 const route = useRoute();
+
+// 예전 가입자 중 지역/생년월일이 없는 사람은 로그인 상태로 앱을 켤 때마다
+// 이 정보를 다 채울 때까지 화면 위에 모달을 띄운다. 새 가입자는 회원가입 때
+// 이미 채워지므로 이 모달을 볼 일이 없다.
+const showProfileGate = ref(false);
+const profileConfirmedComplete = ref(false);
+const gateRegion = ref('');
+const gateSggCode = ref('');
+const gateBirthDate = ref('');
+const gateLocationPickerOpen = ref(false);
+const gateSaving = ref(false);
+const gateError = ref('');
+
+// onMounted은 앱이 처음 로드될 때(보통 로그인 전) 한 번만 실행되고 로그인
+// 후 라우트만 바뀌는 SPA 특성상 다시 실행되지 않으므로, 라우트 변화를 지켜보며
+// 토큰이 생긴 시점(로그인 직후)에 다시 확인한다. 이미 완성된 걸 확인했으면
+// 매 이동마다 다시 조회하지 않도록 플래그로 막는다.
+watch(() => route.fullPath, checkProfileCompletion, { immediate: true });
+
+async function checkProfileCompletion() {
+  if (profileConfirmedComplete.value || showProfileGate.value) return;
+  if (!localStorage.getItem('accessToken')) return;
+
+  try {
+    const res = await client.get('/users/me/profile');
+    const profile = res?.data?.data;
+    if (!profile?.targetRegion || !profile?.birthDate) {
+      showProfileGate.value = true;
+    } else {
+      profileConfirmedComplete.value = true;
+    }
+  } catch {
+    // 401 등으로 실패하면 로그인 화면 쪽에서 처리되므로 여기서는 무시
+  }
+}
+
+function selectGateRegion(location) {
+  gateRegion.value = location.name || location.address;
+  gateSggCode.value = location.sggCode ?? '';
+  gateLocationPickerOpen.value = false;
+}
+
+async function submitProfileGate() {
+  if (!gateRegion.value.trim() || !gateBirthDate.value) return;
+
+  gateError.value = '';
+  gateSaving.value = true;
+
+  try {
+    await client.put('/users/me/profile', {
+      targetRegion: gateRegion.value,
+      target_sgg_code: gateSggCode.value,
+      birthDate: gateBirthDate.value,
+    });
+    showProfileGate.value = false;
+    profileConfirmedComplete.value = true;
+  } catch (error) {
+    gateError.value = getApiErrorMessage(
+      error,
+      '저장에 실패했어요. 잠시 후 다시 시도해주세요.',
+    );
+  } finally {
+    gateSaving.value = false;
+  }
+}
 const propertyListHeader = reactive({
   locationLabel: '매물 검색 결과',
   locationPickerRequestId: 0,
@@ -94,12 +162,13 @@ const KEEP_ALIVE_VIEWS = [
         v-if="route.meta.headerAction === 'edit-profile'"
         #right
       >
-        <router-link
+        <button
           class="header-action"
-          to="/profile-setup"
+          type="button"
+          @click="showProfileGate = true"
         >
           내 정보 수정
-        </router-link>
+        </button>
       </template>
     </PageHeader>
 
@@ -116,10 +185,90 @@ const KEEP_ALIVE_VIEWS = [
       :active="activeTab"
       class="global-tab-bar"
     />
+
+    <div
+      v-if="showProfileGate"
+      class="profile-gate-overlay"
+    >
+      <div class="profile-gate-sheet">
+        <p class="profile-gate-title">맞춤 추천을 위해<br />지역과 생년월일을 알려주세요</p>
+
+        <div class="field">
+          <label class="field-label">선호 지역</label>
+          <input
+            class="field-input"
+            type="text"
+            readonly
+            :value="gateRegion"
+            placeholder="예) 서울특별시 강남구"
+            @click="gateLocationPickerOpen = true"
+          />
+        </div>
+        <div class="field">
+          <label class="field-label">생년월일</label>
+          <BirthDatePicker v-model="gateBirthDate" />
+        </div>
+
+        <p
+          v-if="gateError"
+          class="profile-gate-error"
+        >
+          {{ gateError }}
+        </p>
+
+        <button
+          class="btn-cta"
+          type="button"
+          :disabled="!gateRegion.trim() || !gateBirthDate || gateSaving"
+          @click="submitProfileGate"
+        >
+          확인
+        </button>
+      </div>
+    </div>
+
+    <KakaoLocation
+      :open="gateLocationPickerOpen"
+      @close="gateLocationPickerOpen = false"
+      @select="selectGateRegion"
+    />
   </div>
 </template>
 
 <style scoped>
+.profile-gate-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(51, 48, 42, 0.5);
+}
+
+.profile-gate-sheet {
+  width: 100%;
+  max-width: 375px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px 20px 28px;
+  background: var(--white);
+  border-radius: 20px 20px 0 0;
+}
+
+.profile-gate-title {
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--text-primary);
+}
+
+.profile-gate-error {
+  font-size: 12px;
+  color: var(--danger);
+}
+
 .header-location {
   display: flex;
   align-items: center;

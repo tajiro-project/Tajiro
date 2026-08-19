@@ -79,8 +79,8 @@ export const ONBOARDING_STEPS = {
   'compare-box': [
     {
       target: 'comparebox-settings',
-      title: '비교 기준',
-      text: '눌러서 바꿀 수 있어요. 선호 위치는 통근 시간의 기준점이 되고, 우선순위는 이 비교에만 적용돼요.',
+      title: '가치관 설정 수정',
+      text: '비교에는 저장된 내 가치관이 적용돼요. 필요하면 여기서 가치관을 수정할 수 있어요.',
     },
     {
       target: 'comparebox-start',
