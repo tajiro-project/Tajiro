@@ -8,7 +8,10 @@
       class="scroll-area"
       :auto-hide="true"
     >
-      <p v-if="route.query.demo === '1'" class="demo-banner">
+      <p
+        v-if="route.query.demo === '1'"
+        class="demo-banner"
+      >
         예시 화면이에요 · 실제 매물이 아니에요
       </p>
 
@@ -71,7 +74,10 @@
       </div>
 
       <!-- 내 기준 점수 & 시세 문구 통합 카드 -->
-      <div class="score-card" data-tour="detail-score">
+      <div
+        class="score-card"
+        data-tour="detail-score"
+      >
         <div class="score-header">
           <span class="label">주거 가치관 반영 점수</span>
         </div>
@@ -255,7 +261,10 @@
       </div>
 
       <!-- 단순 이동 바 -->
-      <div class="banner-group" data-tour="detail-banners">
+      <div
+        class="banner-group"
+        data-tour="detail-banners"
+      >
         <button
           class="simple-banner yellow"
           @click="goToInfra"
@@ -746,7 +755,8 @@ const DEMO_PROPERTY = {
   roomNum: 3,
   bathroomNum: 2,
   parkAvailability: true,
-  propertyDescription: '깔끔하게 관리된 신축급 아파트예요. 채광이 좋고 지하철역이 가까워요.',
+  propertyDescription:
+    '깔끔하게 관리된 신축급 아파트예요. 채광이 좋고 지하철역이 가까워요.',
   moveInDate: '2026-08-31T00:00:00',
   availableDate: '2021-11-30T00:00:00',
   discussionStatus: false,
@@ -1038,14 +1048,10 @@ async function addToCompare() {
   } catch (error) {
     console.error('비교함 담기 실패:', error);
 
-    const status = error.response?.status;
-
-    if (status === 409) {
-      const serverMessage = error.response?.data?.message;
-      compareMsg.value =
-        serverMessage || '비교함에는 매물을 최대 3개까지 담을 수 있습니다.';
-    } else if (status === 404) {
-      compareMsg.value = '존재하지 않는 매물입니다.';
+    if (error.code === 'COMPARE_409_1') {
+      compareMsg.value = error.message;
+    } else if (error.code === 'COMPARE_409_2') {
+      compareMsg.value = error.message;
     } else {
       compareMsg.value = '비교함 추가 중 오류가 발생했습니다.';
     }
