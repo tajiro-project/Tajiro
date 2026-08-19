@@ -11,7 +11,7 @@ import org.tajiro.seller.service.PropertyAggregationCoordinator;
 @RestController
 @RequestMapping("/api/admin/infra/batch")
 @RequiredArgsConstructor
-@Api(tags = "인프라 수집 배치", description = "관리자용 인프라 수집 컨트롤러")
+@Api(tags = "14. 관리자 인프라 수집", description = "관리자용 건물 주변 인프라 수집 API")
 public class BuildingInfraBatchController {
 
     private final PropertyAggregationCoordinator aggregationCoordinator;

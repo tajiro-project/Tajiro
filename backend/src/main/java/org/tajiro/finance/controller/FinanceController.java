@@ -20,7 +20,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/financial-products")
 @RequiredArgsConstructor
-@Api(tags = "KB금융 상품 관리")
+@Api(tags = "11. 금융 상품", description = "맞춤형 금융 상품 조회 및 추천 API")
 public class FinanceController {
     final FinanceServiceImpl service;
     private final FinanceEmbeddingService embeddingService;

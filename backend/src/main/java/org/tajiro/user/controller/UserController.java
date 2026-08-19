@@ -23,7 +23,7 @@ import java.time.LocalDateTime;
 @RestController
 @RequestMapping("/api/users/me")
 @RequiredArgsConstructor
-@Api(tags = "내 정보")
+@Api(tags = "03. 내 정보", description = "사용자 프로필 조회, 수정 및 회원 탈퇴 API")
 public class UserController {
 
     private final UserProfileService userProfileService;

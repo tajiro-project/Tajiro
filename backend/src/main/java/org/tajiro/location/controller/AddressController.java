@@ -19,7 +19,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/locations")
 @RequiredArgsConstructor
-@Api(tags = "위치", description = "주소 검색 관련 API")
+@Api(tags = "05. 주소 검색", description = "주소 검색 및 건물 동 조회 API")
 public class AddressController {
     private final KakaoLocalClient kakaoLocalClient;
     private final BuildingLedgerClient buildingLedgerClient;

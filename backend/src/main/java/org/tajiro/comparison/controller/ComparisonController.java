@@ -28,7 +28,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
-@Api(tags = "매물 비교")
+@Api(tags = "08. 매물 비교", description = "비교할 매물 관리, 비교 지표 조회 및 인공지능 분석 API")
 public class ComparisonController {
 
 

@@ -17,7 +17,7 @@ import springfox.documentation.annotations.ApiIgnore;
 @RestController
 @RequestMapping("/api/properties")
 @RequiredArgsConstructor
-@Api(tags = "매물")
+@Api(tags = "06. 매물 탐색", description = "매물 주변 안전 정보 조회 API")
 public class SafetyController {
 
     private final SafetyService safetyService;

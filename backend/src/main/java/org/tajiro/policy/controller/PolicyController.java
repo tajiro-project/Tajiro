@@ -21,7 +21,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/policies")
 @RequiredArgsConstructor
-@Api(tags = "청년 정책 관리")
+@Api(tags = "10. 청년 정책", description = "맞춤형 청년 정책 조회 및 추천 API")
 public class PolicyController{
 
     final PolicyService service;
