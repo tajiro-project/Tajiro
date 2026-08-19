@@ -45,7 +45,7 @@
 </template>
 
 <script setup>
-import { computed, nextTick, onBeforeUnmount, onDeactivated, onMounted, ref, watch } from 'vue';
+import { computed, nextTick, onActivated, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useOnboardingTour } from '@/composables/useOnboardingTour';
 
@@ -174,10 +174,10 @@ watch(
   },
 );
 
-onMounted(() => {
-  // ?demo=1로 들어온 화면은 "다시보기" 흐름 중이라는 뜻이라, 이 그룹을 예전에 이미 봤어도
-  // (hasSeen) 다시 보여준다. 예: 매물리스트 다시보기에서 예시 카드를 눌러 매물상세로 넘어가도
-  // 그 화면의 투어를 이어서 볼 수 있어야 한다.
+// ?demo=1로 들어온 화면은 "다시보기" 흐름 중이라는 뜻이라, 이 그룹을 예전에 이미 봤어도
+// (hasSeen) 다시 보여준다. 예: 매물리스트 다시보기에서 예시 카드를 눌러 매물상세로 넘어가도
+// 그 화면의 투어를 이어서 볼 수 있어야 한다.
+function tryStartTour() {
   if (route.query.demo === '1') {
     startAt(props.groupName);
   } else {
@@ -185,26 +185,22 @@ onMounted(() => {
   }
   measure();
   watchForTarget();
+}
+
+onMounted(() => {
+  tryStartTour();
   window.addEventListener('resize', onWindowChange);
   window.addEventListener('scroll', onWindowChange, true);
 });
 
-// 투어를 끝내지 않은 채 화면을 벗어나면(예: 가치관 미설정 상태로 매물 리스트에 들어왔다가
-// 404로 가치관 설정 화면으로 튕겨나가는 경우) state.activeGroup이 이 그룹으로 남아있게 되고,
-// 그러면 다음 화면의 maybeStart가 "이미 다른 투어가 진행 중"이라고 판단해 조용히 무시해버린다.
-// PropertyListView처럼 KeepAlive로 감싸인 화면은 onBeforeUnmount가 아니라 onDeactivated로 벗어나므로
-// 두 훅 모두에서 정리한다.
-function resetIfStillActive() {
-  if (state.activeGroup === props.groupName) {
-    state.activeGroup = null;
-    state.stepIndex = 0;
-  }
-}
-
-onDeactivated(resetIfStillActive);
+// PropertyListView처럼 KeepAlive로 감싸인 화면은, 가치관 미설정 등으로 첫 진입 때 바로 다른 화면으로
+// 튕겨나갔다가 나중에 실제로 데이터가 뜨는 시점에 돌아오면 재마운트가 아니라 재활성화라서
+// onMounted가 다시 안 불린다 — 그러면 정작 유저가 실제로 보는 시점엔 투어 시작 로직이 한 번도 안 돌아서
+// 온보딩이 안 뜬다. onActivated에서 같은 시작 로직을 다시 태워준다(최초 마운트 때는 onMounted 다음에
+// 한 번 더 불리지만 maybeStart/startAt이 멱등적이라 문제없음).
+onActivated(tryStartTour);
 
 onBeforeUnmount(() => {
-  resetIfStillActive();
   observer?.disconnect();
   window.removeEventListener('resize', onWindowChange);
   window.removeEventListener('scroll', onWindowChange, true);
