@@ -7,8 +7,6 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.lang.Long;
-
 
 @NoArgsConstructor
 @AllArgsConstructor
@@ -40,4 +38,7 @@ public class PropertyDetailVO {
     private Boolean discussionStatus;
     private String dong;
     private BigDecimal evaluationScore;
+
+    private String agentPhone;
+    private String agencyName;
 }

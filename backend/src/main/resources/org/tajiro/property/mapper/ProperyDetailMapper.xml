@@ -4,39 +4,43 @@
 
 <mapper namespace="org.tajiro.property.mapper.PropertyDetailMapper">
 
-    <!-- 1. 매물 정보 조회 (property 테이블 1:1 매핑) -->
+    <!-- 1. 매물 정보 조회 (property + building + users 조인) -->
     <select id="selectPropertyDetail" parameterType="long" resultType="PropertyDetailVO">
         SELECT
-            p.id,
-            p.source_listing_id     AS sourceListingId,
-            p.building_id          AS buildingId,
-            b.sigungu_cd           AS sigunguCd,
-            p.title,
-            p.property_type        AS propertyType,
-            p.trade_type           AS tradeType,
-            p.deposit,
-            p.monthly_rent         AS monthlyRent,
-            p.maintenance_fee      AS maintenanceFee,
-            p.area_m2              AS areaM2,
-            p.floor_info           AS floorInfo,
-            p.room_number          AS roomNumber,
-            p.address,
-            p.room_num             AS roomNum,
-            p.bathroom_num         AS bathroomNum,
-            p.park_availability    AS parkAvailability,
-            p.transaction_status   AS transactionStatus,
-            p.property_description AS propertyDescription,
-            p.available_date       AS availableDate,
-            p.move_in_date         AS moveInDate,
-            p.update_date          AS updateDate,
-            p.discussion_status    AS discussionStatus,
-            p.dong
+        p.id,
+        p.source_listing_id     AS sourceListingId,
+        p.building_id          AS buildingId,
+        b.sigungu_cd           AS sigunguCd,
+        p.title,
+        p.property_type        AS propertyType,
+        p.trade_type           AS tradeType,
+        p.deposit,
+        p.monthly_rent         AS monthlyRent,
+        p.maintenance_fee      AS maintenanceFee,
+        p.area_m2              AS areaM2,
+        p.floor_info           AS floorInfo,
+        p.room_number          AS roomNumber,
+        p.address,
+        p.room_num             AS roomNum,
+        p.bathroom_num         AS bathroomNum,
+        p.park_availability    AS parkAvailability,
+        p.transaction_status   AS transactionStatus,
+        p.property_description AS propertyDescription,
+        p.available_date       AS availableDate,
+        p.move_in_date         AS moveInDate,
+        p.update_date          AS updateDate,
+        p.discussion_status    AS discussionStatus,
+        p.dong,
+        p.evaluation_score     AS evaluationScore,
+        u.phone                AS agentPhone,
+        u.agency_name          AS agencyName
         FROM property p
         JOIN building b ON b.id = p.building_id
+        LEFT JOIN users u ON u.id = p.seller_id
         WHERE p.id = #{id}
     </select>
 
-    <!-- 2. 사용자별 매물 분석 결과(추천 점수 & 직장 거리) 조회 -->
+    <!-- 2. 사용자별 매물 분석 결과 -->
     <select id="selectPropertyValueAnalysisResult" resultType="PropertyValueAnalysisResultVO">
         SELECT
             recommend_score           AS recommendScore,
