@@ -17,7 +17,10 @@
       <div class="scroll-wrapper">
         <div class="scroll-content">
           <div class="title-area">
-            <p v-if="route.query.demo === '1'" class="demo-banner">
+            <p
+              v-if="route.query.demo === '1'"
+              class="demo-banner"
+            >
               예시 화면이에요 · 실제 안전 데이터가 아니에요
             </p>
             <h1 class="main-title">{{ buildingName }} 기준 안전 지표예요</h1>
@@ -125,8 +128,8 @@ import { SAFETY_CATEGORIES } from '@/constants/preferenceOptions';
 
 const route = useRoute();
 
-// 💡 쿼리 스트링으로 전달받은 buildingName 우선 사용
 const buildingName = ref(route.query.buildingName || '');
+const propertyType = ref(route.query.propertyType || '');
 
 const CATEGORY_KEY_MAP = {
   POLICE_CENTER: 'POLICE',
@@ -179,36 +182,66 @@ const DEMO_SAFETY_DATA = {
       safeCategory: 'POLICE_CENTER',
       countWithin500m: 1,
       details: [
-        { safeDetailId: 'demo-police-1', latitude: 36.3281, longitude: 127.4655, safeName: '용운지구대' },
+        {
+          safeDetailId: 'demo-police-1',
+          latitude: 36.3281,
+          longitude: 127.4655,
+          safeName: '용운지구대',
+        },
       ],
     },
     {
       safeCategory: 'CCTV',
       countWithin500m: 6,
       details: [
-        { safeDetailId: 'demo-cctv-1', latitude: 36.3276, longitude: 127.4650, safeName: '방범 CCTV' },
-        { safeDetailId: 'demo-cctv-2', latitude: 36.3270, longitude: 127.4645, safeName: '방범 CCTV' },
+        {
+          safeDetailId: 'demo-cctv-1',
+          latitude: 36.3276,
+          longitude: 127.465,
+          safeName: '방범 CCTV',
+        },
+        {
+          safeDetailId: 'demo-cctv-2',
+          latitude: 36.327,
+          longitude: 127.4645,
+          safeName: '방범 CCTV',
+        },
       ],
     },
     {
       safeCategory: 'SAFETY_BELL',
       countWithin500m: 2,
       details: [
-        { safeDetailId: 'demo-bell-1', latitude: 36.3274, longitude: 127.4652, safeName: '안전 비상벨' },
+        {
+          safeDetailId: 'demo-bell-1',
+          latitude: 36.3274,
+          longitude: 127.4652,
+          safeName: '안전 비상벨',
+        },
       ],
     },
     {
       safeCategory: 'SECURITY_LIGHT',
       countWithin500m: 9,
       details: [
-        { safeDetailId: 'demo-light-1', latitude: 36.3272, longitude: 127.4648, safeName: '보안등' },
+        {
+          safeDetailId: 'demo-light-1',
+          latitude: 36.3272,
+          longitude: 127.4648,
+          safeName: '보안등',
+        },
       ],
     },
     {
       safeCategory: 'CHILD_ACCIDENT_ZONE',
       countWithin500m: 1,
       details: [
-        { safeDetailId: 'demo-accident-1', latitude: 36.3279, longitude: 127.4642, safeName: '어린이 보호구역' },
+        {
+          safeDetailId: 'demo-accident-1',
+          latitude: 36.3279,
+          longitude: 127.4642,
+          safeName: '어린이 보호구역',
+        },
       ],
     },
   ],
@@ -217,6 +250,7 @@ const DEMO_SAFETY_DATA = {
 onMounted(async () => {
   if (route.query.demo === '1') {
     buildingName.value = 'e편한세상대전에코포레';
+    propertyType.value = '아파트'; // 데모용 임시 타입 설정
     propertyCenter.value = DEMO_CENTER;
     rawSafetyData.value = DEMO_SAFETY_DATA;
     updateDate.value = DEMO_SAFETY_DATA.updatedAt;
@@ -227,19 +261,23 @@ onMounted(async () => {
   const propertyId = route.params.id;
   if (!propertyId) return;
 
-  if (!buildingName.value) {
+  if (!buildingName.value || !propertyType.value) {
     try {
       const pRes = await propertyApi.getPropertyDetail(propertyId);
       const pData = pRes?.data || pRes;
       const rawTitle = pData?.title || pData?.buildingName || pData?.name || '';
-      buildingName.value =
-        rawTitle.replace(/\s*\d+호$/, '').trim() || '건물명 정보 없음';
+
+      if (!buildingName.value) {
+        buildingName.value =
+          rawTitle.replace(/\s*\d+호$/, '').trim() || '건물명 정보 없음';
+      }
+      if (!propertyType.value) {
+        propertyType.value = pData?.propertyType || pData?.realEstateType || '';
+      }
     } catch (err) {
-      console.error('건물명 조회 실패:', err);
-      buildingName.value = '건물명 정보 없음';
+      console.error('건물 정보 조회 실패:', err);
     }
   }
-
   try {
     isLoading.value = true;
     const res = await propertyApi.safety(propertyId);
@@ -277,6 +315,7 @@ const mapMarkers = computed(() => {
       lng: propertyCenter.value.lng,
       selected: true,
       count: 1,
+      propertyType: propertyType.value,
     },
   ];
 });
