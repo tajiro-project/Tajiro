@@ -15,10 +15,14 @@
 
     <simplebar class="content">
       <ul v-if="items.length" class="cards">
-        <li v-for="item in items" :key="item.propertyId" class="card">
+        <li
+          v-for="item in items"
+          :key="item.propertyId"
+          class="card"
+          :class="{ sold: !item.transactionStatus }"
+        >
           <div
             class="card-body"
-            :class="{ dimmed: !item.transactionStatus }"
             @click="
               router.push({
                 path: `/seller/properties/${item.propertyId}`,
@@ -27,6 +31,9 @@
             "
           >
             <span class="thumb">
+              <span v-if="!item.transactionStatus" class="sold-overlay">
+                거래 완료
+              </span>
               <img
                 v-if="item.imageUrl"
                 :src="item.imageUrl"
@@ -64,7 +71,7 @@
                 {{ statusLabel(item) }}
               </span>
               <p class="card-title">{{ titleOf(item) }}</p>
-              <p class="card-meta">{{ typeLabel(item) }}</p>
+              <p class="card-sub">{{ typeLabel(item) }}</p>
               <p class="card-price">{{ priceLabel(item) }}</p>
               <p class="card-meta">{{ subMeta(item) }}</p>
             </div>
@@ -316,36 +323,48 @@ async function removeProperty(item) {
   gap: 12px;
 }
 
+/* 카드 모양·글자는 매물 목록(PropertyListView)과 같은 값을 쓴다 */
 .card {
   display: flex;
   flex-direction: column;
-  background: var(--white);
+  background: #fff;
   border: 1px solid var(--border);
-  border-radius: var(--radius-card);
-  box-shadow: var(--shadow-card);
+  border-radius: 14px;
   overflow: hidden;
+}
+
+.card.sold {
+  background: #f2f1ee;
+  border-color: #e2e0da;
+}
+
+.card.sold .card-title,
+.card.sold .card-price {
+  color: #8a8477;
+}
+
+.card.sold .card-sub,
+.card.sold .card-meta {
+  color: #a8a49b;
 }
 
 .card-body {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 13px;
+  padding: 12px;
   cursor: pointer;
 }
 
-.card-body.dimmed {
-  opacity: 0.55;
-}
-
 .thumb {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 76px;
-  height: 76px;
+  width: 62px;
+  height: 62px;
   flex-shrink: 0;
-  background: var(--yellow-tint);
+  background: #f5efdb;
   border-radius: 10px;
   overflow: hidden;
 }
@@ -356,13 +375,26 @@ async function removeProperty(item) {
   object-fit: cover;
 }
 
+.sold-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(33, 30, 24, 0.55);
+  border-radius: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+}
+
 .card-texts {
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 3px;
 }
 
 .detail-chevron {
@@ -371,6 +403,7 @@ async function removeProperty(item) {
 }
 
 .status-badge {
+  margin-bottom: 4px;
   padding: 3px 7px;
   background: #e5f6ea;
   border-radius: 6px;
@@ -386,7 +419,7 @@ async function removeProperty(item) {
 
 .card-title {
   width: 100%;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 700;
   color: var(--text-primary);
   overflow: hidden;
@@ -394,16 +427,19 @@ async function removeProperty(item) {
   white-space: nowrap;
 }
 
-.card-meta {
-  font-size: 11px;
-  color: var(--kb-silver);
-}
-
+.card-sub,
 .card-price {
   margin-top: 2px;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--kb-gray);
+}
+
+.card-meta {
+  margin-top: 3px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--kb-silver);
 }
 
 .card-actions {
