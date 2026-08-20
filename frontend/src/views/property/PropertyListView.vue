@@ -1122,6 +1122,7 @@ const markers = computed(() => {
         lat: Number(p.latitude),
         lng: Number(p.longitude),
         name: p.buildingName,
+        propertyType: p.propertyType,
         count: 0,
         rank: null,
       });
