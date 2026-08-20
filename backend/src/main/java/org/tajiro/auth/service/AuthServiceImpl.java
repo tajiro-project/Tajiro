@@ -115,7 +115,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional(readOnly = true)
     public UserInfoResponse getMyInfo(Long userId) {
-        return UserInfoResponse.of(authMapper.findById(userId));
+        return authMapper.findMyInfoById(userId);
     }
 
     @Override

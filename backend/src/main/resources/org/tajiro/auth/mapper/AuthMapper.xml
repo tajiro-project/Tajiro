@@ -81,21 +81,12 @@
         WHERE id = #{userId}
     </update>
 
-    <!-- 10. ID로 사용자 조회 -->
-    <select id="findById" resultType="UserVO">
+    <!-- 10. ID로 내 정보(이름/연락처/중개사무소명) 조회 -->
+    <select id="findMyInfoById" resultType="org.tajiro.auth.dto.UserInfoResponse">
         SELECT
-            id,
-            email,
-            password_hash AS passwordHash,
             name,
-            role,
             phone,
-            agency_name   AS agencyName,
-            provider,
-            status,
-            created_at    AS createdAt,
-            deleted_at    AS deletedAt,
-            onboarding_seen AS onboardingSeen
+            agency_name AS agencyName
         FROM users
         WHERE id = #{userId}
     </select>
