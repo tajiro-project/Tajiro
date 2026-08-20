@@ -24,6 +24,7 @@ import org.tajiro.exception.BusinessException;
 import org.tajiro.preference.domain.HousingPreferenceVO;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -43,6 +44,9 @@ public class OpenAiComparisonClient implements ComparisonAiClient {
             "infraScore",
             "amenityScore");
     private static final String REPORT_SYSTEM_PROMPT = String.join("\n",
+            "각 매물에는 A, B, C 중 하나의 comparisonLabel이 있습니다. 매물을 지칭할 때 해당 라벨을 일관되게 사용하세요.",
+            "각 응답 필드에서 매물을 처음 언급할 때는 comparisonLabel과 title을 사용해 'A 매물(왕십리동 원룸)' 형식으로 작성하고, 이후에는 'A 매물'로 작성하세요.",
+            "매물명만 단독으로 지칭하지 말고, 같은 매물에 다른 comparisonLabel을 부여하지 마세요.",
             "당신은 한국의 청년 주거 매물을 비교하는 의사결정 코치입니다.",
             "housingPreference는 DB에 저장된 사용자의 전체 가치관 정보이므로 매물 비교와 추천 근거에 반영하세요.",
             "properties의 preferenceScore는 백엔드가 사용자 선호 조건과 우선순위를 반영해 계산한 최종 맞춤 점수입니다.",
@@ -152,13 +156,14 @@ public class OpenAiComparisonClient implements ComparisonAiClient {
     }
 
     private List<ObjectNode> toAiProperties(List<ComparisonMetricDTO> properties) {
-        return properties.stream()
-                .map(property -> {
-                    ObjectNode aiProperty = objectMapper.valueToTree(property);
-                    aiProperty.remove(FRONTEND_SCORE_FIELDS);
-                    return aiProperty;
-                })
-                .collect(Collectors.toList());
+        List<ObjectNode> aiProperties = new ArrayList<>();
+        for (int index = 0; index < properties.size(); index++) {
+            ObjectNode aiProperty = objectMapper.valueToTree(properties.get(index));
+            aiProperty.remove(FRONTEND_SCORE_FIELDS);
+            aiProperty.put("comparisonLabel", String.valueOf((char) ('A' + index)));
+            aiProperties.add(aiProperty);
+        }
+        return aiProperties;
     }
 
     private Map<String, Object> createResponseFormat(List<Long> propertyIds) {
