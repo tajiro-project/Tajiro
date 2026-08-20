@@ -75,6 +75,7 @@ public class ComparisonReportServiceImpl implements ComparisonReportService {
                 .comparedProperties(comparisonReportMapper.findPropertiesByJson(propertyIdsJson))
                 .aiPropertySummaryText(report.getAiPropertySummaryText())
                 .aiSummary(report.getAiSummary())
+                .aiSafetySummary(report.getAiSafetySummary())
                 .aiRecommendedPropertyId(report.getAiRecommendedPropertyId())
                 .aiAtp(report.getAiAtp())
                 .workplaceLat(workplace[0])

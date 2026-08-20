@@ -20,6 +20,7 @@ public class ComparisonReportVO {
     private String preferencePrioritiesJson;
     private String aiPropertySummaryText;
     private String aiSummary;
+    private String aiSafetySummary;
     private Boolean saved;
     private String aiAtp;
     private LocalDateTime createdAt;

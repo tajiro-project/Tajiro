@@ -19,6 +19,7 @@ public class ComparisonReportResponse {
     private List<ComparisonReportPropertyDTO> comparedProperties;
     private String aiPropertySummaryText;
     private String aiSummary;
+    private String aiSafetySummary;
     private Long aiRecommendedPropertyId;
     private String aiAtp;
     private Double workplaceLat;

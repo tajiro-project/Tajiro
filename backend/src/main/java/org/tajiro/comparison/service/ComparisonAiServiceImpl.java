@@ -36,7 +36,7 @@ public class ComparisonAiServiceImpl implements ComparisonAiService {
 
     private static final String COMPARISON_WORKPLACE_PREFIX = "__COMPARE_WORKPLACE__:";
     private static final String SCORE_CONTEXT_PREFIX = "__PREFERENCE_SCORE_CONTEXT__:";
-    private static final String SCORE_CONTEXT_VERSION = "preference-score-v2";
+    private static final String SCORE_CONTEXT_VERSION = "preference-score-v3";
     private static final Set<String> SUPPORTED_PRIORITIES = Set.of(
             "COMMUTE",
             "COST",
@@ -168,6 +168,7 @@ public class ComparisonAiServiceImpl implements ComparisonAiService {
                 .preferencePrioritiesJson(prioritiesJson)
                 .aiPropertySummaryText(generated.getAiPropertySummaryText())
                 .aiSummary(generated.getAiSummary())
+                .aiSafetySummary(generated.getAiSafetySummary())
                 .aiRecommendedPropertyId(generated.getAiRecommendedPropertyId())
                 .saved(false)
                 .aiAtp(generated.getAiAtp())
@@ -185,6 +186,7 @@ public class ComparisonAiServiceImpl implements ComparisonAiService {
         report.setPreferencePrioritiesJson(prioritiesJson);
         report.setAiPropertySummaryText(generated.getAiPropertySummaryText());
         report.setAiSummary(generated.getAiSummary());
+        report.setAiSafetySummary(generated.getAiSafetySummary());
         report.setAiRecommendedPropertyId(generated.getAiRecommendedPropertyId());
         report.setAiAtp(generated.getAiAtp());
         comparisonReportMapper.updateGeneratedReport(report);
@@ -196,6 +198,7 @@ public class ComparisonAiServiceImpl implements ComparisonAiService {
                 .reportId(report.getReportId())
                 .aiPropertySummaryText(report.getAiPropertySummaryText())
                 .aiSummary(report.getAiSummary())
+                .aiSafetySummary(report.getAiSafetySummary())
                 .aiRecommendedPropertyId(report.getAiRecommendedPropertyId())
                 .aiAtp(report.getAiAtp())
                 .build();
@@ -209,6 +212,7 @@ public class ComparisonAiServiceImpl implements ComparisonAiService {
         if (report == null
                 || !hasText(report.getAiPropertySummaryText())
                 || !hasText(report.getAiSummary())
+                || !hasText(report.getAiSafetySummary())
                 || !hasText(report.getAiAtp())
                 || report.getAiRecommendedPropertyId() == null
                 || !propertyIds.contains(report.getAiRecommendedPropertyId())) {
