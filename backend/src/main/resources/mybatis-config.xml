@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration
+        PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+    <settings>
+        <setting name="mapUnderscoreToCamelCase" value="true"/>
+        <setting name="jdbcTypeForNull" value="NULL"/>
+    </settings>
+    <typeAliases>
+        <typeAlias alias="PropertyVO" type="org.tajiro.property.domain.PropertyVO"/>
+        <typeAlias alias="PropertySearchRequest" type="org.tajiro.preference.dto.PropertySearchRequest"/>
+        <typeAlias alias="UserVO" type="org.tajiro.auth.domain.UserVO"/>
+        <typeAlias alias="FinanceVO" type="org.tajiro.finance.domain.FinanceVO"/>
+        <typeAlias alias="PolicyVO" type="org.tajiro.policy.domain.PolicyVO"/>
+        <typeAlias alias="PolicyCategoryVO" type="org.tajiro.policy.domain.PolicyCategoryVO"/>
+        <typeAlias alias="UserProfileVO" type="org.tajiro.user.domain.UserProfileVO"/>
+        <typeAlias alias="FinanceCategoryVO" type="org.tajiro.finance.domain.FinanceCategoryVO"/>
+
+        <typeAlias alias="PropertyDetailVO" type="org.tajiro.property.domain.PropertyDetailVO"/>
+        <typeAlias alias="InfraSummaryDTO" type="org.tajiro.property.dto.PropertyDetailDTO$InfraSummaryDTO"/>
+        <typeAlias alias="BuildingVO" type="org.tajiro.property.domain.BuildingVO"/>
+        <typeAlias alias="InfrastructureInfoDTO" type="org.tajiro.property.dto.PropertyInfrastructureDTO$InfrastructureInfoDTO"/>
+        <typeAlias alias="PropertySafetyDTO" type="org.tajiro.property.dto.PropertySafetyDTO"/>
+        <typeAlias alias="SafetyItemDTO" type="org.tajiro.property.dto.PropertySafetyDTO$SafetyItemDTO"/>
+        <typeAlias alias="SafetyDetailDTO" type="org.tajiro.property.dto.PropertySafetyDTO$SafetyDetailDTO"/>
+
+        <typeAlias alias="HousingPreferenceVO" type="org.tajiro.preference.domain.HousingPreferenceVO"/>
+        <typeAlias alias="PropertyValueAnalysisResultVO" type="org.tajiro.property.domain.PropertyValueAnalysisResultVO"/>
+        <typeAlias alias="FavoriteVO" type="org.tajiro.favorite.domain.FavoriteVO"/>
+        <typeAlias alias="FavoriteDTO" type="org.tajiro.favorite.dto.FavoriteDTO"/>
+        <typeAlias alias="PriorityItem" type="org.tajiro.dashboard.dto.DashboardDTO$PriorityItem"/>
+        <typeAlias alias="TermsVO" type="org.tajiro.terms.domain.TermsVO"/>
+        <typeAlias alias="SellerPropertyListVO" type="org.tajiro.seller.domain.SellerPropertyListVO"/>
+        <typeAlias alias="SellerPropertyCountsVO" type="org.tajiro.seller.domain.SellerPropertyCountsVO"/>
+    </typeAliases>
+</configuration>

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.tajiro.dashboard.mapper.DashboardMapper">
+
+    <select id="getUserName" resultType="string">
+        SELECT name FROM users WHERE id = #{userId}
+    </select>
+
+    <select id="getPriorities" resultType="PriorityItem">
+        SELECT
+            criterion AS criterion,
+            priority_order AS priorityOrder
+        FROM preference_priority
+        WHERE user_id = #{userId}
+        ORDER BY priority_order
+    </select>
+
+    <select id="countFavorites" resultType="int">
+        SELECT COUNT(*) FROM favorite_property WHERE user_id = #{userId}
+    </select>
+
+    <select id="countReports" resultType="int">
+        SELECT COUNT(*) FROM comparison_report WHERE user_id = #{userId} AND saved = true
+    </select>
+
+</mapper>

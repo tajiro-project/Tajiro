@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.tajiro.preference.mapper.PreferenceMapper">
+
+    <select id="findByUserId"
+            resultType="org.tajiro.preference.domain.HousingPreferenceVO">
+        SELECT user_id,
+               housing_types,
+               trade_types,
+               min_deposit,
+               max_deposit,
+               min_monthly_rent,
+               max_monthly_rent,
+               min_selling_price,
+               max_selling_price,
+               min_area,
+               max_area,
+               floor_preference,
+               max_workplace_distance_meters,
+               desired_infra_categories,
+               desired_amenity_categories,
+               has_car,
+               workplace_latitude,
+               workplace_longitude,
+               workplace_address
+        FROM housing_preference
+        WHERE user_id = #{userId}
+    </select>
+
+    <select id="findPrioritiesByUserId"
+            resultType="org.tajiro.preference.domain.PreferencePriorityVO">
+        SELECT id, user_id, criterion, priority_order
+        FROM preference_priority
+        WHERE user_id = #{userId}
+        ORDER BY priority_order
+    </select>
+
+    <insert id="upsert"
+            parameterType="org.tajiro.preference.domain.HousingPreferenceVO">
+        INSERT INTO housing_preference (
+            user_id,
+            housing_types,
+            trade_types,
+            min_deposit,
+            max_deposit,
+            min_monthly_rent,
+            max_monthly_rent,
+            min_selling_price,
+            max_selling_price,
+            min_area,
+            max_area,
+            floor_preference,
+            max_workplace_distance_meters,
+            desired_infra_categories,
+            desired_amenity_categories,
+            has_car,
+            workplace_latitude,
+            workplace_longitude,
+            workplace_address
+        ) VALUES (
+            #{userId},
+            #{housingTypes},
+            #{tradeTypes},
+            #{minDeposit},
+            #{maxDeposit},
+            #{minMonthlyRent},
+            #{maxMonthlyRent},
+            #{minSellingPrice},
+            #{maxSellingPrice},
+            #{minArea},
+            #{maxArea},
+            #{floorPreference},
+            #{maxWorkplaceDistanceMeters},
+            #{desiredInfraCategories},
+            #{desiredAmenityCategories},
+            #{hasCar},
+            #{workplaceLatitude},
+            #{workplaceLongitude},
+            #{workplaceAddress}
+        )
+        ON DUPLICATE KEY UPDATE
+            housing_types = VALUES(housing_types),
+            trade_types = VALUES(trade_types),
+            min_deposit = VALUES(min_deposit),
+            max_deposit = VALUES(max_deposit),
+            min_monthly_rent = VALUES(min_monthly_rent),
+            max_monthly_rent = VALUES(max_monthly_rent),
+            min_selling_price = VALUES(min_selling_price),
+            max_selling_price = VALUES(max_selling_price),
+            min_area = VALUES(min_area),
+            max_area = VALUES(max_area),
+            floor_preference = VALUES(floor_preference),
+            max_workplace_distance_meters = VALUES(max_workplace_distance_meters),
+            desired_infra_categories = VALUES(desired_infra_categories),
+            desired_amenity_categories = VALUES(desired_amenity_categories),
+            has_car = VALUES(has_car),
+            workplace_latitude = VALUES(workplace_latitude),
+            workplace_longitude = VALUES(workplace_longitude),
+            workplace_address = VALUES(workplace_address)
+    </insert>
+
+    <delete id="deletePrioritiesByUserId">
+        DELETE FROM preference_priority
+        WHERE user_id = #{userId}
+    </delete>
+
+    <insert id="insertPriorities">
+        INSERT INTO preference_priority (user_id, criterion, priority_order)
+        VALUES
+        <foreach collection="priorities" item="priority" separator=",">
+            (#{priority.userId}, #{priority.criterion}, #{priority.priorityOrder})
+        </foreach>
+    </insert>
+</mapper>

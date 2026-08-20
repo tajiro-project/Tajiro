@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.tajiro.finance.mapper.FinanceMapper">
+
+    <select id="get" resultType="FinanceVO">
+        select * from financial_product
+        where id = #{id}
+        ORDER BY id DESC
+    </select>
+
+
+    <select id="getList"
+            parameterType="string"
+            resultType="FinanceVO">
+        SELECT *
+        FROM financial_product
+        WHERE is_active = 1
+
+        <if test="keyword != null and keyword != ''">
+            AND (
+            product_name LIKE CONCAT('%', #{keyword}, '%')
+            OR eligibility LIKE CONCAT('%', #{keyword}, '%')
+            )
+        </if>
+
+        ORDER BY category_similarity DESC,id DESC
+    </select>
+
+    <!--
+        매물 기반 금융상품 추천
+
+        property.trade_type
+            =
+        financial_product.trade_type
+
+        정확히 일치하는 금융상품만 조회한다.
+    -->
+    <select id="getRecommendedByPropertyId"
+            resultType="FinanceVO">
+
+        SELECT fp.*
+
+        FROM financial_product fp
+
+                 INNER JOIN property p
+                            ON p.id = #{propertyId}
+
+        WHERE fp.is_active = 1
+
+          AND fp.trade_type
+            = p.trade_type
+
+        ORDER BY
+            fp.category_similarity DESC,
+            fp.min_rate ASC
+            LIMIT 3
+
+    </select>
+
+
+    <!--
+        아직 embedding이 없는
+        금융상품 category
+    -->
+    <select id="getCategoriesWithoutEmbedding"
+            resultType="FinanceCategoryVO">
+
+        SELECT
+            id,
+            trade_type,
+            product_type,
+            description,
+            embedding
+
+        FROM financial_product_category
+
+        WHERE embedding IS NULL
+
+        ORDER BY id
+
+    </select>
+
+
+    <!--
+        embedding이 만들어진
+        9개 category
+    -->
+    <select id="getCategoriesWithEmbedding"
+            resultType=
+                    "org.tajiro.finance.domain.FinanceCategoryVO">
+
+        SELECT
+            id,
+            trade_type,
+            product_type,
+            description,
+            embedding
+
+        FROM financial_product_category
+
+        WHERE embedding IS NOT NULL
+
+        ORDER BY id
+
+    </select>
+
+
+    <!--
+        아직 embedding이 없는 상품
+    -->
+    <select id="getProductsWithoutEmbedding"
+            resultType="FinanceVO">
+
+        SELECT
+            id,
+            product_name,
+            eligibility,
+            embedding
+
+        FROM financial_product
+
+        WHERE embedding IS NULL
+
+        ORDER BY id
+
+    </select>
+
+
+    <!--
+        embedding이 존재하는 상품
+        → 9개 카테고리 비교 대상
+    -->
+    <select id="getProductsWithEmbedding"
+            resultType="FinanceVO">
+
+        SELECT
+            id,
+            product_name,
+            eligibility,
+            embedding,
+            trade_type,
+            product_type,
+            category_similarity
+
+        FROM financial_product
+
+        WHERE embedding IS NOT NULL
+
+        ORDER BY id
+
+    </select>
+
+
+    <!-- category embedding 저장 -->
+    <update id="updateCategoryEmbedding">
+
+        UPDATE financial_product_category
+
+        SET embedding = #{embedding}
+
+        WHERE id = #{id}
+
+    </update>
+
+
+    <!-- 상품 embedding 저장 -->
+    <update id="updateProductEmbedding">
+
+        UPDATE financial_product
+
+        SET embedding = #{embedding}
+
+        WHERE id = #{id}
+
+    </update>
+
+
+    <!--
+        cosine similarity가 가장 높은
+        category 결과 저장
+    -->
+    <update id="updateProductClassification">
+
+        UPDATE financial_product
+
+        SET
+            trade_type = #{tradeType},
+            product_type = #{productType},
+            category_similarity =
+                #{categorySimilarity}
+
+        WHERE id = #{id}
+
+    </update>
+
+</mapper>

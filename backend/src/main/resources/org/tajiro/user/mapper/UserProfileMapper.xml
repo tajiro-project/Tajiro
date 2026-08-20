@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.tajiro.user.mapper.UserProfileMapper">
+
+    <select id="getUserProfileById" resultType="UserProfileVO">
+        select * from user_profile
+        where user_id = #{userId}
+    </select>
+
+    <insert id="upsertProfile" parameterType="UserProfileVO">
+        INSERT INTO user_profile
+            (user_id, target_region, birth_date, monthly_income, asset_amount, job_status, target_sgg_code, updated_at)
+        VALUES
+            (#{userId}, #{targetRegion}, #{birthDate}, #{monthlyIncome}, #{assetAmount}, #{jobStatus}, #{targetSggCode}, #{updatedAt})
+        ON DUPLICATE KEY UPDATE
+            target_region = VALUES(target_region),
+            birth_date = VALUES(birth_date),
+            monthly_income = VALUES(monthly_income),
+            asset_amount = VALUES(asset_amount),
+            job_status = VALUES(job_status),
+            target_sgg_code = VALUES(target_sgg_code),
+            updated_at = VALUES(updated_at)
+    </insert>
+
+</mapper>

@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.tajiro.property.mapper.SafetyMapper">
+
+    <resultMap id="SafetyDetailMap" type="org.tajiro.property.dto.PropertySafetyDTO$SafetyDetailDTO">
+        <id property="safeDetailId" column="detail_id"/>
+        <result property="safeName" column="detail_safe_name"/>
+        <result property="latitude" column="detail_latitude"/>
+        <result property="longitude" column="detail_longitude"/>
+        <result property="distanceM" column="detail_distance_m"/>
+        <result property="polygon" column="detail_polygon"/>
+    </resultMap>
+
+    <resultMap id="SafetyItemMap" type="org.tajiro.property.dto.PropertySafetyDTO$SafetyItemDTO">
+        <id property="safeId" column="safe_id"/>
+        <result property="safeCategory" column="safe_category"/>
+        <result property="countWithin500m" column="count_within500m"/>
+        <result property="nearestDistanceMeters" column="nearest_distance_meters"/>
+        <result property="nearestSafeName" column="nearest_safe_name"/>
+        <result property="updatedAt" column="update_at"/> <!-- 업데이트 일시 매핑 -->
+        <collection property="details" resultMap="SafetyDetailMap" notNullColumn="detail_id"/>
+    </resultMap>
+
+    <resultMap id="PropertySafetyResultMap" type="org.tajiro.property.dto.PropertySafetyDTO">
+        <id property="propertyId" column="property_id"/>
+        <result property="latitude" column="building_latitude"/>
+        <result property="longitude" column="building_longitude"/>
+        <collection property="safetyList" resultMap="SafetyItemMap" notNullColumn="safe_id"/>
+    </resultMap>
+
+    <select id="existsPropertyById" resultType="boolean">
+        SELECT EXISTS (
+            SELECT 1
+            FROM property
+            WHERE id = #{propertyId}
+        )
+    </select>
+
+    <select id="selectPropertySafetyInfo" resultMap="PropertySafetyResultMap">
+        <!-- 1. 기존 안전 데이터 (safety.update_at) -->
+        SELECT
+        p.id AS property_id,
+        b.latitude AS building_latitude,
+        b.longitude AS building_longitude,
+        s.id AS safe_id,
+        s.safe_category AS safe_category,
+        s.count_within500m AS count_within500m,
+        s.nearest_distance_meters AS nearest_distance_meters,
+        (
+        SELECT sd_near.safe_name
+        FROM safety_detail sd_near
+        WHERE sd_near.safe_id = s.id
+        ORDER BY sd_near.sort_order ASC
+        LIMIT 1
+        ) AS nearest_safe_name,
+        s.update_at AS update_at,
+        sd.id AS detail_id,
+        sd.safe_name AS detail_safe_name,
+        sd.latitude AS detail_latitude,
+        sd.longitude AS detail_longitude,
+        sd.distance_m AS detail_distance_m,
+        sd.polygon AS detail_polygon
+        FROM property p
+        INNER JOIN building b ON p.building_id = b.id
+        INNER JOIN safety s ON b.id = s.building_id AND s.safe_category != 'POLICE_CENTER'
+        LEFT JOIN safety_detail sd ON s.id = sd.safe_id
+        WHERE p.id = #{propertyId}
+
+        UNION ALL
+
+        <!-- 2. 경찰서/지구대 인프라 데이터 (infrastructure.computed_at) -->
+        SELECT
+        p.id AS property_id,
+        b.latitude AS building_latitude,
+        b.longitude AS building_longitude,
+        (i.id + 900000) AS safe_id,
+        'POLICE_CENTER' AS safe_category,
+        i.count_within2000m AS count_within500m,
+        i.nearest_distance_meters AS nearest_distance_meters,
+        (
+        SELECT id_near.infra_name
+        FROM infrastructure_detail id_near
+        WHERE id_near.infra_id = i.id
+        ORDER BY id_near.sort_order ASC
+        LIMIT 1
+        ) AS nearest_safe_name,
+        i.computed_at AS update_at,
+        id.id AS detail_id,
+        id.infra_name AS detail_safe_name,
+        id.latitude AS detail_latitude,
+        id.longitude AS detail_longitude,
+        id.distance_m AS detail_distance_m,
+        NULL AS detail_polygon
+        FROM property p
+        INNER JOIN building b ON p.building_id = b.id
+        INNER JOIN infrastructure i ON b.id = i.building_id AND i.infra_category = 'POLICE'
+        LEFT JOIN infrastructure_detail id ON i.id = id.infra_id
+        WHERE p.id = #{propertyId}
+
+        ORDER BY safe_id ASC
+    </select>
+
+</mapper>

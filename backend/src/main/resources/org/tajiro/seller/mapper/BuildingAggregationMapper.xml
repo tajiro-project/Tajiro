@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.tajiro.seller.mapper.BuildingAggregationMapper">
+
+    <select id="findPendingInfrastructureBuildingIds" resultType="long">
+        SELECT id
+        FROM building
+        WHERE infra_status = 'PENDING'
+          AND latitude IS NOT NULL
+          AND longitude IS NOT NULL
+          AND latitude != 0
+          AND longitude != 0
+        ORDER BY id
+        LIMIT #{limit}
+    </select>
+
+    <select id="findPendingSafetyBuildingIds" resultType="long">
+        SELECT id
+        FROM building
+        WHERE safety_status = 'PENDING'
+          AND latitude IS NOT NULL
+          AND longitude IS NOT NULL
+          AND latitude != 0
+          AND longitude != 0
+        ORDER BY id
+        LIMIT #{limit}
+    </select>
+
+    <update id="claimInfrastructure">
+        UPDATE building
+        SET infra_status = 'PROCESSING'
+        WHERE id = #{buildingId}
+          AND infra_status = 'PENDING'
+    </update>
+
+    <update id="completeInfrastructure">
+        UPDATE building
+        SET infra_status = 'DONE'
+        WHERE id = #{buildingId}
+          AND infra_status = 'PROCESSING'
+    </update>
+
+    <update id="failInfrastructure">
+        UPDATE building
+        SET infra_status = 'FAILED'
+        WHERE id = #{buildingId}
+          AND infra_status = 'PROCESSING'
+    </update>
+
+    <update id="claimSafety">
+        UPDATE building
+        SET safety_status = 'PROCESSING'
+        WHERE id = #{buildingId}
+          AND safety_status = 'PENDING'
+    </update>
+
+    <update id="completeSafety">
+        UPDATE building
+        SET safety_status = 'DONE'
+        WHERE id = #{buildingId}
+          AND safety_status = 'PROCESSING'
+    </update>
+
+    <update id="failSafety">
+        UPDATE building
+        SET safety_status = 'FAILED'
+        WHERE id = #{buildingId}
+          AND safety_status = 'PROCESSING'
+    </update>
+
+</mapper>

@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.tajiro.comparison.mapper.ComparisonMapper">
+    <select id="findByUserId"
+            resultType="org.tajiro.comparison.dto.ComparePropertyDTO">
+        SELECT cp.property_id,
+               p.title,
+               p.property_type,
+               p.trade_type,
+               p.deposit,
+               p.monthly_rent,
+               p.maintenance_fee,
+               p.area_m2,
+               p.floor_info,
+               b.bld_nm AS building_name,
+               pi.image_url AS thumbnail_url
+        FROM compare_property cp
+        JOIN property p ON p.id = cp.property_id
+        LEFT JOIN building b ON b.id = p.building_id
+        LEFT JOIN property_image pi
+               ON pi.property_id = p.id
+              AND pi.sort_order = (
+                  SELECT MIN(pi2.sort_order)
+                  FROM property_image pi2
+                  WHERE pi2.property_id = p.id
+              )
+        WHERE cp.user_id = #{userId}
+          AND cp.property_status = 1
+        ORDER BY cp.added_at DESC
+    </select>
+
+    <select id="existsProperty" resultType="boolean">
+        SELECT EXISTS(
+            SELECT 1
+            FROM property
+            WHERE id = #{propertyId}
+        )
+    </select>
+
+    <select id="existsByUserIdAndPropertyId" resultType="boolean">
+        SELECT EXISTS(
+            SELECT 1
+            FROM compare_property
+            WHERE user_id = #{userId}
+              AND property_id = #{propertyId}
+        )
+    </select>
+
+    <select id="countByUserId" resultType="int">
+        SELECT COUNT(*)
+        FROM compare_property
+        WHERE user_id = #{userId}
+          AND property_status = 1
+    </select>
+
+    <insert id="insert">
+        INSERT INTO compare_property (user_id, property_id, property_status, added_at)
+        VALUES (#{userId}, #{propertyId}, 1, NOW())
+    </insert>
+
+    <delete id="delete">
+        DELETE FROM compare_property
+        WHERE user_id = #{userId}
+          AND property_id = #{propertyId}
+    </delete>
+
+    <select id="findMetrics"
+            resultType="org.tajiro.comparison.dto.ComparisonMetricDTO">
+        SELECT p.id AS property_id,
+               p.title,
+               p.property_type,
+               p.trade_type,
+               p.deposit,
+               p.monthly_rent,
+               p.maintenance_fee,
+               p.area_m2,
+               p.floor_info,
+               p.update_date,
+               COALESCE(pref.has_car, FALSE) AS has_car,
+               CASE
+                   WHEN #{workplaceLat} IS NOT NULL
+                        AND #{workplaceLng} IS NOT NULL
+                        AND b.latitude IS NOT NULL
+                        AND b.longitude IS NOT NULL
+                       THEN CEIL(
+                           (
+                               6371000 * ACOS(LEAST(1,
+                                   COS(RADIANS(#{workplaceLat}))
+                                   * COS(RADIANS(b.latitude))
+                                   * COS(RADIANS(b.longitude) - RADIANS(#{workplaceLng}))
+                                   + SIN(RADIANS(#{workplaceLat}))
+                                   * SIN(RADIANS(b.latitude))
+                               ))
+                           ) / CASE WHEN COALESCE(pref.has_car, FALSE) THEN 250.0 ELSE 67.0 END
+                       )
+                   WHEN pvar.workplace_distance_meters IS NULL THEN NULL
+                   ELSE CEIL(pvar.workplace_distance_meters / CASE WHEN COALESCE(pref.has_car, FALSE) THEN 250.0 ELSE 67.0 END)
+               END AS commute_minutes,
+               COALESCE(infra.infra_count, 0) AS infra_count,
+               COALESCE(infra.amenity_count, 0) AS amenity_count,
+               infra.police_nearest_distance_meters AS police_nearest_distance_meters,
+               p.evaluation_score,
+               p.market_status,
+               p.market_reference_price,
+               p.market_transaction_count,
+               p.market_basis_level,
+               p.market_calculated_at,
+               COALESCE(safety.cctv_count, 0) AS cctv_count_within500m,
+               COALESCE(safety.children_count, 0) AS children_count_within500m,
+               COALESCE(safety.bell_count, 0) AS bell_count_within500m,
+               COALESCE(safety.safety_light_count, 0) AS safety_light_count_within500m
+        FROM property p
+        LEFT JOIN building b ON b.id = p.building_id
+        LEFT JOIN property_value_analysis_result pvar
+               ON pvar.property_id = p.id
+              AND pvar.user_id = #{userId}
+        LEFT JOIN housing_preference pref ON pref.user_id = #{userId}
+        LEFT JOIN (
+            SELECT i.building_id,
+                   COUNT(DISTINCT CASE
+                       WHEN i.count_within2000m &gt; 0
+                            AND FIND_IN_SET(
+                                i.infra_category,
+                                COALESCE(NULLIF(hp.desired_infra_categories, ''),
+                                    'SUBWAY,BUS_TERMINAL,TRAIN,HOSPITAL,PHARMACY,SCHOOL,KINDERGARTEN,ACADEMY,LIBRARY,PARK,POLICE,FIRE,GOV_OFFICE,PUBLIC,POST_OFFICE,BANK')
+                            )
+                           THEN i.infra_category
+                   END) AS infra_count,
+                   COUNT(DISTINCT CASE
+                       WHEN i.count_within2000m &gt; 0
+                            AND FIND_IN_SET(
+                                i.infra_category,
+                                COALESCE(NULLIF(hp.desired_amenity_categories, ''),
+                                    'CONVENIENCE,MART,CAFE,FOOD,CULTURE,SPORTS,SWIMMING,PARKING,GAS')
+                            )
+                           THEN i.infra_category
+                   END) AS amenity_count,
+                   MAX(CASE WHEN i.infra_category = 'POLICE'
+                            THEN i.nearest_distance_meters END) AS police_nearest_distance_meters
+            FROM infrastructure i
+            LEFT JOIN housing_preference hp ON hp.user_id = #{userId}
+            GROUP BY i.building_id
+        ) infra ON infra.building_id = p.building_id
+        LEFT JOIN (
+            SELECT building_id,
+                   MAX(CASE WHEN safe_category = 'CCTV'
+                            THEN count_within500m ELSE 0 END) AS cctv_count,
+                   MAX(CASE WHEN safe_category = 'CHILD_GUARD_HOUSE'
+                            THEN count_within500m ELSE 0 END) AS children_count,
+                   MAX(CASE WHEN safe_category = 'SAFETY_BELL'
+                            THEN count_within500m ELSE 0 END) AS bell_count,
+                   MAX(CASE WHEN safe_category = 'SECURITY_LIGHT'
+                            THEN count_within500m ELSE 0 END) AS safety_light_count
+            FROM safety
+            GROUP BY building_id
+        ) safety ON safety.building_id = p.building_id
+        WHERE p.id IN
+        <foreach collection="propertyIds" item="propertyId" open="(" separator="," close=")">
+            #{propertyId}
+        </foreach>
+        ORDER BY FIELD(p.id,
+        <foreach collection="propertyIds" item="propertyId" separator=",">
+            #{propertyId}
+        </foreach>
+        )
+    </select>
+
+    <select id="findPreferencePriorities" resultType="string">
+        SELECT criterion
+        FROM preference_priority
+        WHERE user_id = #{userId}
+        ORDER BY priority_order
+    </select>
+</mapper>

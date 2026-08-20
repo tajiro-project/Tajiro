@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.tajiro.property.mapper.InfraMapper">
+
+    <!-- infrastructure 테이블에 데이터가 없는 건물만 조회 -->
+    <select id="selectTargetBuildings" resultType="org.tajiro.property.domain.BuildingVO">
+        SELECT b.id,
+               b.building_code AS buildingCode,
+               b.road_address AS roadAddress,
+               b.jibun_address AS jibunAddress,
+               b.bld_nm AS bldNm,
+               b.dong_nm AS dongNm,
+               b.pnu,
+               b.latitude,
+               b.longitude
+        FROM building b
+        WHERE NOT EXISTS (
+            SELECT 1 FROM infrastructure i WHERE i.building_id = b.id
+        )
+        LIMIT #{limit}
+    </select>
+
+    <select id="selectBuildingById" resultType="org.tajiro.property.domain.BuildingVO">
+        SELECT id,
+               building_code AS buildingCode,
+               road_address AS roadAddress,
+               jibun_address AS jibunAddress,
+               bld_nm AS bldNm,
+               dong_nm AS dongNm,
+               pnu,
+               latitude,
+               longitude
+        FROM building
+        WHERE id = #{id}
+    </select>
+
+    <!-- 💡 INSERT 영역에 computed_at과 CURRENT_TIMESTAMP를 추가하여 1364 에러 해결 -->
+    <insert id="upsertInfrastructure" parameterType="org.tajiro.property.domain.InfrastructureVO">
+        INSERT INTO infrastructure (
+            building_id, infra_category, count_within2000m,
+            nearest_distance_meters, nearest_walk_minutes, is_saturated,
+            computed_at
+        )
+        VALUES (
+                   #{buildingId}, #{infraCategory}, #{countWithin2000m},
+                   #{nearestDistanceMeters}, #{nearestWalkMinutes}, #{isSaturated},
+                   CURRENT_TIMESTAMP
+               )
+        ON DUPLICATE KEY UPDATE
+                             count_within2000m = VALUES(count_within2000m),
+                             nearest_distance_meters = VALUES(nearest_distance_meters),
+                             nearest_walk_minutes = VALUES(nearest_walk_minutes),
+                             is_saturated = VALUES(is_saturated),
+                             computed_at = CURRENT_TIMESTAMP
+    </insert>
+
+    <select id="selectInfrastructureByBuildingAndCategory" resultType="org.tajiro.property.domain.InfrastructureVO">
+        SELECT id,
+               building_id AS buildingId,
+               infra_category AS infraCategory,
+               count_within2000m AS countWithin2000m,
+               nearest_distance_meters AS nearestDistanceMeters,
+               nearest_walk_minutes AS nearestWalkMinutes,
+               is_saturated AS isSaturated,
+               computed_at AS computedAt
+        FROM infrastructure
+        WHERE building_id = #{buildingId} AND infra_category = #{infraCategory}
+    </select>
+
+    <delete id="deleteInfrastructureDetailByInfraId">
+        DELETE FROM infrastructure_detail
+        WHERE infra_id = #{infraId}
+    </delete>
+
+    <insert id="insertInfrastructureDetail" parameterType="org.tajiro.property.domain.InfrastructureDetailVO">
+        INSERT INTO infrastructure_detail (
+            infra_id, infra_name, road_address,
+            latitude, longitude, distance_m, sort_order
+        )
+        VALUES (
+                   #{infraId}, #{infraName}, #{roadAddress},
+                   #{latitude}, #{longitude}, #{distanceM}, #{sortOrder}
+               )
+    </insert>
+
+    <select id="selectInfrastructureByBuildingId" resultType="org.tajiro.property.domain.InfrastructureVO">
+        SELECT id,
+               building_id AS buildingId,
+               infra_category AS infraCategory,
+               count_within2000m AS countWithin2000m,
+               nearest_distance_meters AS nearestDistanceMeters,
+               nearest_walk_minutes AS nearestWalkMinutes,
+               is_saturated AS isSaturated,
+               computed_at AS computedAt
+        FROM infrastructure
+        WHERE building_id = #{buildingId}
+    </select>
+
+    <select id="selectDetailsByInfraId" resultType="org.tajiro.property.domain.InfrastructureDetailVO">
+        SELECT id,
+               infra_id AS infraId,
+               infra_name AS infraName,
+               road_address AS roadAddress,
+               latitude,
+               longitude,
+               distance_m AS distanceM,
+               sort_order AS sortOrder
+        FROM infrastructure_detail
+        WHERE infra_id = #{infraId}
+        ORDER BY sort_order ASC
+    </select>
+
+</mapper>

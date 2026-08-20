@@ -1,0 +1,322 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.tajiro.market.mapper.MarketTransactionMapper">
+
+    <delete id="deleteTransactionsForMonth">
+        DELETE FROM property_actual_transaction
+        WHERE source_api = #{sourceApi}
+          AND sgg_code = #{sggCode}
+          AND source_deal_ym = #{dealYm}
+    </delete>
+
+    <delete id="deleteTransactionsBefore">
+        DELETE FROM property_actual_transaction
+        WHERE deal_date &lt; #{cutoffDate}
+    </delete>
+
+    <delete id="deleteCoverageBefore">
+        DELETE FROM market_transaction_sync
+        WHERE deal_ym &lt; #{cutoffDealYm}
+    </delete>
+
+    <insert id="upsertTransactions">
+        INSERT INTO property_actual_transaction (
+            source_api,
+            source_unique_key,
+            property_category,
+            trade_type,
+            sgg_code,
+            source_deal_ym,
+            legal_dong_code,
+            umd_name,
+            jibun,
+            building_name,
+            source_building_code,
+            building_dong,
+            house_type,
+            exclusive_area_m2,
+            total_floor_area_m2,
+            land_area_m2,
+            floor,
+            build_year,
+            deal_date,
+            deal_amount,
+            deposit,
+            monthly_rent,
+            converted_price,
+            canceled,
+            cancellation_date,
+            created_at,
+            updated_at
+        ) VALUES
+        <foreach collection="transactions" item="transaction" separator=",">
+            (
+                #{transaction.sourceApi},
+                #{transaction.sourceUniqueKey},
+                #{transaction.propertyCategory},
+                #{transaction.tradeType},
+                #{transaction.sggCode},
+                #{transaction.sourceDealYm},
+                #{transaction.legalDongCode},
+                #{transaction.umdName},
+                #{transaction.jibun},
+                #{transaction.buildingName},
+                #{transaction.sourceBuildingCode},
+                #{transaction.buildingDong},
+                #{transaction.houseType},
+                #{transaction.exclusiveAreaM2},
+                #{transaction.totalFloorAreaM2},
+                #{transaction.landAreaM2},
+                #{transaction.floor},
+                #{transaction.buildYear},
+                #{transaction.dealDate},
+                #{transaction.dealAmount},
+                #{transaction.deposit},
+                #{transaction.monthlyRent},
+                #{transaction.convertedPrice},
+                #{transaction.canceled},
+                #{transaction.cancellationDate},
+                NOW(),
+                NOW()
+            )
+        </foreach>
+        ON DUPLICATE KEY UPDATE
+            property_category = VALUES(property_category),
+            trade_type = VALUES(trade_type),
+            sgg_code = VALUES(sgg_code),
+            source_deal_ym = VALUES(source_deal_ym),
+            legal_dong_code = VALUES(legal_dong_code),
+            umd_name = VALUES(umd_name),
+            jibun = VALUES(jibun),
+            building_name = VALUES(building_name),
+            source_building_code = VALUES(source_building_code),
+            building_dong = VALUES(building_dong),
+            house_type = VALUES(house_type),
+            exclusive_area_m2 = VALUES(exclusive_area_m2),
+            total_floor_area_m2 = VALUES(total_floor_area_m2),
+            land_area_m2 = VALUES(land_area_m2),
+            floor = VALUES(floor),
+            build_year = VALUES(build_year),
+            deal_date = VALUES(deal_date),
+            deal_amount = VALUES(deal_amount),
+            deposit = VALUES(deposit),
+            monthly_rent = VALUES(monthly_rent),
+            converted_price = VALUES(converted_price),
+            canceled = VALUES(canceled),
+            cancellation_date = VALUES(cancellation_date),
+            updated_at = NOW()
+    </insert>
+
+    <insert id="markSyncSuccess">
+        INSERT INTO market_transaction_sync (
+            source_api,
+            sgg_code,
+            deal_ym,
+            last_attempt_status,
+            total_count,
+            last_success_at,
+            last_attempt_at,
+            last_error
+        ) VALUES (
+            #{sourceApi},
+            #{sggCode},
+            #{dealYm},
+            'SUCCESS',
+            #{totalCount},
+            NOW(),
+            NOW(),
+            NULL
+        )
+        ON DUPLICATE KEY UPDATE
+            last_attempt_status = 'SUCCESS',
+            total_count = VALUES(total_count),
+            last_success_at = NOW(),
+            last_attempt_at = NOW(),
+            last_error = NULL
+    </insert>
+
+    <insert id="markSyncFailure">
+        INSERT INTO market_transaction_sync (
+            source_api,
+            sgg_code,
+            deal_ym,
+            last_attempt_status,
+            total_count,
+            last_success_at,
+            last_attempt_at,
+            last_error
+        ) VALUES (
+            #{sourceApi},
+            #{sggCode},
+            #{dealYm},
+            'FAILED',
+            0,
+            NULL,
+            NOW(),
+            LEFT(#{lastError}, 500)
+        )
+        ON DUPLICATE KEY UPDATE
+            last_attempt_status = 'FAILED',
+            last_attempt_at = NOW(),
+            last_error = LEFT(VALUES(last_error), 500)
+    </insert>
+
+    <select id="hasSuccessfulCoverage" resultType="boolean">
+        SELECT EXISTS(
+            SELECT 1
+            FROM market_transaction_sync
+            WHERE source_api = #{sourceApi}
+              AND sgg_code = #{sggCode}
+              AND deal_ym = #{dealYm}
+              AND last_success_at IS NOT NULL
+              AND last_attempt_status = 'SUCCESS'
+        )
+    </select>
+
+    <select id="findLatestSuccessfulSyncAt" resultType="java.time.LocalDateTime">
+        SELECT MAX(last_success_at)
+        FROM market_transaction_sync
+        WHERE last_success_at IS NOT NULL
+    </select>
+
+    <select id="findSyncTargets"
+            resultType="org.tajiro.market.domain.MarketSyncTarget">
+        SELECT DISTINCT
+               b.sigungu_cd AS sgg_code,
+               NULLIF(TRIM(b.market_property_category), '') AS configured_category,
+               p.property_type,
+               p.trade_type
+        FROM property p
+        JOIN building b ON b.id = p.building_id
+        WHERE p.transaction_status = 1
+          AND b.sigungu_cd IS NOT NULL
+          AND b.sigungu_cd REGEXP '^[0-9]{5}$'
+    </select>
+
+    <sql id="marketPropertyColumns">
+        p.id,
+        p.property_type,
+        p.trade_type,
+        p.deposit,
+        p.monthly_rent,
+        p.area_m2,
+        p.title,
+        p.address,
+        p.property_description,
+        NULLIF(TRIM(b.market_property_category), '') AS configured_category,
+        NULLIF(TRIM(b.bld_nm), '') AS building_name,
+        NULLIF(TRIM(b.dong_nm), '') AS building_dong,
+        b.pnu,
+        b.road_address,
+        b.jibun_address,
+        b.sigungu_cd AS sgg_code
+    </sql>
+
+    <select id="findMarketProperties"
+            resultType="org.tajiro.market.domain.MarketPropertyVO">
+        SELECT <include refid="marketPropertyColumns"/>
+        FROM property p
+        JOIN building b ON b.id = p.building_id
+        WHERE p.id IN
+        <foreach collection="propertyIds" item="propertyId" open="(" separator="," close=")">
+            #{propertyId}
+        </foreach>
+    </select>
+
+    <select id="findAllActiveMarketProperties"
+            resultType="org.tajiro.market.domain.MarketPropertyVO">
+        SELECT <include refid="marketPropertyColumns"/>
+        FROM property p
+        JOIN building b ON b.id = p.building_id
+        WHERE p.transaction_status = 1
+    </select>
+
+    <select id="findComparableTransactions"
+            resultType="org.tajiro.market.domain.MarketComparableTransactionVO">
+        SELECT source_api,
+               property_category,
+               trade_type,
+               legal_dong_code,
+               umd_name,
+               jibun,
+               building_name,
+               source_building_code,
+               exclusive_area_m2,
+               total_floor_area_m2,
+               deal_date,
+               converted_price
+        FROM property_actual_transaction
+        WHERE property_category = #{propertyCategory}
+          AND trade_type = #{tradeType}
+          AND sgg_code = #{sggCode}
+          AND deal_date &gt;= #{fromDate}
+          AND canceled = 0
+          AND converted_price IS NOT NULL
+        ORDER BY deal_date DESC
+    </select>
+
+    <select id="findCoverage"
+            resultType="org.tajiro.market.domain.MarketSyncCoverageVO">
+        SELECT source_api,
+               sgg_code,
+               deal_ym,
+               last_attempt_status,
+               total_count,
+               last_success_at,
+               last_attempt_at,
+               last_error
+        FROM market_transaction_sync
+        WHERE sgg_code = #{sggCode}
+          AND deal_ym &gt;= #{fromDealYm}
+          AND source_api IN
+          <foreach collection="sources" item="source" open="(" separator="," close=")">
+              #{source}
+          </foreach>
+    </select>
+
+    <update id="updateEvaluation">
+        UPDATE property
+        SET market_calculated_at =
+                CASE
+                    WHEN market_calculated_at IS NULL
+                        OR NOT (
+                            market_status &lt;=> #{status}
+                            AND (
+                                #{preserveExistingScore}
+                                OR (
+                                    evaluation_score &lt;=> #{evaluationScore}
+                                    AND market_reference_price &lt;=> #{referencePrice}
+                                    AND market_transaction_count &lt;=> #{transactionCount}
+                                    AND market_basis_level &lt;=> #{basisLevel}
+                                )
+                            )
+                        ) THEN NOW()
+                    ELSE market_calculated_at
+                END,
+            evaluation_score =
+                CASE
+                    WHEN #{preserveExistingScore} THEN evaluation_score
+                    ELSE #{evaluationScore}
+                END,
+            market_reference_price =
+                CASE
+                    WHEN #{preserveExistingScore} THEN market_reference_price
+                    ELSE #{referencePrice}
+                END,
+            market_transaction_count =
+                CASE
+                    WHEN #{preserveExistingScore} THEN market_transaction_count
+                    ELSE #{transactionCount}
+                END,
+            market_basis_level =
+                CASE
+                    WHEN #{preserveExistingScore} THEN market_basis_level
+                    ELSE #{basisLevel}
+                END,
+            market_status = #{status}
+        WHERE id = #{propertyId}
+    </update>
+
+</mapper>

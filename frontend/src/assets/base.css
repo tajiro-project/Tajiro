@@ -1,0 +1,206 @@
+:root {
+  /* main */
+  --kb-yellow: #ffbc00; /* main/kb-yellow-positive */
+  --kb-yellow-header: #ffdd80; /* 상단 헤더 옐로우 */
+  --kb-gray: #60584c; /* main/kb-gray */
+  /* sub */
+  --kb-dark-gray: #545045; /* sub/kb-dark-gray */
+  --kb-silver: #8a8d8f; /* sub/kb-silver */
+  --kb-gold: #85714d; /* sub/kb-gold */
+  /* neutral */
+  --bg: #f7f6f3; /* neutral/bg */
+  --white: #ffffff;
+  --text-primary: #33302a; /* neutral/text-primary */
+  --border: #e9e7e2; /* neutral/border */
+  --yellow-tint: #fff6dc; /* neutral/yellow-tint */
+  --danger: #e5484d;
+  --blue: #3b82f6;
+  --green: #16a34a;
+  --radius-card: 16px;
+  --radius-input: 14px;
+  --shadow-card: 0 3px 8px 0 rgba(102, 77, 0, 0.12);
+
+  font-family:
+    'Noto Sans KR',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Malgun Gothic',
+    sans-serif;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  overflow: hidden;
+  background: #e8e6e1;
+  font-family:
+    'Noto Sans KR',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Malgun Gothic',
+    sans-serif;
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font-family: inherit;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: inherit;
+}
+
+input,
+textarea,
+select {
+  font-family: inherit;
+  outline: none;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+ul,
+ol {
+  list-style: none;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+/* 공통 UI */
+.btn-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 46px;
+  border-radius: 14px;
+  background: var(--kb-yellow-header);
+  color: var(--text-primary);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.btn-cta:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.field-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.field-input {
+  width: 100%;
+  height: 46px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-input);
+  background: var(--white);
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.field-input::placeholder {
+  color: #b6b3ad;
+}
+
+.field-input:focus {
+  border-color: var(--kb-yellow);
+}
+
+/* 모바일 프레임 */
+.app-frame {
+  position: relative;
+  width: 100%;
+  min-width: 375px;
+  max-width: 400px;
+  height: 100%;
+  margin: 0 auto;
+  background: var(--bg);
+  box-shadow: 0 0 24px rgba(0, 0, 0, 0.12);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ==========================================
+   App.vue Flex 높이 전달 체인
+   ========================================== */
+
+/* App.vue 메인 라우터 컨테이너 */
+.route-content {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* router-view 내부 자식 페이지 컴포넌트 자동 확장 */
+/* .route-content > * {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;ß
+} */
+
+/* 하단 탭바 크기 고정 */
+.global-tab-bar {
+  flex-shrink: 0;
+}
+
+/* ==========================================
+   Simplebar 전역 설정 (base.css)
+   ========================================== */
+
+/* 1. Flexbox 높이 고정 (Simplebar 라이브러리에 높이 전달) */
+.scroll-area {
+  flex: 1;
+  height: 0; /* 무한 확장 방지 및 수직 기준점 */
+  min-height: 0;
+}
+
+/* 3. 스크롤바 트랙 (투명 처리하여 영역 점유 0px) */
+.scroll-area .simplebar-track.simplebar-vertical {
+  width: 6px;
+  right: 2px;
+  background: transparent !important;
+}
+
+/* 4. 스크롤바 막대 스타일 & 서서히 사라지는 애니메이션 */
+.scroll-area .simplebar-scrollbar::before {
+  background: rgba(0, 0, 0, 0.25) !important;
+  border-radius: 999px !important;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+/* 5. 마우스 호버 및 실제 스크롤 동작 중에만 스크롤바 노출 */
+.scroll-area:hover .simplebar-scrollbar::before,
+.scroll-area .simplebar-scrollbar.simplebar-visible::before {
+  opacity: 1;
+  transition: opacity 0.1s ease;
+}

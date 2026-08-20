@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.tajiro.property.mapper.PropertyMapper">
+    <resultMap id="buildingMap" type="BuildingVO">
+        <id property="id" column="id"/>
+        <result property="bldNm" column="bld_nm"/>
+        <result property="latitude" column="latitude"/>
+        <result property="longitude" column="longitude"/>
+    </resultMap>
+
+    <resultMap id="analysisMap" type="PropertyValueAnalysisResultVO">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="propertyId" column="property_id"/>
+        <result property="workplaceDistanceMeters" column="workplace_distance_meters"/>
+        <result property="recommendScore" column="recommend_score"/>
+        <result property="computedAt" column="computed_at"/>
+    </resultMap>
+
+    <resultMap id="propertyMap" type="PropertyVO">
+        <id property="id" column="id"/>
+        <result property="buildingId" column="building_id"/>
+        <result property="title" column="title"/>
+        <result property="propertyType" column="property_type"/>
+        <result property="tradeType" column="trade_type"/>
+        <result property="deposit" column="deposit"/>
+        <result property="monthlyRent" column="monthly_rent"/>
+        <result property="maintenanceFee" column="maintenance_fee"/>
+        <result property="areaM2" column="area_m2"/>
+        <result property="floorInfo" column="floor_info"/>
+        <result property="address" column="address"/>
+        <result property="parkAvailability" column="park_availability"/>
+        <result property="transactionStatus" column="transaction_status"/>
+        <result property="thumbnailUrl" column="thumbnail_url"/>
+        <result property="distanceMeters" column="distance_meters"/>
+        <result property="desiredInfraCount" column="desired_infra_count"/>
+        <result property="desiredAmenityCount" column="desired_amenity_count"/>
+        <association property="propertyValueAnalysisResultVO" resultMap="analysisMap" columnPrefix="r_"/>
+        <association property="buildingVO" resultMap="buildingMap" columnPrefix="b_"/>
+    </resultMap>
+
+    <sql id="floorHead">
+        TRIM(SUBSTRING_INDEX(p.floor_info, '/', 1))
+    </sql>
+
+    <sql id="distanceExpr">
+        CAST(ROUND(ST_Distance_Sphere(
+        b.geom,
+        ST_SRID(POINT(#{refLng}, #{refLat}), 4326)
+        )) AS SIGNED)
+    </sql>
+
+    <sql id="boundingBox">
+        MBRContains(
+        ST_SRID(ST_GeomFromText(CONCAT('POLYGON((',
+        #{refLng} - #{effectiveRadiusMeters} / (111320.0 * COS(RADIANS(#{refLat}))), ' ',
+        #{refLat} - #{effectiveRadiusMeters} / 111320.0, ',',
+        #{refLng} + #{effectiveRadiusMeters} / (111320.0 * COS(RADIANS(#{refLat}))), ' ',
+        #{refLat} - #{effectiveRadiusMeters} / 111320.0, ',',
+        #{refLng} + #{effectiveRadiusMeters} / (111320.0 * COS(RADIANS(#{refLat}))), ' ',
+        #{refLat} + #{effectiveRadiusMeters} / 111320.0, ',',
+        #{refLng} - #{effectiveRadiusMeters} / (111320.0 * COS(RADIANS(#{refLat}))), ' ',
+        #{refLat} + #{effectiveRadiusMeters} / 111320.0, ',',
+        #{refLng} - #{effectiveRadiusMeters} / (111320.0 * COS(RADIANS(#{refLat}))), ' ',
+        #{refLat} - #{effectiveRadiusMeters} / 111320.0,
+        '))')), 4326),
+        b.geom
+        )
+    </sql>
+
+    <select id="getList" parameterType="PropertySearchRequest" resultMap="propertyMap">
+        SELECT
+        p.id,
+        p.building_id,
+        p.title,
+        p.property_type,
+        p.trade_type,
+        p.deposit,
+        p.monthly_rent,
+        p.maintenance_fee,
+        p.area_m2,
+        p.floor_info,
+        p.address,
+        p.park_availability,
+        p.transaction_status,
+        b.id AS b_id,
+        b.bld_nm AS b_bld_nm,
+        b.latitude AS b_latitude,
+        b.longitude AS b_longitude,
+        r.id AS r_id,
+        r.recommend_score AS r_recommend_score,
+        r.computed_at AS r_computed_at,
+
+        (SELECT pi.image_url
+        FROM property_image pi
+        WHERE pi.property_id = p.id
+        ORDER BY pi.sort_order
+        LIMIT 1) AS thumbnail_url,
+
+        CAST(ROUND(<include refid="distanceExpr"/>) AS SIGNED) AS distance_meters,
+
+        (SELECT COUNT(*)
+        FROM infrastructure i
+        WHERE i.building_id = p.building_id
+        AND i.count_within2000m &gt; 0
+        AND FIND_IN_SET(
+            i.infra_category,
+            COALESCE(NULLIF(#{desiredInfraCategories}, ''),
+                IF(#{useAllCategoriesWhenEmpty},
+                    'SUBWAY,BUS_TERMINAL,TRAIN,HOSPITAL,PHARMACY,SCHOOL,KINDERGARTEN,ACADEMY,LIBRARY,PARK,POLICE,FIRE,GOV_OFFICE,PUBLIC,POST_OFFICE,BANK',
+                    ''))
+        )) AS desired_infra_count,
+
+        (SELECT COUNT(*)
+        FROM infrastructure i
+        WHERE i.building_id = p.building_id
+        AND i.count_within2000m &gt; 0
+        AND FIND_IN_SET(
+            i.infra_category,
+            COALESCE(NULLIF(#{desiredAmenityCategories}, ''),
+                IF(#{useAllCategoriesWhenEmpty},
+                    'CONVENIENCE,MART,CAFE,FOOD,CULTURE,SPORTS,SWIMMING,PARKING,GAS',
+                    ''))
+        )) AS desired_amenity_count
+
+        FROM property p
+        JOIN building b ON b.id = p.building_id
+        LEFT JOIN property_value_analysis_result r
+        ON r.property_id = p.id AND r.user_id = #{userId}
+
+        <where>
+            p.deleted_at IS NULL
+            <if test="propertyIds != null and propertyIds.size() > 0">
+                AND p.id IN
+                <foreach item="propertyId" collection="propertyIds" open="(" separator="," close=")">
+                    #{propertyId}
+                </foreach>
+            </if>
+            <if test="effectiveRadiusMeters != null">
+                AND <include refid="boundingBox"/>
+            </if>
+
+            <if test="radiusMeters != null">
+                AND <include refid="distanceExpr"/> &lt;= #{radiusMeters}
+            </if>
+            <if test="maxWorkplaceDistanceMeters != null">
+                AND <include refid="distanceExpr"/> &lt;= #{maxWorkplaceDistanceMeters}
+            </if>
+
+            <if test="propertyTypes != null and propertyTypes.size() > 0">
+                AND p.property_type IN
+                <foreach item="t" collection="propertyTypes" open="(" separator="," close=")">
+                    #{t}
+                </foreach>
+            </if>
+
+            <if test="tradeTypes != null and tradeTypes.size() > 0">
+                AND p.trade_type IN
+                <foreach item="t" collection="tradeTypes" open="(" separator="," close=")">
+                    #{t}
+                </foreach>
+            </if>
+
+            <if test="hasPriceFilter">
+                AND (
+                (p.trade_type = '월세'
+                    <if test="minDeposit != null">AND p.deposit &gt;= #{minDeposit}</if>
+                    <if test="maxDeposit != null">AND p.deposit &lt;= #{maxDeposit}</if>
+                    <if test="minMonthlyRent != null">AND p.monthly_rent &gt;= #{minMonthlyRent}</if>
+                    <if test="maxMonthlyRent != null">AND p.monthly_rent &lt;= #{maxMonthlyRent}</if>
+                )
+                OR (p.trade_type = '전세'
+                    <if test="minDeposit != null">AND p.deposit &gt;= #{minDeposit}</if>
+                    <if test="maxDeposit != null">AND p.deposit &lt;= #{maxDeposit}</if>
+                )
+                OR (p.trade_type = '매매'
+                    <if test="minSellingPrice != null">AND p.deposit &gt;= #{minSellingPrice}</if>
+                    <if test="maxSellingPrice != null">AND p.deposit &lt;= #{maxSellingPrice}</if>
+                )
+                )
+            </if>
+
+            <if test="minAreaM2 != null">AND p.area_m2 &gt;= #{minAreaM2}</if>
+            <if test="maxAreaM2 != null">AND p.area_m2 &lt;= #{maxAreaM2}</if>
+
+            <if test="floorPreference != null and floorPreference.size() > 0">
+                AND (
+                <foreach item="f" collection="floorPreference" separator=" OR ">
+                    <choose>
+                        <when test="f == '지하/반지하'">
+                            <include refid="floorHead"/> REGEXP '^(지하|반지하)'
+                        </when>
+                        <when test="f == '1층'">
+                            <include refid="floorHead"/> = '1'
+                        </when>
+                        <when test="f == '2층 이상'">
+                            (<include refid="floorHead"/> REGEXP '^[0-9]+$'
+                            AND CAST(<include refid="floorHead"/> AS UNSIGNED) &gt;= 2)
+                        </when>
+                        <when test="f == '옥탑'">
+                            <include refid="floorHead"/> = '옥탑'
+                        </when>
+                        <otherwise>1 = 0</otherwise>
+                    </choose>
+                </foreach>
+                )
+            </if>
+
+            <if test="applyDesiredCategoryFilter
+                    and desiredInfraCategories != null and desiredInfraCategories != ''">
+                AND EXISTS (
+                SELECT 1 FROM infrastructure i
+                WHERE i.building_id = p.building_id
+                AND i.count_within2000m &gt; 0
+                AND FIND_IN_SET(i.infra_category, #{desiredInfraCategories})
+                )
+            </if>
+
+            <if test="applyDesiredCategoryFilter
+                    and desiredAmenityCategories != null and desiredAmenityCategories != ''">
+                AND EXISTS (
+                SELECT 1 FROM infrastructure i
+                WHERE i.building_id = p.building_id
+                AND i.count_within2000m &gt; 0
+                AND FIND_IN_SET(i.infra_category, #{desiredAmenityCategories})
+                )
+            </if>
+            <if test="hasCar != null and hasCar">
+                AND p.park_availability = 1
+            </if>
+        </where>
+        ORDER BY p.id
+    </select>
+
+</mapper>

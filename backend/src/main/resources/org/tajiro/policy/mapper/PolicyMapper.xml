@@ -1,0 +1,427 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.tajiro.policy.mapper.PolicyMapper">
+
+    <select id="get" resultType="PolicyVO">
+        SELECT DISTINCT
+            p.id,
+            p.title,
+            p.region,
+            p.min_age,
+            p.max_age,
+            p.application_period,
+            p.agency,
+            p.apply_method,
+            p.required_documents,
+            p.description,
+            p.sum_description,
+            p.sbiz_cd,
+            p.category_similarity,
+            pc.code AS categoryCode,
+            pc.name AS categoryName
+        FROM policy p
+                 JOIN policy_target_region ptr
+                      ON p.id = ptr.policy_id
+                 LEFT JOIN policy_category pc
+                           ON p.category_id = pc.id
+        WHERE p.id = #{id}
+          AND ptr.sgg_code = #{region}
+          AND (
+              (p.min_age = 0 AND p.max_age = 0)
+              OR (
+                  p.min_age <![CDATA[ <= ]]> #{age}
+                  AND p.max_age <![CDATA[ >= ]]> #{age}
+              )
+          )
+    </select>
+
+
+    <select id="getList" resultType="PolicyVO">
+        SELECT DISTINCT p.*,
+        pc.code AS categoryCode,
+        pc.name AS categoryName
+
+        FROM policy p
+        JOIN policy_target_region ptr
+        ON p.id = ptr.policy_id
+        LEFT JOIN policy_category pc
+        ON p.category_id = pc.id
+
+        WHERE ptr.sgg_code = #{region}
+        AND (
+            (p.min_age = 0 AND p.max_age = 0)
+            OR (
+                p.min_age <![CDATA[ <= ]]> #{age}
+                AND p.max_age <![CDATA[ >= ]]> #{age}
+            )
+        )
+
+        <if test="keyword != null and keyword != ''">
+            AND (
+            p.title LIKE CONCAT('%', #{keyword}, '%')
+            OR p.apply_method LIKE CONCAT('%', #{keyword}, '%')
+            OR p.required_documents LIKE CONCAT('%', #{keyword}, '%')
+            )
+        </if>
+        <if test="categoryCode != null and categoryCode != ''">
+
+            AND pc.code = #{categoryCode}
+
+        </if>
+        ORDER BY
+        p.category_similarity DESC,
+        p.category_similarity IS NULL,
+        p.id DESC
+    </select>
+<!--카테고리 임베딩-->
+    <select id="getCategoriesWithoutEmbedding" resultType="PolicyCategoryVO">
+
+        SELECT
+            id,
+            code,
+            name,
+            description,
+            embedding
+
+        FROM policy_category
+
+        WHERE embedding IS NULL
+
+        ORDER BY id
+
+    </select>
+    <select id="getCategoriesWithEmbedding"
+            resultType="PolicyCategoryVO">
+
+        SELECT
+            id,
+            code,
+            name,
+            description,
+            embedding
+
+        FROM policy_category
+
+        WHERE embedding IS NOT NULL
+
+        ORDER BY id
+
+    </select>
+    <update id="updateCategoryEmbedding">
+
+        UPDATE policy_category
+
+        SET embedding = #{embedding}
+
+        WHERE id = #{id}
+
+    </update>
+<!--정책 임베딩-->
+    <select id="getPoliciesWithoutEmbedding"
+            resultType="policyVO">
+
+        SELECT
+            id,
+            title,
+            description,
+            embedding
+
+        FROM policy
+
+        WHERE embedding IS NULL
+
+        ORDER BY id
+
+            LIMIT #{limit}
+
+    </select>
+    <update id="updatePolicyEmbedding">
+
+        UPDATE policy
+
+        SET embedding = #{embedding}
+
+        WHERE id = #{id}
+
+    </update>
+<!--분류대상조회-->
+    <select id="getPoliciesToClassify"
+            resultType="policyVO">
+
+        SELECT
+            id,
+            title,
+            description,
+            embedding,
+            category_id,
+            category_similarity
+
+        FROM policy
+
+        WHERE embedding IS NOT NULL
+
+          AND (
+            category_id IS NULL
+                OR category_similarity IS NULL
+            )
+
+        ORDER BY id
+
+            LIMIT #{limit}
+
+    </select>
+    <update id="updatePolicyClassification">
+
+        UPDATE policy
+
+        SET
+            category_id = #{categoryId},
+            category_similarity = #{categorySimilarity}
+
+        WHERE id = #{id}
+
+    </update>
+    <select id="countPoliciesWithoutEmbedding"
+            resultType="int">
+
+        SELECT COUNT(*)
+
+        FROM policy
+
+        WHERE embedding IS NULL
+
+    </select>
+    <select id="countPoliciesWithoutClassification"
+            resultType="int">
+
+        SELECT COUNT(*)
+
+        FROM policy
+
+        WHERE embedding IS NOT NULL
+
+          AND (
+            category_id IS NULL
+                OR category_similarity IS NULL
+            )
+
+    </select>
+
+    <select id="getHousingRecommendations"
+            resultType="PolicyVO">
+
+        SELECT DISTINCT
+            p.*,
+            pc.code AS categoryCode,
+            pc.name AS categoryName
+
+        FROM policy p
+
+                 JOIN policy_target_region ptr
+                      ON p.id = ptr.policy_id
+
+                 JOIN policy_category pc
+                      ON p.category_id = pc.id
+
+        WHERE ptr.sgg_code = #{region}
+
+          AND (
+            (p.min_age = 0 AND p.max_age = 0)
+                OR (
+                p.min_age <![CDATA[ <= ]]> #{age}
+                    AND p.max_age <![CDATA[ >= ]]> #{age}
+                )
+            )
+
+          AND pc.code = 'HOUSING'
+
+          AND p.category_similarity IS NOT NULL
+
+        ORDER BY
+            p.category_similarity DESC,
+            p.id DESC
+
+            LIMIT 3
+
+    </select>
+    <!-- 정책 배치 -->
+    <!-- ============================= -->
+    <!-- 정책 자동 동기화 배치 -->
+    <!-- ============================= -->
+
+    <select id="getLegacyPolicies"
+            resultType="PolicyVO">
+
+        SELECT
+            id,
+            application_period
+
+        FROM policy
+
+        WHERE source_policy_no IS NULL
+
+    </select>
+
+
+    <delete id="deletePoliciesByIds">
+
+        DELETE
+        FROM policy
+
+        WHERE id IN
+
+        <foreach collection="policyIds"
+                 item="policyId"
+                 open="("
+                 separator=","
+                 close=")">
+
+            #{policyId}
+
+        </foreach>
+
+    </delete>
+
+    <select id="getBatchPolicySources"
+            resultType="PolicyVO">
+
+        SELECT
+            id,
+            source_policy_no,
+            source_modified_at
+
+        FROM policy
+
+        WHERE source_policy_no IS NOT NULL
+
+        ORDER BY id
+
+    </select>
+
+
+    <insert id="insertBatchPolicy"
+            parameterType="PolicyVO"
+            useGeneratedKeys="true"
+            keyProperty="id">
+
+        INSERT INTO policy (
+            source_policy_no,
+            source_modified_at,
+            title,
+            region,
+            min_age,
+            max_age,
+            application_period,
+            agency,
+            apply_method,
+            required_documents,
+            description,
+            sum_description,
+            sbiz_cd
+        )
+
+        VALUES (
+                   #{sourcePolicyNo},
+                   #{sourceModifiedAt},
+                   #{title},
+                   #{region},
+                   #{minAge},
+                   #{maxAge},
+                   #{applicationPeriod},
+                   #{agency},
+                   #{applyMethod},
+                   #{requiredDocuments},
+                   #{description},
+                   #{sumDescription},
+                   #{sbizCd}
+               )
+
+    </insert>
+
+
+    <update id="updateBatchPolicy"
+            parameterType="PolicyVO">
+
+        UPDATE policy
+
+        SET
+            source_modified_at = #{sourceModifiedAt},
+            title = #{title},
+            region = #{region},
+            min_age = #{minAge},
+            max_age = #{maxAge},
+            application_period = #{applicationPeriod},
+            agency = #{agency},
+            apply_method = #{applyMethod},
+            required_documents = #{requiredDocuments},
+            description = #{description},
+            sum_description = #{sumDescription},
+            sbiz_cd = #{sbizCd},
+
+            embedding = NULL,
+            category_id = NULL,
+            category_similarity = NULL
+
+        WHERE id = #{id}
+          AND source_policy_no = #{sourcePolicyNo}
+
+    </update>
+
+
+    <delete id="deletePolicyTargetRegions">
+
+        DELETE
+        FROM policy_target_region
+
+        WHERE policy_id = #{policyId}
+
+    </delete>
+
+
+    <insert id="insertPolicyTargetRegions">
+
+        INSERT IGNORE INTO policy_target_region (
+        policy_id,
+        sgg_code
+        )
+
+        VALUES
+
+        <foreach collection="sggCodes"
+                 item="sggCode"
+                 separator=",">
+
+            (
+            #{policyId},
+            #{sggCode}
+            )
+
+        </foreach>
+
+    </insert>
+
+
+    <delete id="deleteMissingBatchPolicies">
+
+        DELETE
+        FROM policy
+
+        WHERE source_policy_no IS NOT NULL
+
+        AND source_policy_no NOT IN
+
+        <foreach collection="activePolicyNos"
+                 item="policyNo"
+                 open="("
+                 separator=","
+                 close=")">
+
+            #{policyNo}
+
+        </foreach>
+
+    </delete>
+</mapper>

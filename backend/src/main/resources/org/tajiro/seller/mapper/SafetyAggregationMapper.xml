@@ -1,0 +1,301 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.tajiro.seller.mapper.SafetyAggregationMapper">
+
+    <!--
+        building.safety_status 컬럼이 없으므로
+        안전 카테고리 8개가 아직 전부 저장되지 않은 건물을 찾는다.
+    -->
+    <select id="findPendingBuildings" resultType="BuildingVO">
+        SELECT
+        b.id,
+        b.building_code,
+        b.road_address,
+        b.jibun_address,
+        b.bld_nm,
+        b.dong_nm,
+        b.pnu,
+        b.latitude,
+        b.longitude,
+        b.sigungu_cd
+        FROM building b
+        WHERE b.latitude IS NOT NULL
+        AND b.longitude IS NOT NULL
+        AND b.latitude != 0
+        AND b.longitude != 0
+        AND (
+        SELECT COUNT(DISTINCT s.safe_category)
+        FROM safety s
+        WHERE s.building_id = b.id
+        AND s.safe_category IN
+        <foreach
+                collection="categories"
+                item="category"
+                open="("
+                close=")"
+                separator=",">
+            #{category}
+        </foreach>
+        ) &lt; #{categoryCount}
+        ORDER BY b.id
+        LIMIT #{limit}
+    </select>
+
+
+    <!-- 특정 건물 조회 -->
+    <select id="findBuildingById" resultType="BuildingVO">
+        SELECT
+            id,
+            building_code,
+            road_address,
+            jibun_address,
+            bld_nm,
+            dong_nm,
+            pnu,
+            latitude,
+            longitude,
+            sigungu_cd
+        FROM building
+        WHERE id = #{buildingId}
+    </select>
+
+
+    <!--
+        Python step4_safety_agg.py의 AGG_SQL
+
+        1. bounding box로 후보 축소
+        2. ST_Distance_Sphere로 실제 500m 판정
+        3. 카테고리별 개수
+        4. 최근접 거리 계산
+    -->
+    <select
+            id="aggregateSafety"
+            resultType="org.tajiro.seller.dto.SafetyAggregationDTO">
+
+        SELECT
+        c.safe_category,
+
+        COUNT(p.id) AS count_within500m,
+
+        CAST(
+        ROUND(
+        MIN(
+        ST_Distance_Sphere(
+        p.geom,
+        ST_SRID(
+        POINT(#{lng}, #{lat}),
+        4326
+        )
+        )
+        )
+        ) AS SIGNED
+        ) AS nearest_distance_meters
+
+        FROM (
+
+        <foreach
+                collection="categories"
+                item="category"
+                index="index"
+                separator=" UNION ALL ">
+
+            SELECT
+            #{category} AS safe_category,
+            (#{index} + 1) AS sort_order
+
+        </foreach>
+
+        ) c
+
+        LEFT JOIN safety_poi p
+
+        ON p.category = c.safe_category
+
+        AND p.latitude
+        BETWEEN #{lat} - #{dlat}
+        AND #{lat} + #{dlat}
+
+        AND p.longitude
+        BETWEEN #{lng} - #{dlng}
+        AND #{lng} + #{dlng}
+
+        AND ST_Distance_Sphere(
+        p.geom,
+        ST_SRID(
+        POINT(#{lng}, #{lat}),
+        4326
+        )
+        ) &lt;= #{radius}
+
+        GROUP BY
+        c.safe_category,
+        c.sort_order
+
+        ORDER BY
+        c.sort_order
+
+    </select>
+
+
+    <!--
+        safety 저장
+
+        이미 building + category 데이터가 있으면 UPDATE
+        없으면 INSERT
+    -->
+    <insert id="upsertSafety">
+
+        INSERT INTO safety (
+            building_id,
+            safe_category,
+            count_within500m,
+            nearest_distance_meters,
+            update_at
+        )
+
+        VALUES (
+                   #{buildingId},
+                   #{safeCategory},
+                   #{countWithin500m},
+                   #{nearestDistanceMeters},
+                   CURRENT_TIMESTAMP
+               )
+
+            ON DUPLICATE KEY UPDATE
+
+                                 count_within500m =
+                             VALUES(count_within500m),
+
+                                 nearest_distance_meters =
+                             VALUES(nearest_distance_meters),
+
+                                 update_at =
+                                 CURRENT_TIMESTAMP
+
+    </insert>
+
+
+    <!-- UPSERT 후 safety PK 조회 -->
+    <select id="findSafetyId" resultType="long">
+
+        SELECT id
+
+        FROM safety
+
+        WHERE building_id = #{buildingId}
+          AND safe_category = #{safeCategory}
+
+    </select>
+
+
+    <!-- 재집계 전에 기존 상세 데이터 제거 -->
+    <delete id="deleteSafetyDetails">
+
+        DELETE FROM safety_detail
+        WHERE safe_id = #{safeId}
+
+    </delete>
+
+
+    <!--
+        Python DETAIL_SQL
+
+        해당 카테고리의 500m 내부 POI를
+        상위 3개가 아니라 전부 가져온다.
+    -->
+    <select
+            id="findSafetyPois"
+            resultType="org.tajiro.seller.dto.SafetyPoiDTO">
+
+        SELECT
+
+            COALESCE(
+                    NULLIF(TRIM(p.name), ''),
+                    p.category
+            ) AS safe_name,
+
+            p.latitude,
+
+            p.longitude,
+
+            CAST(
+                    ROUND(
+                            ST_Distance_Sphere(
+                                    p.geom,
+                                    ST_SRID(
+                                            POINT(#{lng}, #{lat}),
+                                            4326
+                                    )
+                            )
+                    ) AS SIGNED
+            ) AS distance_m,
+
+            CAST(p.polygon AS CHAR) AS polygon
+
+        FROM safety_poi p
+
+        WHERE p.category = #{category}
+
+          AND p.latitude
+            BETWEEN #{lat} - #{dlat}
+            AND #{lat} + #{dlat}
+
+          AND p.longitude
+            BETWEEN #{lng} - #{dlng}
+            AND #{lng} + #{dlng}
+
+          AND ST_Distance_Sphere(
+                      p.geom,
+                      ST_SRID(
+                              POINT(#{lng}, #{lat}),
+                              4326
+                      )
+              ) &lt;= #{radius}
+
+        ORDER BY
+            distance_m,
+            p.id
+
+    </select>
+
+
+    <!--
+        safety_detail 전체 일괄 INSERT
+    -->
+    <insert id="insertSafetyDetails">
+
+        INSERT INTO safety_detail (
+        safe_id,
+        safe_name,
+        latitude,
+        longitude,
+        distance_m,
+        sort_order,
+        polygon
+        )
+
+        VALUES
+
+        <foreach
+                collection="details"
+                item="item"
+                separator=",">
+
+            (
+            #{item.safeId},
+            #{item.safeName},
+            #{item.latitude},
+            #{item.longitude},
+            #{item.distanceM},
+            #{item.sortOrder},
+            #{item.polygon,jdbcType=VARCHAR}
+            )
+
+        </foreach>
+
+    </insert>
+
+</mapper>

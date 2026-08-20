@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.tajiro.seller.mapper.PropertyRegistrationMapper">
+
+    <insert id="insertProperty"
+            parameterType="org.tajiro.seller.domain.PropertyRegistrationVO"
+            useGeneratedKeys="true"
+            keyProperty="id"
+            keyColumn="id">
+        INSERT INTO property (
+            seller_id,
+            source_listing_id,
+            building_id,
+            title,
+            property_type,
+            trade_type,
+            deposit,
+            monthly_rent,
+            maintenance_fee,
+            area_m2,
+            floor_info,
+            room_number,
+            address,
+            room_num,
+            bathroom_num,
+            park_availability,
+            transaction_status,
+            property_description,
+            available_date,
+            move_in_date,
+            update_date,
+            discussion_status,
+            dong,
+            evaluation_score
+        ) VALUES (
+            #{sellerId},
+            NULL,
+            #{buildingId},
+            #{title},
+            #{propertyType},
+            #{tradeType},
+            #{deposit},
+            #{monthlyRent},
+            #{maintenanceFee},
+            #{areaM2},
+            #{floorInfo},
+            #{roomNumber},
+            #{address},
+            #{roomNum},
+            #{bathroomNum},
+            #{parkAvailability},
+            #{transactionStatus},
+            #{propertyDescription},
+            #{availableDate},
+            #{moveInDate},
+            #{updateDate},
+            #{discussionStatus},
+            #{dong},
+            NULL
+        )
+    </insert>
+
+    <insert id="insertPropertyImages">
+        INSERT INTO property_image (
+            property_id,
+            image_url,
+            sort_order
+        ) VALUES
+        <foreach collection="imageUrls" item="imageUrl" index="index" separator=",">
+            (
+                #{propertyId},
+                #{imageUrl},
+                #{index} + 1
+            )
+        </foreach>
+    </insert>
+</mapper>

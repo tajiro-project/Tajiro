@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.tajiro.seller.mapper.BuildingMapper">
+    <select id="findIdByBuildingCode" resultType="long">
+        SELECT id
+        FROM building
+        WHERE building_code = #{buildingCode}
+    </select>
+
+    <select id="findNearbyId" resultType="long">
+        SELECT id
+        FROM building
+        WHERE ST_Distance_Sphere(
+                      geom,
+                      ST_SRID(POINT(#{longitude}, #{latitude}), 4326)
+              ) &lt;= #{radiusMeters}
+        ORDER BY ST_Distance_Sphere(
+                         geom,
+                         ST_SRID(POINT(#{longitude}, #{latitude}), 4326))
+            LIMIT 1
+    </select>
+
+    <insert id="insertBuilding"
+            parameterType="org.tajiro.seller.domain.BuildingCreateVO"
+            useGeneratedKeys="true"
+            keyProperty="id"
+            keyColumn="id">
+        INSERT INTO building (
+            building_code,
+            road_address,
+            jibun_address,
+            bld_nm,
+            dong_nm,
+            pnu,
+            latitude,
+            longitude
+        ) VALUES (
+                     #{buildingCode},
+                     #{roadAddress},
+                     #{jibunAddress},
+                     #{bldNm},
+                     #{dongNm},
+                     #{pnu},
+                     #{latitude},
+                     #{longitude}
+                 )
+    </insert>
+</mapper>

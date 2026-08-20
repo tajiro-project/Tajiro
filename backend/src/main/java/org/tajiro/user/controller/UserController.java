@@ -1,0 +1,116 @@
+/**
+ * 내 정보 입력/조회 API (내정보입력).
+ */
+package org.tajiro.user.controller;
+
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
+import org.tajiro.auth.service.AuthService;
+import org.tajiro.common.api.ApiResponse;
+import org.tajiro.common.api.ErrorCode;
+import org.tajiro.exception.BusinessException;
+import org.tajiro.auth.dto.UserInfoResponse;
+import org.tajiro.auth.dto.UserInfoUpdateRequest;
+import org.tajiro.user.dto.OnboardingTourRequest;
+import org.tajiro.user.dto.OnboardingTourResponse;
+import org.tajiro.user.dto.ProfileUpdateResponse;
+import org.tajiro.user.dto.UserProfileDTO;
+import org.tajiro.user.dto.UserProfileRequest;
+import org.tajiro.user.service.UserProfileService;
+import springfox.documentation.annotations.ApiIgnore;
+
+import java.time.LocalDateTime;
+
+@RestController
+@RequestMapping("/api/users/me")
+@RequiredArgsConstructor
+@Api(tags = "03. 내 정보", description = "사용자 프로필 조회, 수정 및 회원 탈퇴 API")
+public class UserController {
+
+    private final UserProfileService userProfileService;
+    private final AuthService authService;
+
+    @GetMapping
+    @ApiOperation(value = "내 정보(이름·연락처·중개사무소명) 조회")
+    public ResponseEntity<ApiResponse<UserInfoResponse>> getMyInfo(
+            @ApiIgnore @AuthenticationPrincipal Long userId) {
+        if (userId == null) {
+            throw new BusinessException(ErrorCode.AUTH_REQUIRED);
+        }
+
+        return ResponseEntity.ok(ApiResponse.success(authService.getMyInfo(userId)));
+    }
+
+    @PutMapping
+    @ApiOperation(value = "내 정보(이름·연락처·중개사무소명) 수정")
+    public ResponseEntity<ApiResponse<Void>> updateMyInfo(
+            @ApiIgnore @AuthenticationPrincipal Long userId,
+            @RequestBody UserInfoUpdateRequest request) {
+        if (userId == null) {
+            throw new BusinessException(ErrorCode.AUTH_REQUIRED);
+        }
+
+        authService.updateMyInfo(userId, request);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    @GetMapping("/profile")
+    public ResponseEntity<ApiResponse<UserProfileDTO>> getProfile(@ApiIgnore @AuthenticationPrincipal Long userId) {
+        if (userId == null) {
+            throw new BusinessException(ErrorCode.AUTH_REQUIRED);
+        }
+
+        return ResponseEntity.ok(ApiResponse.success(userProfileService.getUserProfileById(userId)));
+    }
+
+    @PutMapping("/profile")
+    public ResponseEntity<ApiResponse<ProfileUpdateResponse>> updateProfile(
+            @ApiIgnore @AuthenticationPrincipal Long userId,
+            @RequestBody UserProfileRequest request) {
+        if (userId == null) {
+            throw new BusinessException(ErrorCode.AUTH_REQUIRED);
+        }
+
+        LocalDateTime updatedAt = userProfileService.saveProfile(userId, request);
+        return ResponseEntity.ok(ApiResponse.success(ProfileUpdateResponse.builder().updatedAt(updatedAt).build()));
+    }
+
+    @DeleteMapping
+    public ResponseEntity<Void> withdraw(@ApiIgnore @AuthenticationPrincipal Long userId) {
+        if (userId == null) {
+            throw new BusinessException(ErrorCode.AUTH_REQUIRED);
+        }
+
+        authService.withdraw(userId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/onboarding-tour")
+    public ResponseEntity<ApiResponse<OnboardingTourResponse>> getOnboardingTour(
+            @ApiIgnore @AuthenticationPrincipal Long userId) {
+        if (userId == null) {
+            throw new BusinessException(ErrorCode.AUTH_REQUIRED);
+        }
+
+        String onboardingSeen = authService.getOnboardingSeen(userId);
+        return ResponseEntity.ok(ApiResponse.success(
+                OnboardingTourResponse.builder().onboardingSeen(onboardingSeen).build()));
+    }
+
+    @PatchMapping("/onboarding-tour")
+    public ResponseEntity<ApiResponse<OnboardingTourResponse>> markOnboardingTourSeen(
+            @ApiIgnore @AuthenticationPrincipal Long userId,
+            @RequestBody OnboardingTourRequest request) {
+        if (userId == null) {
+            throw new BusinessException(ErrorCode.AUTH_REQUIRED);
+        }
+
+        String onboardingSeen = authService.markOnboardingTourSeen(userId, request.getGroup());
+        return ResponseEntity.ok(ApiResponse.success(
+                OnboardingTourResponse.builder().onboardingSeen(onboardingSeen).build()));
+    }
+}

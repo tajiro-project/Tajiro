@@ -1,0 +1,159 @@
+# =========================================================
+# OS
+# =========================================================
+
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+*.swp
+*.swo
+*~
+*.tmp
+*.temp
+
+# =========================================================
+# Logs
+# =========================================================
+
+*.log
+logs/
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# =========================================================
+# Environment / Secrets
+# =========================================================
+
+.env
+.env.*
+!.env.example
+!.env.sample
+
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+
+# =========================================================
+# IntelliJ IDEA
+# =========================================================
+
+# Repository를 IntelliJ로 열었을 때
+.idea/
+
+# Backend를 IntelliJ로 따로 열었을 때
+backend/.idea/
+
+# IntelliJ Module
+*.iml
+
+# =========================================================
+# VS Code
+# =========================================================
+
+# Frontend를 VS Code로 열었을 때
+frontend/.vscode/
+
+# Repository를 VS Code로 열었을 때(선택)
+.vscode/
+
+# =========================================================
+# Backend (Spring Legacy + Gradle)
+# =========================================================
+
+backend/.gradle/
+backend/build/
+backend/**/build/
+backend/out/
+backend/target/
+backend/bin/
+
+# Gradle Wrapper는 반드시 포함
+!backend/gradle/wrapper/gradle-wrapper.jar
+
+# Local Spring 설정
+backend/src/main/resources/application-local.properties
+backend/src/main/resources/application-local.yml
+backend/src/main/resources/application-local.yaml
+
+backend/src/main/resources/application-secret.properties
+backend/src/main/resources/application-secret.yml
+backend/src/main/resources/application-secret.yaml
+
+backend/src/main/resources/**/*-local.properties
+backend/src/main/resources/**/*-local.yml
+backend/src/main/resources/**/*-local.yaml
+
+backend/src/main/resources/**/*-secret.properties
+backend/src/main/resources/**/*-secret.yml
+backend/src/main/resources/**/*-secret.yaml
+
+# Runtime
+backend/uploads/
+backend/files/
+backend/temp/
+backend/tmp/
+
+# Embedded DB
+backend/**/*.mv.db
+backend/**/*.trace.db
+
+# Test
+backend/**/reports/
+backend/**/test-results/
+backend/**/jacoco/
+
+# =========================================================
+# Frontend (Vue)
+# =========================================================
+
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/.vite/
+frontend/.cache/
+frontend/coverage/
+frontend/.nyc_output/
+
+frontend/.eslintcache
+frontend/.stylelintcache
+frontend/**/*.tsbuildinfo
+
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+
+# =========================================================
+# MySQL
+# =========================================================
+
+# Dump
+*.sql.gz
+*.dump
+*.dump.gz
+
+# Runtime
+*.pid
+*.sock
+
+mysql.log
+mysql-error.log
+mysql-slow.log
+
+# Local DB Data
+mysql-data/
+mysql_data/
+
+# =========================================================
+# Misc
+# =========================================================
+
+coverage/
+tmp/
+backend/src/main/resources/application.properties
+backend/src/main/resources/application-market.example.properties

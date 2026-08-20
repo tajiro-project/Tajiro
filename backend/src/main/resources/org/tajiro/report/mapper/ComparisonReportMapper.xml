@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.tajiro.report.mapper.ComparisonReportMapper">
+
+    <insert id="insert"
+            parameterType="org.tajiro.report.domain.ComparisonReportVO"
+            useGeneratedKeys="true"
+            keyProperty="reportId"
+            keyColumn="id">
+        INSERT INTO comparison_report (
+            user_id,
+            ai_recommended_property_id,
+            title,
+            compared_property_ids,
+            preference_priorities,
+            ai_property_summary_text,
+            ai_summary,
+            saved,
+            ai_atp,
+            created_at
+        ) VALUES (
+            #{userId},
+            #{aiRecommendedPropertyId},
+            #{title},
+            CAST(#{comparedPropertyIdsJson} AS JSON),
+            CAST(#{preferencePrioritiesJson} AS JSON),
+            #{aiPropertySummaryText},
+            #{aiSummary},
+            #{saved},
+            #{aiAtp},
+            NOW()
+        )
+    </insert>
+
+    <select id="findAllByUserId"
+            resultType="org.tajiro.report.domain.ComparisonReportVO">
+        SELECT id AS report_id,
+               user_id,
+               ai_recommended_property_id,
+               title,
+               CAST(compared_property_ids AS CHAR) AS compared_property_ids_json,
+               CAST(preference_priorities AS CHAR) AS preference_priorities_json,
+               ai_property_summary_text,
+               ai_summary,
+               saved,
+               ai_atp,
+               created_at
+        FROM comparison_report
+        WHERE user_id = #{userId}
+          AND saved = 1
+        ORDER BY created_at DESC, id DESC
+    </select>
+
+    <select id="findReusable"
+            resultType="org.tajiro.report.domain.ComparisonReportVO">
+        SELECT id AS report_id,
+               user_id,
+               ai_recommended_property_id,
+               title,
+               CAST(compared_property_ids AS CHAR) AS compared_property_ids_json,
+               CAST(preference_priorities AS CHAR) AS preference_priorities_json,
+               ai_property_summary_text,
+               ai_summary,
+               saved,
+               ai_atp,
+               created_at
+        FROM comparison_report
+        WHERE user_id = #{userId}
+          AND JSON_LENGTH(compared_property_ids) = #{propertyCount}
+          AND JSON_CONTAINS(compared_property_ids, CAST(#{propertyIdsJson} AS JSON))
+          AND JSON_CONTAINS(CAST(#{propertyIdsJson} AS JSON), compared_property_ids)
+          AND preference_priorities = CAST(#{preferencePrioritiesJson} AS JSON)
+        ORDER BY created_at DESC, id DESC
+        LIMIT 1
+    </select>
+
+    <select id="findLatestBySameProperties"
+            resultType="org.tajiro.report.domain.ComparisonReportVO">
+        SELECT id AS report_id,
+               user_id,
+               ai_recommended_property_id,
+               title,
+               CAST(compared_property_ids AS CHAR) AS compared_property_ids_json,
+               CAST(preference_priorities AS CHAR) AS preference_priorities_json,
+               ai_property_summary_text,
+               ai_summary,
+               saved,
+               ai_atp,
+               created_at
+        FROM comparison_report
+        WHERE user_id = #{userId}
+          AND JSON_LENGTH(compared_property_ids) = #{propertyCount}
+          AND JSON_CONTAINS(compared_property_ids, CAST(#{propertyIdsJson} AS JSON))
+          AND JSON_CONTAINS(CAST(#{propertyIdsJson} AS JSON), compared_property_ids)
+        ORDER BY created_at DESC, id DESC
+        LIMIT 1
+    </select>
+    <select id="findByIdAndUserId"
+            resultType="org.tajiro.report.domain.ComparisonReportVO">
+        SELECT id AS report_id,
+               user_id,
+               ai_recommended_property_id,
+               title,
+               CAST(compared_property_ids AS CHAR) AS compared_property_ids_json,
+               CAST(preference_priorities AS CHAR) AS preference_priorities_json,
+               ai_property_summary_text,
+               ai_summary,
+               saved,
+               ai_atp,
+               created_at
+        FROM comparison_report
+        WHERE id = #{reportId}
+          AND user_id = #{userId}
+          AND saved = 1
+    </select>
+
+    <update id="updateGeneratedReport"
+            parameterType="org.tajiro.report.domain.ComparisonReportVO">
+        UPDATE comparison_report
+        SET ai_recommended_property_id = #{aiRecommendedPropertyId},
+            title = #{title},
+            preference_priorities = CAST(#{preferencePrioritiesJson} AS JSON),
+            ai_property_summary_text = #{aiPropertySummaryText},
+            ai_summary = #{aiSummary},
+            ai_atp = #{aiAtp},
+            created_at = NOW()
+        WHERE id = #{reportId}
+          AND user_id = #{userId}
+    </update>
+
+    <update id="updateCreatedAt">
+        UPDATE comparison_report
+        SET created_at = NOW()
+        WHERE id = #{reportId}
+          AND user_id = #{userId}
+    </update>
+
+    <update id="markSaved">
+        UPDATE comparison_report
+        SET saved = 1
+        WHERE id = #{reportId}
+          AND user_id = #{userId}
+    </update>
+
+    <select id="findPropertyIdsByJson" resultType="long">
+        SELECT report_property.property_id
+        FROM JSON_TABLE(
+            #{propertyIdsJson},
+            '$[*]' COLUMNS (
+                sort_order FOR ORDINALITY,
+                property_id BIGINT PATH '$'
+            )
+        ) report_property
+        ORDER BY report_property.sort_order
+    </select>
+
+    <select id="findPropertiesByJson"
+            resultType="org.tajiro.report.dto.ComparisonReportPropertyDTO">
+        SELECT p.id AS property_id,
+               p.title,
+               p.property_type,
+               p.trade_type,
+               p.deposit,
+               CASE WHEN p.trade_type = '월세' THEN p.monthly_rent END AS monthly_rent,
+               p.maintenance_fee,
+               p.area_m2,
+               p.floor_info,
+               p.update_date AS updated_date
+        FROM JSON_TABLE(
+            #{propertyIdsJson},
+            '$[*]' COLUMNS (
+                sort_order FOR ORDINALITY,
+                property_id BIGINT PATH '$'
+            )
+        ) report_property
+        JOIN property p ON p.id = report_property.property_id
+        ORDER BY report_property.sort_order
+    </select>
+
+    <select id="findLatestMarketCalculatedAtByJson" resultType="java.time.LocalDateTime">
+        SELECT MAX(p.market_calculated_at)
+        FROM JSON_TABLE(
+            #{propertyIdsJson},
+            '$[*]' COLUMNS (
+                property_id BIGINT PATH '$'
+            )
+        ) report_property
+        JOIN property p ON p.id = report_property.property_id
+        WHERE p.market_calculated_at IS NOT NULL
+    </select>
+    <update id="markUnsaved">
+        UPDATE comparison_report
+        SET saved = 0
+        WHERE id = #{reportId}
+          AND user_id = #{userId}
+          AND saved = 1
+    </update>
+</mapper>
