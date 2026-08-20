@@ -6,6 +6,10 @@ import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatche
 import javax.servlet.Filter;
 import javax.servlet.MultipartConfigElement;
 import javax.servlet.ServletRegistration;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 /**
  * web.xml 대체 진입점. 루트 컨텍스트(RootConfig, SecurityConfig)와
@@ -43,9 +47,22 @@ public class WebAppInitializer extends AbstractAnnotationConfigDispatcherServlet
     protected void customizeRegistration(ServletRegistration.Dynamic registration) {
         registration.setInitParameter("throwExceptionIfNoHandlerFound", "true");
         // 매물 등록(25-4) 사진 업로드용 임시 디렉터리
-        String uploadDirectory = System.getProperty("java.io.tmpdir") + "/tajiro-uploads";
+        Path uploadDirectory = Paths.get(
+                System.getProperty("java.io.tmpdir"),
+                "tajiro-uploads"
+        ).toAbsolutePath().normalize();
+
+        try {
+            Files.createDirectories(uploadDirectory);
+        } catch (IOException exception) {
+            throw new IllegalStateException(
+                    "사진 업로드 임시 디렉터리를 생성하지 못했습니다: " + uploadDirectory,
+                    exception
+            );
+        }
+
         registration.setMultipartConfig(new MultipartConfigElement(
-                uploadDirectory,
+                uploadDirectory.toString(),
                 MAX_FILE_SIZE,
                 MAX_REQUEST_SIZE,
                 FILE_SIZE_THRESHOLD

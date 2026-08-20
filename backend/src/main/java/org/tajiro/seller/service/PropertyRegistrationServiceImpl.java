@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Service
@@ -35,6 +36,9 @@ public class PropertyRegistrationServiceImpl implements PropertyRegistrationServ
             "^(?:[1-9]\\d*|지하[1-9]\\d*|반지하|옥탑) / [1-9]\\d*층$"
     );
     private static final Pattern HTTP_URL_PATTERN = Pattern.compile("^https?://.+");
+    private static final Pattern INTERNAL_IMAGE_URL_PATTERN = Pattern.compile(
+            "^/api/property-images/(\\d+)-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\.(?:jpg|png|webp)$"
+    );
     private static final int MAX_IMAGE_COUNT = 10;
 
     private final PropertyRegistrationMapper propertyRegistrationMapper;
@@ -54,7 +58,7 @@ public class PropertyRegistrationServiceImpl implements PropertyRegistrationServ
         validate(request);
 
         String propertyType = normalizePropertyType(request.getPropertyType());
-        List<String> imageUrls = normalizeImageUrls(request.getImageUrls());
+        List<String> imageUrls = normalizeImageUrls(request.getImageUrls(), sellerId);
         Long buildingId = resolveBuilding(request);
 
         PropertyRegistrationVO property = PropertyRegistrationVO.builder()
@@ -141,7 +145,6 @@ public class PropertyRegistrationServiceImpl implements PropertyRegistrationServ
         }
 
         validateCoordinates(request.getLocation());
-        normalizeImageUrls(request.getImageUrls());
     }
 
     private void validateCoordinates(PropertyRegistrationRequest.LocationRequest location) {
@@ -182,7 +185,7 @@ public class PropertyRegistrationServiceImpl implements PropertyRegistrationServ
         }
     }
 
-    private List<String> normalizeImageUrls(List<String> imageUrls) {
+    private List<String> normalizeImageUrls(List<String> imageUrls, Long sellerId) {
         if (imageUrls == null || imageUrls.isEmpty()) {
             return Collections.emptyList();
         }
@@ -193,8 +196,14 @@ public class PropertyRegistrationServiceImpl implements PropertyRegistrationServ
         List<String> normalized = new ArrayList<>(imageUrls.size());
         for (String imageUrl : imageUrls) {
             String value = trimToNull(imageUrl);
-            if (value == null || value.length() > 2048
-                    || !HTTP_URL_PATTERN.matcher(value).matches()) {
+            if (value == null || value.length() > 2048) {
+                throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
+            }
+            Matcher internalMatcher = INTERNAL_IMAGE_URL_PATTERN.matcher(value);
+            boolean isExternalHttpUrl = HTTP_URL_PATTERN.matcher(value).matches();
+            boolean isOwnedInternalImage = internalMatcher.matches()
+                    && sellerId.toString().equals(internalMatcher.group(1));
+            if (!isExternalHttpUrl && !isOwnedInternalImage) {
                 throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
             }
             normalized.add(value);
