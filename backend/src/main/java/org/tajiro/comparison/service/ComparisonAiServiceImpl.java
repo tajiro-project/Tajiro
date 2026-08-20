@@ -36,7 +36,7 @@ public class ComparisonAiServiceImpl implements ComparisonAiService {
 
     private static final String COMPARISON_WORKPLACE_PREFIX = "__COMPARE_WORKPLACE__:";
     private static final String SCORE_CONTEXT_PREFIX = "__PREFERENCE_SCORE_CONTEXT__:";
-    private static final String SCORE_CONTEXT_VERSION = "preference-score-v2";
+    private static final String SCORE_CONTEXT_VERSION = "preference-score-v3";
     private static final Set<String> SUPPORTED_PRIORITIES = Set.of(
             "COMMUTE",
             "COST",
