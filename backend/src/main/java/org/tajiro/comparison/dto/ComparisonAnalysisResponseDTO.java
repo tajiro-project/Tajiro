@@ -13,6 +13,7 @@ public class ComparisonAnalysisResponseDTO {
     private Long reportId;
     private String aiPropertySummaryText;
     private String aiSummary;
+    private String aiSafetySummary;
     private Long aiRecommendedPropertyId;
     private String aiAtp;
 }

@@ -96,6 +96,31 @@
           </div>
         </section>
 
+        <section v-if="aiSafetyText" class="safety-ai-card">
+          <p class="safety-ai-head">
+            <svg width="17" height="17" viewBox="0 0 17 17" fill="none">
+              <path
+                d="M8.5 1.5l5.5 2.4v4c0 3.5-2.3 5.5-5.5 6.8C5.3 13.4 3 11.4 3 7.9v-4l5.5-2.4z"
+                stroke="currentColor"
+                stroke-width="1.4"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M6.2 8.2l1.5 1.5 3.1-3.2"
+                stroke="currentColor"
+                stroke-width="1.4"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            AI 안전 참고 분석
+          </p>
+          <p class="safety-ai-text">{{ aiSafetyText }}</p>
+          <p class="safety-ai-note">
+            주변 시설 수는 실제 치안 수준이나 거주 안전성을 의미하지 않아요.
+          </p>
+        </section>
+
         <p v-if="warningText" class="warn">
           <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
             <path
@@ -538,6 +563,11 @@ const aiSecondaryText = computed(() => {
   if (coachingError.value) return '';
   const summary = formatKoreanMoneyText(coaching.value?.aiSummary ?? '');
   return summary === aiPrimaryText.value ? '' : summary;
+});
+
+const aiSafetyText = computed(() => {
+  if (coachingError.value) return '';
+  return String(coaching.value?.aiSafetySummary ?? '').trim();
 });
 
 const warningText = computed(() => {
@@ -997,8 +1027,10 @@ function loadDemoComparison() {
     reportId: null,
     aiRecommendedPropertyId: 'demo-1',
     aiPropertySummaryText:
-      'A 매물은 통근 시간과 안전 지표에서 앞서 있어, 출퇴근 부담을 줄이고 싶다면 더 적합해요.',
-    aiSummary: 'A 매물이 직주근접·안전 지표에서 우세해요.',
+      'A 매물은 통근 시간이 짧고 주거비 부담이 상대적으로 낮아, 출퇴근과 비용을 중시한다면 더 적합해요.',
+    aiSummary: 'A 매물이 직주근접과 비용 지표에서 상대적으로 앞서요.',
+    aiSafetySummary:
+      'A 매물 주변에는 CCTV와 안전등이 B 매물보다 많이 확인돼요. B 매물은 비상벨과 아동안전시설 정보가 상대적으로 적으므로 계약 전 야간 귀가 동선과 주변 환경을 직접 확인해 보세요.',
     aiAtp: null,
   };
   activeWorkplace.value = { lat: 36.35, lng: 127.38 };
@@ -1107,6 +1139,7 @@ function createReportCoaching(report) {
     reportId: report.reportId,
     aiPropertySummaryText: propertySummary || summary,
     aiSummary: summary === propertySummary ? '' : summary,
+    aiSafetySummary: report.aiSafetySummary,
     aiRecommendedPropertyId: report.aiRecommendedPropertyId,
     aiAtp: report.aiAtp,
   };
@@ -1144,7 +1177,11 @@ function getPreferencePriorities(preference) {
 }
 
 function shouldShowAiRefreshModal(report) {
-  return route.query.aiRefresh === '1' || hasUpdatedReportData(report);
+  return (
+    route.query.aiRefresh === '1' ||
+    !String(report?.aiSafetySummary ?? '').trim() ||
+    hasUpdatedReportData(report)
+  );
 }
 
 function hasUpdatedReportData(report) {
@@ -1683,6 +1720,36 @@ function goBack() {
 .ai-p.error {
   color: var(--danger);
   font-weight: 700;
+}
+.safety-ai-card {
+  margin-top: 12px;
+  padding: 15px 16px;
+  background: #f4f8f7;
+  border: 1px solid #cfe1dc;
+  border-radius: 16px;
+}
+.safety-ai-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 9px;
+  color: #3f7468;
+  font-size: 14px;
+  font-weight: 800;
+}
+.safety-ai-text {
+  margin: 0;
+  color: #3f4c49;
+  font-size: 13px;
+  line-height: 1.65;
+}
+.safety-ai-note {
+  margin: 10px 0 0;
+  padding-top: 9px;
+  border-top: 1px solid #dce9e5;
+  color: #74817e;
+  font-size: 11px;
+  line-height: 1.5;
 }
 .warn {
   display: flex;

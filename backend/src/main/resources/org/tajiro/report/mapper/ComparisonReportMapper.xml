@@ -17,6 +17,7 @@
             preference_priorities,
             ai_property_summary_text,
             ai_summary,
+            ai_safety_summary,
             saved,
             ai_atp,
             created_at
@@ -28,6 +29,7 @@
             CAST(#{preferencePrioritiesJson} AS JSON),
             #{aiPropertySummaryText},
             #{aiSummary},
+            #{aiSafetySummary},
             #{saved},
             #{aiAtp},
             NOW()
@@ -44,6 +46,7 @@
                CAST(preference_priorities AS CHAR) AS preference_priorities_json,
                ai_property_summary_text,
                ai_summary,
+               ai_safety_summary,
                saved,
                ai_atp,
                created_at
@@ -63,6 +66,7 @@
                CAST(preference_priorities AS CHAR) AS preference_priorities_json,
                ai_property_summary_text,
                ai_summary,
+               ai_safety_summary,
                saved,
                ai_atp,
                created_at
@@ -86,6 +90,7 @@
                CAST(preference_priorities AS CHAR) AS preference_priorities_json,
                ai_property_summary_text,
                ai_summary,
+               ai_safety_summary,
                saved,
                ai_atp,
                created_at
@@ -107,6 +112,7 @@
                CAST(preference_priorities AS CHAR) AS preference_priorities_json,
                ai_property_summary_text,
                ai_summary,
+               ai_safety_summary,
                saved,
                ai_atp,
                created_at
@@ -124,6 +130,7 @@
             preference_priorities = CAST(#{preferencePrioritiesJson} AS JSON),
             ai_property_summary_text = #{aiPropertySummaryText},
             ai_summary = #{aiSummary},
+            ai_safety_summary = #{aiSafetySummary},
             ai_atp = #{aiAtp},
             created_at = NOW()
         WHERE id = #{reportId}

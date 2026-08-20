@@ -43,6 +43,7 @@ class OpenAiComparisonClientTest {
         String responseBody = "{\"choices\":[{\"message\":{\"content\":"
                 + "\"{\\\"aiPropertySummaryText\\\":\\\"두 매물을 비교했어요.\\\","
                 + "\\\"aiSummary\\\":\\\"랭크썸 점수 외 시세까지 고려해 119번 매물이 더 적합해요.\\\","
+                + "\\\"aiSafetySummary\\\":\\\"112번 매물 주변의 안전시설 현황을 계약 전 확인하세요.\\\","
                 + "\\\"aiRecommendedPropertyId\\\":119,"
                 + "\\\"aiAtp\\\":\\\"계약 전에 관리비 항목을 확인하세요.\\\"}\"}}]}";
 
@@ -55,8 +56,14 @@ class OpenAiComparisonClientTest {
                         "\"enum\":[112,119]")))
                 .andExpect(content().string(containsString(
                         "\"preferenceScore\":82")))
+                .andExpect(content().string(containsString(
+                        "\"aiSafetySummary\"")))
                 .andExpect(content().string(not(containsString(
                         "\"commuteScore\""))))
+                .andExpect(content().string(containsString(
+                        "안전 지표를 단순히 나열하거나 수치의 많고 적음을 문장으로 반복하지 마세요.")))
+                .andExpect(content().string(containsString(
+                        "시설 역할별 구성 해석, 매물별 강점과 공백, 구체적인 현장 확인 안내")))
                 .andRespond(withSuccess(responseBody, MediaType.APPLICATION_JSON));
 
         ComparisonAnalysisResponseDTO result = clientWith("test-key").generate(
@@ -69,6 +76,9 @@ class OpenAiComparisonClientTest {
         assertEquals(
                 "맞춤 평가 점수 외 시세까지 고려해 119번 매물이 더 적합해요.",
                 result.getAiSummary());
+        assertEquals(
+                "112번 매물 주변의 안전시설 현황을 계약 전 확인하세요.",
+                result.getAiSafetySummary());
         server.verify();
     }
 
@@ -89,6 +99,7 @@ class OpenAiComparisonClientTest {
         String responseBody = "{\"choices\":[{\"message\":{\"content\":"
                 + "\"{\\\"aiPropertySummaryText\\\":\\\"요약\\\","
                 + "\\\"aiSummary\\\":\\\"추천\\\","
+                + "\\\"aiSafetySummary\\\":\\\"안전시설 참고\\\","
                 + "\\\"aiRecommendedPropertyId\\\":999,"
                 + "\\\"aiAtp\\\":\\\"확인 사항\\\"}\"}}]}";
         server.expect(requestTo("https://api.openai.com/v1/chat/completions"))
