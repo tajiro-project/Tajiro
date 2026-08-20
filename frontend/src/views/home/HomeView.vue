@@ -392,12 +392,19 @@ function onScroll() {
   activeIndex.value = Math.round(track.scrollLeft / step);
 }
 
-function goBanner(index) {
+/** 스크롤만 옮긴다. 자동 전환이 쓰는 쪽 */
+function slideTo(index) {
   const track = trackRef.value;
   const step = bannerStep();
   if (!track || !step) return;
 
   track.scrollTo({ left: step * index, behavior: 'smooth' });
+}
+
+/** 사용자가 직접 넘긴 경우. 방금 봤으니 5초를 새로 센다 */
+function goBanner(index) {
+  slideTo(index);
+  startAuto();
 }
 
 function goPrev() {
@@ -414,7 +421,7 @@ function startAuto() {
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
   autoTimer = setInterval(() => {
-    goBanner((activeIndex.value + 1) % BANNERS.length);
+    slideTo((activeIndex.value + 1) % BANNERS.length);
   }, AUTO_INTERVAL);
 }
 
