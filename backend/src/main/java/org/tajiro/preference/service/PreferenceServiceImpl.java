@@ -45,7 +45,7 @@ public class PreferenceServiceImpl implements PreferenceService {
     public PreferenceDTO get(Long userId) {
         HousingPreferenceVO preference = preferenceMapper.findByUserId(userId);
         if (preference == null) {
-            throw new BusinessException(ErrorCode.PREFERENCE_NOT_FOUND);
+            return null;
         }
 
         return toDto(preference, preferenceMapper.findPrioritiesByUserId(userId));
