@@ -170,7 +170,12 @@
             @click="onCardClick(p)"
           >
             <span class="thumb">
-              <img v-if="p.rank" :src="MEDALS[p.rank]" :alt="`추천 ${p.rank}위`"" class="medal"/>
+              <img
+                v-if="p.rank"
+                :src="MEDALS[p.rank]"
+                :alt="`추천 ${p.rank}위`"
+                class="medal"
+              />
               <span v-if="p.transactionStatus === false" class="sold-overlay">
                 거래 완료
               </span>
