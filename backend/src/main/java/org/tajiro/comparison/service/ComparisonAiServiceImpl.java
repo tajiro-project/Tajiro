@@ -36,7 +36,7 @@ public class ComparisonAiServiceImpl implements ComparisonAiService {
 
     private static final String COMPARISON_WORKPLACE_PREFIX = "__COMPARE_WORKPLACE__:";
     private static final String SCORE_CONTEXT_PREFIX = "__PREFERENCE_SCORE_CONTEXT__:";
-    private static final String SCORE_CONTEXT_VERSION = "preference-score-v3";
+    private static final String SCORE_CONTEXT_VERSION = "preference-score-v4";
     private static final Set<String> SUPPORTED_PRIORITIES = Set.of(
             "COMMUTE",
             "COST",
@@ -296,6 +296,8 @@ public class ComparisonAiServiceImpl implements ComparisonAiService {
     private String buildScoreContextHash(HousingPreferenceVO preference) {
         String context = String.join("|",
                 SCORE_CONTEXT_VERSION,
+                valueOf(preference.getHousingTypes()),
+                valueOf(preference.getTradeTypes()),
                 valueOf(preference.getMinDeposit()),
                 valueOf(preference.getMaxDeposit()),
                 valueOf(preference.getMinMonthlyRent()),
@@ -304,9 +306,11 @@ public class ComparisonAiServiceImpl implements ComparisonAiService {
                 valueOf(preference.getMaxSellingPrice()),
                 valueOf(preference.getMinArea()),
                 valueOf(preference.getMaxArea()),
+                valueOf(preference.getFloorPreference()),
                 valueOf(preference.getMaxWorkplaceDistanceMeters()),
                 valueOf(preference.getDesiredInfraCategories()),
-                valueOf(preference.getDesiredAmenityCategories()));
+                valueOf(preference.getDesiredAmenityCategories()),
+                valueOf(preference.getHasCar()));
         try {
             byte[] digest = MessageDigest.getInstance("SHA-256")
                     .digest(context.getBytes(StandardCharsets.UTF_8));
