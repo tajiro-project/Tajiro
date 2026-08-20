@@ -20,6 +20,10 @@ public enum ErrorCode {
 
     // --- 매물 (Property) ---
     PROPERTY_NOT_FOUND(404, "PROP_404", "존재하지 않거나 삭제된 매물입니다."),
+    PROPERTY_IMAGE_NOT_FOUND(404, "PROP_IMAGE_404", "존재하지 않는 매물 이미지입니다."),
+    INVALID_IMAGE_FILE(400, "PROP_IMAGE_400", "지원하지 않거나 올바르지 않은 이미지 파일입니다."),
+    IMAGE_FILE_TOO_LARGE(413, "PROP_IMAGE_413", "이미지 파일은 10MB를 초과할 수 없습니다."),
+    IMAGE_STORAGE_FAILED(500, "PROP_IMAGE_500", "이미지를 저장하지 못했습니다."),
 
     // --- 인프라 (Infrastructure) ---
     INFRASTRUCTURE_NOT_FOUND(404, "INFRA_404", "해당 매물의 인프라 정보가 존재하지 않습니다."),
