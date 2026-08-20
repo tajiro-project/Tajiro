@@ -181,9 +181,9 @@ const KEEP_ALIVE_VIEWS = [
   justify-content: center;
   gap: 4px;
   max-width: 132px;
-  height: 34px;
+  height: 22px;
   width: auto;
-  padding: 0 10px;
+  padding: 0 8px;
   margin-left: auto;
   border: 0;
   border-radius: 999px;
