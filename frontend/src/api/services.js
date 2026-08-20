@@ -125,7 +125,7 @@ export const comparisonApi = {
       })
     ).data;
   },
-  analyze: async (propertyIds, workplace, priorities) => {
+  analyze: async (propertyIds) => {
     const sortedIds = [...(propertyIds ?? [])]
       .map(Number)
       .sort((a, b) => a - b);
@@ -134,9 +134,6 @@ export const comparisonApi = {
         '/comparisons/analyze',
         {
           propertyIds: sortedIds,
-          workplaceLat: workplace?.lat,
-          workplaceLng: workplace?.lng,
-          priorities,
         },
         { timeout: 35000 },
       )
