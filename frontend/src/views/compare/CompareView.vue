@@ -1177,11 +1177,7 @@ async function refreshAiCoaching() {
   refreshingCoaching.value = true;
   coachingError.value = '';
   try {
-    const updatedCoaching = await getCoaching(
-      currentPropertyIds.value,
-      activeWorkplace.value,
-      activePriorities.value,
-    );
+    const updatedCoaching = await getCoaching(currentPropertyIds.value);
     const updatedMetrics = await getMetrics(
       currentPropertyIds.value,
       activeWorkplace.value,
@@ -1216,11 +1212,9 @@ async function getMetrics(propertyIds, workplace, refreshMarketScore = true) {
   }
 }
 
-async function getCoaching(propertyIds, workplace, priorities) {
+async function getCoaching(propertyIds) {
   try {
-    return unwrapApiData(
-      await comparisonApi.analyze(propertyIds, workplace, priorities),
-    );
+    return unwrapApiData(await comparisonApi.analyze(propertyIds));
   } catch (error) {
     const message =
       error.response?.data?.message ?? AI_COACHING_UNAVAILABLE_MESSAGE;
