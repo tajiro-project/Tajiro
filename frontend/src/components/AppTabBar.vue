@@ -18,7 +18,7 @@
 </template>
 
 <script setup>
-import { Home, Heart, Building2, ArrowUpDown, User } from 'lucide-vue-next';
+import { Home, Bookmark, Building2, ArrowUpDown, User } from 'lucide-vue-next';
 
 defineProps({
   active: { type: String, default: 'home' }, // home | scrap | property | compare | my
@@ -26,7 +26,7 @@ defineProps({
 
 const tabs = [
   { key: 'home', label: '홈', to: '/home', icon: Home },
-  { key: 'scrap', label: '찜', to: '/favorites', icon: Heart },
+  { key: 'scrap', label: '스크랩', to: '/favorites', icon: Bookmark },
   { key: 'property', label: '매물', to: '/properties', icon: Building2 },
   { key: 'compare', label: '비교함', to: '/compare-box', icon: ArrowUpDown },
   { key: 'my', label: '마이', to: '/mypage', icon: User },

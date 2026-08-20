@@ -103,7 +103,7 @@ const routes = [
     path: '/favorites',
     name: 'favorites',
     component: () => import('@/views/favorite/FavoriteListView.vue'),
-    meta: { headerTitle: '스크랩한 매물' },
+    meta: { headerTitle: '스크랩 매물' },
   },
   {
     path: '/register',

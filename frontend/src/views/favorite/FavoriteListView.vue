@@ -1,8 +1,7 @@
 <template>
   <div class="favorite-list">
-
     <simplebar class="content">
-      <p class="count-label">찜한 매물 {{ items.length }}건</p>
+      <p class="count-label">스크랩 매물 {{ items.length }}건</p>
       <ul
         v-if="items.length"
         class="cards"
@@ -57,20 +56,14 @@
               class="heart-btn"
               type="button"
               :disabled="removingId === item.propertyId"
-              aria-label="찜 해제"
+              aria-label="스크랩 해제"
               @click.stop="removeFavorite(item)"
             >
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 20 20"
-                fill="none"
-              >
-                <path
-                  d="M10 17.2s-6.6-4-6.6-8.7c0-2.3 1.8-4 4-4 1.2 0 2.2.6 2.6 1.4.4-.8 1.4-1.4 2.6-1.4 2.2 0 4 1.7 4 4 0 4.7-6.6 8.7-6.6 8.7z"
-                  fill="#FFBC00"
-                />
-              </svg>
+              <Bookmark
+                :size="20"
+                fill="#FFBC00"
+                color="#FFBC00"
+              />
             </button>
           </div>
         </li>
@@ -92,6 +85,7 @@
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { favoriteApi } from '@/api/services';
+import { Bookmark } from 'lucide-vue-next';
 import simplebar from 'simplebar-vue';
 
 const PYEONG = 3.3058;
