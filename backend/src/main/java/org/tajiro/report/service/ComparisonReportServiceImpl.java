@@ -82,8 +82,8 @@ public class ComparisonReportServiceImpl implements ComparisonReportService {
                 .priorities(extractComparisonPriorities(
                         report.getPreferencePrioritiesJson()))
                 .createdAt(report.getCreatedAt())
-                .latestMarketSyncAt(
-                        comparisonReportMapper.findLatestMarketSyncAtByJson(propertyIdsJson))
+                .latestMarketCalculatedAt(
+                        comparisonReportMapper.findLatestMarketCalculatedAtByJson(propertyIdsJson))
                 .build();
     }
 

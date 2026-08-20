@@ -278,7 +278,24 @@
 
     <update id="updateEvaluation">
         UPDATE property
-        SET evaluation_score =
+        SET market_calculated_at =
+                CASE
+                    WHEN market_calculated_at IS NULL
+                        OR NOT (
+                            market_status &lt;=> #{status}
+                            AND (
+                                #{preserveExistingScore}
+                                OR (
+                                    evaluation_score &lt;=> #{evaluationScore}
+                                    AND market_reference_price &lt;=> #{referencePrice}
+                                    AND market_transaction_count &lt;=> #{transactionCount}
+                                    AND market_basis_level &lt;=> #{basisLevel}
+                                )
+                            )
+                        ) THEN NOW()
+                    ELSE market_calculated_at
+                END,
+            evaluation_score =
                 CASE
                     WHEN #{preserveExistingScore} THEN evaluation_score
                     ELSE #{evaluationScore}
@@ -298,12 +315,7 @@
                     WHEN #{preserveExistingScore} THEN market_basis_level
                     ELSE #{basisLevel}
                 END,
-            market_status = #{status},
-            market_calculated_at =
-                CASE
-                    WHEN #{preserveExistingScore} THEN market_calculated_at
-                    ELSE NOW()
-                END
+            market_status = #{status}
         WHERE id = #{propertyId}
     </update>
 
