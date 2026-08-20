@@ -1,6 +1,9 @@
 <template>
   <div class="pref-wizard">
-    <p v-if="isDemoMode" class="demo-banner">
+    <p
+      v-if="isDemoMode"
+      class="demo-banner"
+    >
       예시 화면이에요 · 실제 내 가치관 설정이 아니에요
     </p>
     <button
@@ -12,7 +15,10 @@
       마이페이지로
     </button>
     <!-- STEP 표시 + 진행 바 -->
-    <div class="step-head" data-tour="preferences-wizard">
+    <div
+      class="step-head"
+      data-tour="preferences-wizard"
+    >
       <p class="step-line">
         <span class="step-no"
           >STEP {{ step }} / {{ PREFERENCE_STEP_COUNT }}</span
@@ -31,10 +37,18 @@
     </div>
 
     <!-- STEP 1 — 이주·통근 정보 -->
-    <p v-if="isLoading" class="status-message" role="status">
+    <p
+      v-if="isLoading"
+      class="status-message"
+      role="status"
+    >
       저장된 설정을 불러오는 중입니다.
     </p>
-    <p v-else-if="errorMessage" class="status-message error" role="alert">
+    <p
+      v-else-if="errorMessage"
+      class="status-message error"
+      role="alert"
+    >
       {{ errorMessage }}
     </p>
 
@@ -43,7 +57,10 @@
       v-if="step === 1"
       class="content"
     > -->
-    <simplebar v-if="step === 1" class="content">
+    <simplebar
+      v-if="step === 1"
+      class="content"
+    >
       <div class="field">
         <label class="section-title"
           >선호 위치(직장 / 학교 등)<span class="req">*</span></label
@@ -75,9 +92,20 @@
       <div class="field">
         <label class="section-title">자차 보유 여부</label>
         <div class="check-row">
-          <label class="check-item" @click="pref.hasCar = true">
-            <span class="checkbox" :class="{ on: pref.hasCar }">
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <label
+            class="check-item"
+            @click="pref.hasCar = !pref.hasCar"
+          >
+            <span
+              class="checkbox"
+              :class="{ on: pref.hasCar }"
+            >
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 12 12"
+                fill="none"
+              >
                 <path
                   d="M2 6.5L4.7 9L10 3.5"
                   stroke="#545045"
@@ -87,28 +115,17 @@
                 />
               </svg>
             </span>
-            자차 보유 O
-          </label>
-          <label class="check-item" @click="pref.hasCar = false">
-            <span class="checkbox" :class="{ on: !pref.hasCar }">
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                <path
-                  d="M2 6.5L4.7 9L10 3.5"
-                  stroke="#545045"
-                  stroke-width="1.8"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-              </svg>
-            </span>
-            자차 보유 X
+            자차 보유 여부
           </label>
         </div>
       </div>
     </simplebar>
 
     <!-- STEP 2 — 희망 주거 조건 -->
-    <simplebar v-else-if="step === 2" class="content">
+    <simplebar
+      v-else-if="step === 2"
+      class="content"
+    >
       <div class="group">
         <p class="section-title">매물 유형</p>
         <div class="chips">
@@ -138,7 +155,10 @@
         </div>
       </div>
 
-      <div v-if="pref.tradeTypes.length" class="range-card">
+      <div
+        v-if="pref.tradeTypes.length"
+        class="range-card"
+      >
         <div
           v-if="
             pref.tradeTypes.includes('월세') || pref.tradeTypes.includes('전세')
@@ -158,7 +178,10 @@
           />
         </div>
 
-        <div v-if="pref.tradeTypes.includes('월세')" class="range-group">
+        <div
+          v-if="pref.tradeTypes.includes('월세')"
+          class="range-group"
+        >
           <p class="range-title">
             월세 <span class="range-value">{{ monthlyRentLabel }}</span>
           </p>
@@ -171,7 +194,10 @@
           />
         </div>
 
-        <div v-if="pref.tradeTypes.includes('매매')" class="range-group">
+        <div
+          v-if="pref.tradeTypes.includes('매매')"
+          class="range-group"
+        >
           <p class="range-title">
             매매가 <span class="range-value">{{ salePriceLabel }}</span>
           </p>
@@ -216,7 +242,10 @@
     </simplebar>
 
     <!-- STEP 3 — 인프라·편의시설 -->
-    <simplebar v-else-if="step === 3" class="content">
+    <simplebar
+      v-else-if="step === 3"
+      class="content"
+    >
       <div class="group">
         <p class="section-title">희망 인프라</p>
         <p class="caption">반경 2km 이내만 표시</p>
@@ -254,7 +283,10 @@
     </simplebar>
 
     <!-- STEP 4 — 가치관 우선순위 (0~3개 선택) -->
-    <simplebar v-else class="content">
+    <simplebar
+      v-else
+      class="content"
+    >
       <div class="priority-head">
         <p class="section-title big">주거 가치관 우선순위</p>
         <p class="caption">
@@ -269,14 +301,19 @@
           :class="{ on: priorityOrder(opt.criterion) }"
           @click="onTogglePriority(opt.criterion)"
         >
-          <span class="p-icon" v-html="opt.icon" />
+          <span
+            class="p-icon"
+            v-html="opt.icon"
+          />
           <span class="p-texts">
             <span class="p-title">{{ opt.title }}</span>
             <span class="p-sub">{{ opt.sub }}</span>
           </span>
-          <span v-if="priorityOrder(opt.criterion)" class="p-badge">{{
-            priorityOrder(opt.criterion)
-          }}</span>
+          <span
+            v-if="priorityOrder(opt.criterion)"
+            class="p-badge"
+            >{{ priorityOrder(opt.criterion) }}</span
+          >
         </button>
       </div>
     </simplebar>
@@ -341,10 +378,16 @@
         >
           <div class="quick-modal-head">
             <div>
-              <p id="quick-setup-title" class="quick-modal-title">
+              <p
+                id="quick-setup-title"
+                class="quick-modal-title"
+              >
                 어떤 조건으로 찾아볼까요?
               </p>
-              <p id="quick-setup-description" class="quick-modal-description">
+              <p
+                id="quick-setup-description"
+                class="quick-modal-description"
+              >
                 선택한 유형에 맞춰 나머지 가치관을 자동으로 설정해드려요.
               </p>
             </div>
@@ -374,13 +417,20 @@
                   {{ preset.description }}
                 </span>
               </span>
-              <span class="quick-preset-action" aria-hidden="true">
+              <span
+                class="quick-preset-action"
+                aria-hidden="true"
+              >
                 {{ activeQuickPreset === preset.key ? '적용 중' : '›' }}
               </span>
             </button>
           </div>
 
-          <p v-if="quickSetupError" class="quick-modal-error" role="alert">
+          <p
+            v-if="quickSetupError"
+            class="quick-modal-error"
+            role="alert"
+          >
             {{ quickSetupError }}
           </p>
         </div>
