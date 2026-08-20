@@ -3,6 +3,8 @@ package org.tajiro.seller.service;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.ObjectProvider;
+import org.tajiro.common.api.ErrorCode;
+import org.tajiro.exception.BusinessException;
 import org.tajiro.seller.domain.PropertyRegistrationVO;
 import org.tajiro.seller.dto.PropertyRegistrationRequest;
 import org.tajiro.seller.dto.PropertyRegistrationResponse;
@@ -18,6 +20,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PropertyRegistrationServiceImplTest {
@@ -59,6 +62,42 @@ class PropertyRegistrationServiceImplTest {
         PropertyRegisteredEvent event = (PropertyRegisteredEvent) events.get(0);
         assertEquals(101L, event.getPropertyId());
         assertEquals(77L, event.getBuildingId());
+    }
+
+    @Test
+    void sellerCanRegisterAnImageUploadedByTheSameAccount() {
+        StubPropertyRegistrationMapper mapper = new StubPropertyRegistrationMapper();
+        PropertyRegistrationServiceImpl service = new PropertyRegistrationServiceImpl(
+                mapper,
+                new FixedObjectProvider<>(null),
+                event -> { }
+        );
+        PropertyRegistrationRequest request = validRequest();
+        String imageUrl = "/api/property-images/3-00000000-0000-0000-0000-000000000000.jpg";
+        request.setImageUrls(List.of(imageUrl));
+
+        service.register(3L, request);
+
+        assertEquals(List.of(imageUrl), mapper.savedImageUrls);
+    }
+
+    @Test
+    void sellerCannotRegisterAnotherSellersInternalImage() {
+        PropertyRegistrationServiceImpl service = new PropertyRegistrationServiceImpl(
+                new StubPropertyRegistrationMapper(),
+                new FixedObjectProvider<>(null),
+                event -> { }
+        );
+        PropertyRegistrationRequest request = validRequest();
+        request.setImageUrls(List.of(
+                "/api/property-images/99-00000000-0000-0000-0000-000000000000.jpg"));
+
+        BusinessException exception = assertThrows(
+                BusinessException.class,
+                () -> service.register(3L, request)
+        );
+
+        assertEquals(ErrorCode.INVALID_INPUT_VALUE, exception.getResponseCode());
     }
 
     private PropertyRegistrationRequest validRequest() {

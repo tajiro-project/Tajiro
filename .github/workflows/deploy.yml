@@ -61,6 +61,8 @@ jobs:
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
 
           KAKAO_REST_API_KEY: ${{ secrets.KAKAO_REST_API_KEY }}
+          BUILDING_LEDGER_SERVICE_KEY: ${{ secrets.BUILDING_LEDGER_SERVICE_KEY }}
+
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 
           MARKET_API_SERVICE_KEY: ${{ secrets.MARKET_API_SERVICE_KEY }}
@@ -74,7 +76,7 @@ jobs:
           app.api-base-package=org.tajiro
 
           # ==========================================
-          # DB
+          # Database
           # ==========================================
           db.driver-class-name=net.sf.log4jdbc.sql.jdbcapi.DriverSpy
           db.url=$DB_URL
@@ -88,9 +90,10 @@ jobs:
           jwt.access-token-validity-seconds=3600
 
           # ==========================================
-          # Kakao
+          # Kakao / Building Ledger
           # ==========================================
           kakao.rest-api-key=$KAKAO_REST_API_KEY
+          building-ledger.service-key=$BUILDING_LEDGER_SERVICE_KEY
           kakao.local-base-url=https://dapi.kakao.com
 
           # ==========================================
@@ -98,7 +101,6 @@ jobs:
           # ==========================================
           ai.api-key=$OPENAI_API_KEY
           ai.model=gpt-4o-mini
-
           ai.api-url=https://api.openai.com/v1/embeddings
           ai.embedding-model=text-embedding-3-small
 
@@ -125,7 +127,6 @@ jobs:
           market.sync.history-months=24
           market.sync.refresh-months=3
 
-          # 매일 오전 4시 10분
           market.sync.cron=0 10 4 * * *
           market.sync.zone=Asia/Seoul
 
@@ -140,13 +141,20 @@ jobs:
           # Policy Batch
           # ==========================================
           policy.sync.enabled=false
-
-          # 매일 오전 4시 10분
           policy.sync.cron=0 10 4 * * *
           policy.sync.zone=Asia/Seoul
-
-          # LLM 한 번에 요약할 정책 수
           policy.summary.batch-size=20
+
+          # ==========================================
+          # AWS S3 - Property Image Storage
+          # ==========================================
+          property.image.storage-type=s3
+          property.image.s3.bucket=tajiro-property-images-709444203951-ap-northeast-2-an
+          property.image.s3.region=ap-northeast-2
+          property.image.s3.prefix=property-images
+
+          spring.servlet.multipart.max-file-size=10MB
+          spring.servlet.multipart.max-request-size=11MB
           EOF
 
       # ==========================================
@@ -165,7 +173,6 @@ jobs:
         working-directory: frontend
         env:
           VITE_KAKAO_MAP_KEY: ${{ secrets.VITE_KAKAO_MAP_KEY }}
-
         run: |
           umask 077
           echo "VITE_KAKAO_MAP_KEY=$VITE_KAKAO_MAP_KEY" > .env.production
@@ -210,9 +217,7 @@ jobs:
           sudo rm -rf /opt/tomcat/work/Catalina/localhost/ROOT
 
           sudo cp "$WAR_FILE" /opt/tomcat/webapps/ROOT.war
-
-          sudo chown tomcat:tomcat \
-            /opt/tomcat/webapps/ROOT.war
+          sudo chown tomcat:tomcat /opt/tomcat/webapps/ROOT.war
 
           sudo systemctl start tomcat
 
@@ -222,9 +227,7 @@ jobs:
       - name: Deploy frontend
         run: |
           sudo rm -rf /var/www/tajiro/*
-
-          sudo cp -r frontend/dist/. \
-            /var/www/tajiro/
+          sudo cp -r frontend/dist/. /var/www/tajiro/
 
           sudo find /var/www/tajiro \
             -type d \
