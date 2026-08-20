@@ -522,7 +522,7 @@
             aria-label="찜"
             @click="toggleFavorite"
           >
-            <Heart
+            <Bookmark
               :size="20"
               :fill="isFavorite ? '#ffbc00' : 'none'"
               :color="isFavorite ? '#ffbc00' : '#8a8d8f'"
@@ -585,7 +585,7 @@ import {
   Phone,
   MessageSquare,
   Info,
-  Heart,
+  Bookmark,
   Landmark,
   Lock,
   Banknote,
