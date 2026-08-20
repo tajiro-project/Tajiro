@@ -702,8 +702,9 @@ function updateActiveDot(newKey, oldKey) {
 function handleIdle() {
   if (!map) return;
 
-  // 지도가 멈춘 뒤라 화면 좌표가 정확하다. 줌이 바뀌었으면 묶음도 다시 계산된다
-  redrawOverlays();
+  // 줌에 따라 묶음이 달라지는 건 매물 목록뿐이다.
+  // 지도가 멈춘 뒤라 화면 좌표가 정확하다
+  if (props.mode === 'list') redrawOverlays();
 
   const bounds = map.getBounds();
   const sw = bounds.getSouthWest();
