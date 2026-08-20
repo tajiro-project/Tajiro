@@ -147,6 +147,15 @@ export const comparisonApi = {
 // ---------- seller ----------
 export const sellerApi = {
   create: async (body) => (await client.post('/seller/properties', body)).data,
+  uploadImage: async (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await client.post('/property-images', formData, {
+      timeout: 30000,
+    });
+    return response.data?.data ?? response.data;
+  },
   myProperties: async (params = {}) =>
     (await client.get('/seller/properties', { params })).data,
   myProperty: async (id) => (await client.get(`/seller/properties/${id}`)).data,

@@ -330,12 +330,49 @@
     <div v-else class="content">
       <div class="field">
         <label class="section-title">매물 사진</label>
-        <button class="photo-add" @click="addPhoto">
+        <input
+          ref="photoInput"
+          class="photo-input"
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          multiple
+          @change="handlePhotoSelection"
+        />
+        <button
+          type="button"
+          class="photo-add"
+          :disabled="isUploadingPhotos || form.photos.length >= MAX_PHOTO_COUNT"
+          @click="openPhotoPicker"
+        >
           <span class="plus">+</span>
-          <span class="photo-label"
-            >사진 추가 ({{ form.photos.length }}/10)</span
-          >
+          <span class="photo-label">
+            {{
+              isUploadingPhotos
+                ? '업로드 중...'
+                : `사진 추가 (${form.photos.length}/${MAX_PHOTO_COUNT})`
+            }}
+          </span>
         </button>
+        <p v-if="photoError" class="photo-error">{{ photoError }}</p>
+        <div v-if="form.photos.length" class="photo-grid">
+          <div
+            v-for="(photo, index) in form.photos"
+            :key="photo"
+            class="photo-preview"
+          >
+            <img :src="photo" :alt="`매물 사진 ${index + 1}`" />
+            <span v-if="index === 0" class="photo-main-badge">대표</span>
+            <button
+              type="button"
+              class="photo-remove"
+              :aria-label="`매물 사진 ${index + 1} 삭제`"
+              :disabled="isUploadingPhotos"
+              @click="removePhoto(index)"
+            >
+              ×
+            </button>
+          </div>
+        </div>
       </div>
       <div class="field">
         <label class="section-title">매물 상세 설명</label>
@@ -354,7 +391,12 @@
       </button>
       <button
         class="btn-cta"
-        :disabled="!canNext || isSubmitting || (isEditMode && step === 4)"
+        :disabled="
+          !canNext ||
+          isSubmitting ||
+          isUploadingPhotos ||
+          (isEditMode && step === 4)
+        "
         @click="onNext"
       >
         {{
@@ -438,6 +480,17 @@ const isAddressOpen = ref(false);
 const isDongOpen = ref(false);
 const dongOptions = ref([]);
 const isSubmitting = ref(false);
+const photoInput = ref(null);
+const isUploadingPhotos = ref(false);
+const photoError = ref('');
+
+const MAX_PHOTO_COUNT = 10;
+const MAX_PHOTO_SIZE = 10 * 1024 * 1024;
+const ALLOWED_PHOTO_TYPES = new Set([
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+]);
 
 onMounted(loadPropertyForEdit);
 
@@ -567,8 +620,68 @@ function openAddressFromDong() {
   isAddressOpen.value = true;
 }
 
-function addPhoto() {
-  if (form.photos.length < 10) form.photos.push(`photo-${Date.now()}`);
+function openPhotoPicker() {
+  if (isUploadingPhotos.value || form.photos.length >= MAX_PHOTO_COUNT) return;
+
+  photoError.value = '';
+  if (photoInput.value) {
+    photoInput.value.value = '';
+    photoInput.value.click();
+  }
+}
+
+async function handlePhotoSelection(event) {
+  const files = Array.from(event.target.files ?? []);
+  event.target.value = '';
+  if (files.length === 0) return;
+
+  const remainingCount = MAX_PHOTO_COUNT - form.photos.length;
+  if (files.length > remainingCount) {
+    photoError.value = `사진은 최대 ${MAX_PHOTO_COUNT}장까지 등록할 수 있어요. (추가 가능 ${remainingCount}장)`;
+    return;
+  }
+
+  const invalidTypeFile = files.find(
+    (file) => !ALLOWED_PHOTO_TYPES.has(file.type),
+  );
+  if (invalidTypeFile) {
+    photoError.value = `${invalidTypeFile.name}: JPEG, PNG, WebP 파일만 등록할 수 있어요.`;
+    return;
+  }
+
+  const oversizedFile = files.find((file) => file.size > MAX_PHOTO_SIZE);
+  if (oversizedFile) {
+    photoError.value = `${oversizedFile.name}: 파일 크기는 10MB 이하여야 해요.`;
+    return;
+  }
+
+  isUploadingPhotos.value = true;
+  photoError.value = '';
+
+  try {
+    for (const file of files) {
+      try {
+        const uploadedImage = await sellerApi.uploadImage(file);
+        if (!uploadedImage?.imageUrl) {
+          throw new Error('업로드 응답에 이미지 URL이 없습니다.');
+        }
+        form.photos.push(uploadedImage.imageUrl);
+      } catch (error) {
+        photoError.value =
+          error.response?.data?.message ??
+          `${file.name} 업로드에 실패했어요. 잠시 후 다시 시도해 주세요.`;
+        break;
+      }
+    }
+  } finally {
+    isUploadingPhotos.value = false;
+  }
+}
+
+function removePhoto(index) {
+  if (isUploadingPhotos.value) return;
+  form.photos.splice(index, 1);
+  photoError.value = '';
 }
 
 function buildFloorInfo() {
@@ -609,6 +722,8 @@ function buildPayload() {
 }
 
 async function onNext() {
+  if (isUploadingPhotos.value) return;
+
   if (step.value < 4) {
     go(step.value + 1);
     return;
@@ -859,6 +974,70 @@ function moneyHint(manwon) {
   border-radius: 14px;
   background: var(--white);
   cursor: pointer;
+}
+.photo-add:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+.photo-input {
+  display: none;
+}
+.photo-error {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #d32f2f;
+}
+.photo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.photo-preview {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 1;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #f5f5f5;
+}
+.photo-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.photo-main-badge {
+  position: absolute;
+  left: 6px;
+  bottom: 6px;
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.68);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+}
+.photo-remove {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 25px;
+  height: 25px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.68);
+  color: #fff;
+  font-size: 19px;
+  line-height: 1;
+  cursor: pointer;
+}
+.photo-remove:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 .plus {
   font-size: 20px;
