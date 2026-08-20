@@ -10,6 +10,8 @@ import org.tajiro.auth.dto.LoginRequest;
 import org.tajiro.auth.dto.LoginResponse;
 import org.tajiro.auth.dto.RegisterRequest;
 import org.tajiro.auth.dto.RegisterResponse;
+import org.tajiro.auth.dto.UserInfoResponse;
+import org.tajiro.auth.dto.UserInfoUpdateRequest;
 import org.tajiro.auth.mapper.AuthMapper;
 import org.tajiro.common.api.ErrorCode;
 import org.tajiro.exception.BusinessException;
@@ -108,6 +110,21 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     public void withdraw(Long userId) {
         authMapper.softDeleteUser(userId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public UserInfoResponse getMyInfo(Long userId) {
+        return authMapper.findMyInfoById(userId);
+    }
+
+    @Override
+    @Transactional
+    public void updateMyInfo(Long userId, UserInfoUpdateRequest request) {
+        if (request == null || request.getName() == null || request.getName().isBlank()) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
+        }
+        authMapper.updateUserInfo(userId, request.getName(), request.getPhone(), request.getAgencyName());
     }
 
     @Override

@@ -3,6 +3,7 @@ package org.tajiro.auth.mapper;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.tajiro.auth.domain.UserVO;
+import org.tajiro.auth.dto.UserInfoResponse;
 
 import java.util.List;
 
@@ -37,4 +38,13 @@ public interface AuthMapper {
 
     // 9. 온보딩 투어 완료 여부(비트열) 갱신
     void updateOnboardingSeen(@Param("userId") Long userId, @Param("onboardingSeen") String onboardingSeen);
+
+    // 10. ID로 내 정보(이름/연락처/중개사무소명) 조회
+    UserInfoResponse findMyInfoById(@Param("userId") Long userId);
+
+    // 11. 내 정보(이름/연락처/중개사무소명) 수정
+    void updateUserInfo(@Param("userId") Long userId,
+                         @Param("name") String name,
+                         @Param("phone") String phone,
+                         @Param("agencyName") String agencyName);
 }
