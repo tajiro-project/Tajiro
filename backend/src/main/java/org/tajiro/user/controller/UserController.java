@@ -4,6 +4,7 @@
 package org.tajiro.user.controller;
 
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -12,6 +13,8 @@ import org.tajiro.auth.service.AuthService;
 import org.tajiro.common.api.ApiResponse;
 import org.tajiro.common.api.ErrorCode;
 import org.tajiro.exception.BusinessException;
+import org.tajiro.auth.dto.UserInfoResponse;
+import org.tajiro.auth.dto.UserInfoUpdateRequest;
 import org.tajiro.user.dto.OnboardingTourRequest;
 import org.tajiro.user.dto.OnboardingTourResponse;
 import org.tajiro.user.dto.ProfileUpdateResponse;
@@ -30,6 +33,30 @@ public class UserController {
 
     private final UserProfileService userProfileService;
     private final AuthService authService;
+
+    @GetMapping
+    @ApiOperation(value = "내 정보(이름·연락처·중개사무소명) 조회")
+    public ResponseEntity<ApiResponse<UserInfoResponse>> getMyInfo(
+            @ApiIgnore @AuthenticationPrincipal Long userId) {
+        if (userId == null) {
+            throw new BusinessException(ErrorCode.AUTH_REQUIRED);
+        }
+
+        return ResponseEntity.ok(ApiResponse.success(authService.getMyInfo(userId)));
+    }
+
+    @PutMapping
+    @ApiOperation(value = "내 정보(이름·연락처·중개사무소명) 수정")
+    public ResponseEntity<ApiResponse<Void>> updateMyInfo(
+            @ApiIgnore @AuthenticationPrincipal Long userId,
+            @RequestBody UserInfoUpdateRequest request) {
+        if (userId == null) {
+            throw new BusinessException(ErrorCode.AUTH_REQUIRED);
+        }
+
+        authService.updateMyInfo(userId, request);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
 
     @GetMapping("/profile")
     public ResponseEntity<ApiResponse<UserProfileDTO>> getProfile(@ApiIgnore @AuthenticationPrincipal Long userId) {

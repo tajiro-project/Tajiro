@@ -81,4 +81,32 @@
         WHERE id = #{userId}
     </update>
 
+    <!-- 10. ID로 사용자 조회 -->
+    <select id="findById" resultType="UserVO">
+        SELECT
+            id,
+            email,
+            password_hash AS passwordHash,
+            name,
+            role,
+            phone,
+            agency_name   AS agencyName,
+            provider,
+            status,
+            created_at    AS createdAt,
+            deleted_at    AS deletedAt,
+            onboarding_seen AS onboardingSeen
+        FROM users
+        WHERE id = #{userId}
+    </select>
+
+    <!-- 11. 내 정보(이름/연락처/중개사무소명) 수정 -->
+    <update id="updateUserInfo">
+        UPDATE users
+        SET name = #{name},
+            phone = #{phone},
+            agency_name = #{agencyName}
+        WHERE id = #{userId}
+    </update>
+
 </mapper>
