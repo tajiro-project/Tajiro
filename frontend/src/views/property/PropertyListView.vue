@@ -599,6 +599,7 @@
     :initial-location="
       locationPickerMode === 'header' ? filter.workplace : draft.workplace
     "
+    :search-placeholder="locationPickerPlaceholder"
     @close="closeLocationPicker"
     @select="handleLocationSelect"
   />
@@ -1251,6 +1252,13 @@ const currentLocationLabel = computed(() => {
   const isCoordinate = /^-?\d+(\.\d+)?\s*,\s*-?\d+(\.\d+)?$/.test(label);
 
   return isCoordinate ? '현재 선택 위치' : label || '매물 검색 결과';
+});
+
+const locationPickerPlaceholder = computed(() => {
+  const workplace =
+    locationPickerMode.value === 'header' ? filter.workplace : draft.workplace;
+
+  return workplace?.name || workplace?.address || undefined;
 });
 
 watch(

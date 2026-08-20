@@ -32,7 +32,7 @@
             ref="searchInput"
             v-model.trim="query"
             type="search"
-            placeholder="장소 또는 주소 검색 (예: 강남역)"
+            :placeholder="searchPlaceholder"
             aria-label="장소 또는 주소"
           />
           <button type="submit" :disabled="loading || !query">검색</button>
@@ -100,6 +100,10 @@ const props = defineProps({
   initialLocation: {
     type: Object,
     default: null,
+  },
+  searchPlaceholder: {
+    type: String,
+    default: '장소 또는 주소 검색 (예: 강남역)',
   },
 });
 
@@ -176,6 +180,10 @@ async function initializeMap() {
     }
 
     updatePosition(initial.lat, initial.lng, props.initialLocation?.name ?? '');
+
+    if (!hasInitialCoordinates() && initialLocationLabel()) {
+      moveToInitialAddress(initialLocationLabel());
+    }
     await nextTick();
     map.relayout();
     map.setCenter(center);
@@ -185,6 +193,52 @@ async function initializeMap() {
   } finally {
     loading.value = false;
   }
+}
+
+function hasInitialCoordinates() {
+  return (
+    Number.isFinite(Number(props.initialLocation?.lat)) &&
+    Number.isFinite(Number(props.initialLocation?.lng))
+  );
+}
+
+function initialLocationLabel() {
+  return props.initialLocation?.address || props.initialLocation?.name || '';
+}
+
+function moveToInitialAddress(address) {
+  if (!address || !geocoder || !places || !map) return;
+
+  geocoder.addressSearch(address, (results, status) => {
+    if (status === window.kakao.maps.services.Status.OK && results[0]) {
+      moveMapToSearchResult(results[0], props.initialLocation?.name || address);
+      return;
+    }
+
+    places.keywordSearch(address, (placeResults, placeStatus) => {
+      if (
+        placeStatus !== window.kakao.maps.services.Status.OK ||
+        !placeResults.length
+      ) {
+        return;
+      }
+
+      moveMapToSearchResult(
+        placeResults[0],
+        props.initialLocation?.name || address,
+      );
+    });
+  });
+}
+
+function moveMapToSearchResult(result, preferredName) {
+  const lat = Number(result.y);
+  const lng = Number(result.x);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+
+  const position = new window.kakao.maps.LatLng(lat, lng);
+  map.setCenter(position);
+  updatePosition(lat, lng, preferredName);
 }
 
 function updatePosition(lat, lng, preferredName = '') {
