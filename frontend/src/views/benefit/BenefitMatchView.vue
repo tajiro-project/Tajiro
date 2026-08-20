@@ -3,7 +3,6 @@
     <simplebar
       ref="scrollAreaRef"
       class="scroll-area"
-      :class="{ dimmed: needProfile }"
     >
       <!-- 탭 -->
       <div class="tabs">
@@ -225,51 +224,19 @@
       </div>
     </Teleport>
 
-    <!-- 12-1 내 정보 입력 필요 모달 -->
-    <Teleport to="body">
-      <div v-if="isActive && needProfile" class="modal-overlay">
-        <div class="modal">
-          <span class="m-icon">
-            <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-              <rect
-                x="5"
-                y="2.5"
-                width="12"
-                height="17"
-                rx="2"
-                stroke="#a8842c"
-                stroke-width="1.6"
-              />
-              <path
-                d="M8.5 7h5M8.5 10.5h5M8.5 14h3"
-                stroke="#a8842c"
-                stroke-width="1.4"
-                stroke-linecap="round"
-              />
-            </svg>
-          </span>
-          <p class="m-title">내 정보 입력이 필요해요</p>
-          <p class="m-text">
-            맞춤 청년 정책/금융 상품을 찾으려면<br />소득·나이·지역 정보가
-            필요해요.<br />지금 입력하시겠어요?
-          </p>
-          <div class="m-actions">
-            <button class="m-later" @click="$router.push('/home')">
-              다음에
-            </button>
-            <button class="m-go" @click="$router.push('/profile-setup')">
-              입력하러 가기
-            </button>
-          </div>
-        </div>
-      </div>
-    </Teleport>
+    <KakaoLocation
+      :open="isLocationPickerOpen"
+      :initial-location="preferredLocation"
+      @close="isLocationPickerOpen = false"
+      @select="updatePreferredRegion"
+    />
   </div>
 </template>
 
 <script setup>
 import {
   computed,
+  inject,
   nextTick,
   onActivated,
   onBeforeUnmount,
@@ -281,6 +248,8 @@ import {
 import { onBeforeRouteLeave } from 'vue-router';
 import simplebar from 'simplebar-vue';
 import { financeApi, policyApi, userApi } from '@/api/services';
+import { getApiErrorMessage } from '@/api/client';
+import KakaoLocation from '@/components/KakaoLocation.vue';
 
 defineOptions({ name: 'BenefitMatchView' });
 
@@ -301,12 +270,13 @@ const scrollAreaRef = ref(null);
 const filterDropdownStyle = ref({});
 const policies = ref([]);
 const products = ref([]);
-const needProfile = ref(false);
-const isActive = ref(false);
+const isLocationPickerOpen = ref(false);
+const preferredLocation = ref(null);
 const currentPage = ref(1);
 const savedScrollTop = ref(0);
 const reloadOnActivate = ref(false);
 const pageSize = 5;
+const benefitHeader = inject('benefitHeader');
 const financeFilterGroups = [
   {
     key: 'transaction',
@@ -354,22 +324,30 @@ const selectedTargetSummary = computed(() => {
   return `${count}개 선택`;
 });
 
+const currentLocationLabel = computed(() => {
+  const location = preferredLocation.value;
+
+  if (!location) return '선호 지역';
+
+  const label = location.name || location.address || '';
+  const isCoordinate = /^-?\d+(\.\d+)?\s*,\s*-?\d+(\.\d+)?$/.test(label);
+
+  return isCoordinate ? '현재 선택 위치' : label || '선호 지역';
+});
+
 onMounted(async () => {
-  await checkProfile();
+  await loadPreferredRegion();
   await loadMatches();
 });
 
 onActivated(async () => {
-  isActive.value = true;
   document.addEventListener('pointerdown', closeFilterOnOutsideClick);
   window.addEventListener('resize', updateFilterDropdownPosition);
 
   if (reloadOnActivate.value) {
     reloadOnActivate.value = false;
-    await checkProfile();
+    await loadPreferredRegion();
     await loadMatches();
-  } else if (needProfile.value) {
-    await checkProfile();
   }
 
   await nextTick();
@@ -380,7 +358,7 @@ onActivated(async () => {
 });
 
 onDeactivated(() => {
-  isActive.value = false;
+  isLocationPickerOpen.value = false;
   document.removeEventListener('pointerdown', closeFilterOnOutsideClick);
   window.removeEventListener('resize', updateFilterDropdownPosition);
   filtersExpanded.value = false;
@@ -406,9 +384,33 @@ onBeforeUnmount(() => {
   window.removeEventListener('resize', updateFilterDropdownPosition);
 });
 
-async function checkProfile() {
+async function loadPreferredRegion() {
   const profile = await userApi.getProfile();
-  needProfile.value = !profile || !profile.targetRegion || !profile.birthDate;
+  preferredLocation.value = profile?.targetRegion
+    ? { name: profile.targetRegion, address: profile.targetRegion }
+    : null;
+}
+
+async function updatePreferredRegion(location) {
+  const targetRegion = location.address || location.name;
+  if (!targetRegion) return;
+
+  try {
+    await userApi.updateProfile({
+      targetRegion,
+      target_sgg_code: location.sggCode ?? '',
+    });
+    preferredLocation.value = { ...location, name: targetRegion };
+    isLocationPickerOpen.value = false;
+    await loadMatches();
+  } catch (error) {
+    window.alert(
+      getApiErrorMessage(
+        error,
+        '선호 지역 저장에 실패했어요. 잠시 후 다시 시도해주세요.',
+      ),
+    );
+  }
 }
 
 async function loadMatches() {
@@ -592,6 +594,19 @@ watch(
 );
 
 watch(
+  () => benefitHeader?.locationPickerRequestId,
+  () => {
+    isLocationPickerOpen.value = true;
+  },
+);
+
+watch(
+  currentLocationLabel,
+  (label) => benefitHeader?.setLocationLabel(label),
+  { immediate: true },
+);
+
+watch(
   [tab, keyword, selectedTargetCodes, selectedFinanceFilters],
   () => {
     currentPage.value = 1;
@@ -617,14 +632,6 @@ function shortAmount(v) {
   display: flex;
   flex-direction: column;
   background: var(--bg);
-}
-.edit-badge {
-  padding: 6px 12px;
-  border-radius: 8px;
-  background: #454138;
-  color: #fff;
-  font-size: 11.5px;
-  font-weight: 700;
 }
 .scroll-area {
   flex: 1;
@@ -953,71 +960,6 @@ function shortAmount(v) {
   background: var(--yellow-tint);
   color: #6b5300;
   font-size: 11.5px;
-  font-weight: 800;
-}
-/* 12-1 모달 */
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 120;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(33, 30, 24, 0.5);
-  padding: 24px;
-}
-.modal {
-  width: 100%;
-  max-width: 300px;
-  background: var(--white);
-  border-radius: 20px;
-  padding: 28px 20px 20px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-}
-.m-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background: var(--yellow-tint);
-}
-.m-title {
-  margin-top: 16px;
-  font-size: 16px;
-  font-weight: 900;
-}
-.m-text {
-  margin-top: 10px;
-  font-size: 12.5px;
-  line-height: 1.6;
-  color: var(--kb-gray);
-}
-.m-actions {
-  display: flex;
-  gap: 8px;
-  width: 100%;
-  margin-top: 20px;
-}
-.m-later {
-  flex: 0 0 84px;
-  height: 44px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: var(--white);
-  font-size: 13.5px;
-  font-weight: 700;
-}
-.m-go {
-  flex: 1;
-  height: 44px;
-  border-radius: 12px;
-  background: var(--kb-yellow-header);
-  font-size: 13.5px;
   font-weight: 800;
 }
 .pagination {

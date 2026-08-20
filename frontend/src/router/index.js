@@ -54,14 +54,14 @@ const routes = [
     path: '/benefits/policies',
     name: 'policy-match',
     component: () => import('@/views/benefit/BenefitMatchView.vue'),
-    meta: { headerTitle: '정책 · 금융 추천', headerAction: 'edit-profile' },
+    meta: { headerTitle: '정책 · 금융 추천', headerAction: 'preferred-region' },
   }, // 12-1 / 12-2
   {
     path: '/benefits/kb',
     name: 'kb-match',
     component: () => import('@/views/benefit/BenefitMatchView.vue'),
     props: { initialTab: 'kb' },
-    meta: { headerTitle: '정책 · 금융 추천', headerAction: 'edit-profile' },
+    meta: { headerTitle: '정책 · 금융 추천', headerAction: 'preferred-region' },
   }, // 12-2 KB
   {
     path: '/properties/:id',

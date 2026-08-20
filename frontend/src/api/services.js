@@ -7,6 +7,10 @@ export const userApi = {
     const response = await client.get('/users/me/profile');
     return response.data?.data ?? response.data;
   },
+  updateProfile: async (profile) => {
+    const response = await client.put('/users/me/profile', profile);
+    return response.data?.data ?? response.data;
+  },
 };
 
 // ---------- preference ----------
