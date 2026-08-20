@@ -24,6 +24,13 @@ import iconApartment from '@/assets/img/pin/apartment.svg?raw';
 import iconOfficetel from '@/assets/img/pin/officetel.svg?raw';
 import iconOneroom from '@/assets/img/pin/oneroom.svg?raw';
 import iconHouse from '@/assets/img/pin/house.svg?raw';
+import iconWorkplaceFlag from '@/assets/img/pin/workplace-flag.svg?raw';
+
+/**
+ * 깃발 SVG 는 깃대가 왼쪽에 치우쳐 있다.
+ * 깃대 밑동(viewBox 기준 x≈155/512)이 좌표에 오도록 앵커를 맞춘다.
+ */
+const REFERENCE_X_ANCHOR = 0.303;
 
 // 매물 유형별 핀 배경(fill), 테두리(line), 아이콘 색(ink)
 const PIN_TYPES = {
@@ -282,13 +289,7 @@ function createReferenceLocationElement() {
   element.className = 'reference-location-marker';
   element.setAttribute('aria-hidden', 'true');
 
-  const pole = document.createElement('span');
-  pole.className = 'reference-location-pole';
-
-  const flag = document.createElement('span');
-  flag.className = 'reference-location-flag';
-
-  element.append(pole, flag);
+  element.innerHTML = iconWorkplaceFlag;
 
   return element;
 }
@@ -603,6 +604,7 @@ function redrawOverlays() {
     const overlay = new window.kakao.maps.CustomOverlay({
       position,
       content: createReferenceLocationElement(),
+      xAnchor: REFERENCE_X_ANCHOR,
       yAnchor: 1,
       zIndex: 20,
     });
@@ -806,7 +808,7 @@ onUnmounted(() => {
 :deep(.property-pin.selected) {
   transform: scale(1.12);
   transform-origin: bottom center;
-  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.32));
+  filter: drop-shadow(0 4px 9px rgba(0, 0, 0, 0.55));
 }
 
 :deep(.pin-icon) {
@@ -828,33 +830,19 @@ onUnmounted(() => {
 
 :deep(.reference-location-marker) {
   position: relative;
-  width: 24px;
-  height: 32px;
+  width: 44px;
+  height: 44px;
   padding: 0;
   border: 0;
   background: transparent;
-  filter: drop-shadow(0 1px 1px rgba(51, 48, 42, 0.2));
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.28));
   pointer-events: none;
 }
 
-:deep(.reference-location-pole) {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  width: 2px;
-  height: 32px;
-  transform: translateX(-50%);
-  background: #161616;
-}
-
-:deep(.reference-location-flag) {
-  position: absolute;
-  top: 3px;
-  left: 50%;
-  width: 18px;
-  height: 12px;
-  background: #e91608;
-  clip-path: polygon(0 0, 100% 50%, 0 100%);
+:deep(.reference-location-marker svg) {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 /* 배지는 박스 밖으로 나가지만 요소 너비는 44px 그대로라 핀 끝점이 안 밀린다 */
