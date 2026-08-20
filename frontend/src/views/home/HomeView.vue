@@ -137,222 +137,195 @@
       <section class="banner-carousel">
         <p class="section-title">안전과 혜택도 함께 확인하세요</p>
         <div class="banner-viewport">
-          <div
-            ref="trackRef"
-            class="banner-track"
-            @scroll.passive="onScroll"
-            @pointerdown="pauseAuto"
-            @pointerup="resumeAuto"
-            @pointercancel="resumeAuto"
-          >
-            <div class="banner">
-              <section class="safety-card">
-                <p class="safety-title">
-                  <ShieldCheck :size="16" :stroke-width="1.8" color="#545045" />
-                  안전까지 확인하고 이사하세요
-                </p>
+        <div
+          ref="trackRef"
+          class="banner-track"
+          @scroll.passive="onScroll"
+          @pointerdown="pauseAuto"
+          @pointerup="resumeAuto"
+          @pointercancel="resumeAuto"
+        >
+          <div class="banner">
+            <section class="safety-card">
+              <p class="safety-title">
+              <ShieldCheck :size="16" :stroke-width="1.8" color="#545045" />
+              안전까지 확인하고 이사하세요
+            </p>
 
-                <ul class="safety-list">
-                  <li class="safety-item">
-                    <span class="safety-icon">
-                      <svg
-                        width="18"
-                        height="18"
-                        viewBox="0 0 18 18"
-                        fill="none"
-                      >
-                        <rect
-                          x="2"
-                          y="6"
-                          width="10"
-                          height="7"
-                          rx="1.5"
-                          stroke="#60584c"
-                          stroke-width="1.4"
-                        />
-                        <path
-                          d="M12 8.5l4-2v6l-4-2"
-                          stroke="#60584c"
-                          stroke-width="1.4"
-                          stroke-linejoin="round"
-                        />
-                      </svg>
-                    </span>
-                    <span class="safety-texts">
-                      <span class="safety-item-title">집 근처 치안</span>
-                      <span class="safety-item-sub"
-                        >주변 CCTV 개수를 확인해요</span
-                      >
-                    </span>
-                  </li>
-                  <li class="safety-item">
-                    <span class="safety-icon">
-                      <svg
-                        width="18"
-                        height="18"
-                        viewBox="0 0 18 18"
-                        fill="none"
-                      >
-                        <circle
-                          cx="9"
-                          cy="9"
-                          r="6.5"
-                          stroke="#60584c"
-                          stroke-width="1.4"
-                        />
-                        <path
-                          d="M9 5.5v7M5.5 9h7"
-                          stroke="#60584c"
-                          stroke-width="1.4"
-                          stroke-linecap="round"
-                        />
-                      </svg>
-                    </span>
-                    <span class="safety-texts">
-                      <span class="safety-item-title">여성 안심</span>
-                      <span class="safety-item-sub"
-                        >안전 비상벨 · 보안등을 확인해요</span
-                      >
-                    </span>
-                  </li>
-                  <li class="safety-item">
-                    <span class="safety-icon">
-                      <svg
-                        width="18"
-                        height="18"
-                        viewBox="0 0 18 18"
-                        fill="none"
-                      >
-                        <circle
-                          cx="9"
-                          cy="5.5"
-                          r="2.5"
-                          stroke="#60584c"
-                          stroke-width="1.4"
-                        />
-                        <path
-                          d="M4 15v-2a5 5 0 0110 0v2"
-                          stroke="#60584c"
-                          stroke-width="1.4"
-                          stroke-linecap="round"
-                        />
-                      </svg>
-                    </span>
-                    <span class="safety-texts">
-                      <span class="safety-item-title">자녀 안전</span>
-                      <span class="safety-item-sub"
-                        >어린이 보호구역을 함께 보여줘요</span
-                      >
-                    </span>
-                  </li>
-                </ul>
-              </section>
-            </div>
-            <!-- 정책 · 금융 매칭 기준 안내 (원준수 멘토님 피드백 #2) -->
-            <div class="banner">
-              <section class="benefit-preview">
-                <p class="section-title">
-                  <Landmark :size="16" :stroke-width="1.8" color="#545045" />
-                  나에게 맞는 정책·금융 혜택을 추천해드려요
-                </p>
-                <div class="benefit-list">
-                  <div
-                    v-for="item in benefitMatchCriteria"
-                    :key="item.title"
-                    class="benefit-item"
+            <ul class="safety-list">
+              <li class="safety-item">
+                <span class="safety-icon">
+                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                    <rect
+                      x="2"
+                      y="6"
+                      width="10"
+                      height="7"
+                      rx="1.5"
+                      stroke="#60584c"
+                      stroke-width="1.4"
+                    />
+                    <path
+                      d="M12 8.5l4-2v6l-4-2"
+                      stroke="#60584c"
+                      stroke-width="1.4"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                </span>
+                <span class="safety-texts">
+                  <span class="safety-item-title">집 근처 치안</span>
+                  <span class="safety-item-sub">주변 CCTV 개수를 확인해요</span>
+                </span>
+              </li>
+              <li class="safety-item">
+                <span class="safety-icon">
+                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                    <circle
+                      cx="9"
+                      cy="9"
+                      r="6.5"
+                      stroke="#60584c"
+                      stroke-width="1.4"
+                    />
+                    <path
+                      d="M9 5.5v7M5.5 9h7"
+                      stroke="#60584c"
+                      stroke-width="1.4"
+                      stroke-linecap="round"
+                    />
+                  </svg>
+                </span>
+                <span class="safety-texts">
+                  <span class="safety-item-title">여성 안심</span>
+                  <span class="safety-item-sub"
+                    >안전 비상벨 · 보안등을 확인해요</span
                   >
-                    <span class="benefit-badge" :class="item.type">{{
-                      item.type === 'policy' ? '정책' : '금융'
-                    }}</span>
-                    <div class="benefit-texts">
-                      <span class="benefit-title">{{ item.title }}</span>
-                      <span class="benefit-sub">{{ item.sub }}</span>
-                    </div>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  class="banner-cta"
-                  @click="router.push('/benefits/policies')"
-                >
-                  내 선호 지역 맞춤 혜택 보기
-                </button>
-              </section>
-            </div>
-            <!-- 비교함 AI 리포트 안내 -->
-            <div class="banner">
-              <section class="safety-card">
-                <p class="safety-title">
-                  <Bot :size="16" :stroke-width="1.8" color="#545045" />
-                  매물 2~3개, AI 리포트로 비교해요
-                </p>
-
-                <ul class="safety-list">
-                  <li class="safety-item">
-                    <span class="safety-icon">
-                      <svg
-                        width="18"
-                        height="18"
-                        viewBox="0 0 16 16"
-                        fill="none"
-                      >
-                        <path
-                          d="M2 14V7M6 14V3M10 14V9M14 14V5"
-                          stroke="#60584c"
-                          stroke-width="1.4"
-                          stroke-linecap="round"
-                        />
-                      </svg>
-                    </span>
-                    <span class="safety-texts">
-                      <span class="safety-item-title"
-                        >가치관 우선순위로 점수 비교</span
-                      >
-                      <span class="safety-item-sub"
-                        >통근·비용·인프라 등을 내가 고른 기준으로 비교해요</span
-                      >
-                    </span>
-                  </li>
-                  <li class="safety-item">
-                    <span class="safety-icon ai-badge">AI</span>
-                    <span class="safety-texts">
-                      <span class="safety-item-title"
-                        >AI 추천 매물까지 확인</span
-                      >
-                      <span class="safety-item-sub"
-                        >가장 적합한 매물과 이유를 코칭 요약으로
-                        알려드려요</span
-                      >
-                    </span>
-                  </li>
-                </ul>
-
-                <button
-                  type="button"
-                  class="banner-cta"
-                  @click="router.push('/compare-box')"
-                >
-                  비교함 담으러 가기
-                </button>
-              </section>
-            </div>
+                </span>
+              </li>
+              <li class="safety-item">
+                <span class="safety-icon">
+                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                    <circle
+                      cx="9"
+                      cy="5.5"
+                      r="2.5"
+                      stroke="#60584c"
+                      stroke-width="1.4"
+                    />
+                    <path
+                      d="M4 15v-2a5 5 0 0110 0v2"
+                      stroke="#60584c"
+                      stroke-width="1.4"
+                      stroke-linecap="round"
+                    />
+                  </svg>
+                </span>
+                <span class="safety-texts">
+                  <span class="safety-item-title">자녀 안전</span>
+                  <span class="safety-item-sub"
+                    >어린이 보호구역을 함께 보여줘요</span
+                  >
+                </span>
+              </li>
+            </ul>
+          </section>
           </div>
-          <button
-            type="button"
-            class="banner-nav prev"
-            aria-label="이전 배너"
-            @click="goPrev"
-          >
-            <ChevronLeft :size="18" :stroke-width="2.2" />
-          </button>
-          <button
-            type="button"
-            class="banner-nav next"
-            aria-label="다음 배너"
-            @click="goNext"
-          >
-            <ChevronRight :size="18" :stroke-width="2.2" />
-          </button>
+          <!-- 정책 · 금융 매칭 기준 안내 (원준수 멘토님 피드백 #2) -->
+          <div class="banner">
+          <section class="benefit-preview">
+            <p class="section-title">
+              <Landmark :size="16" :stroke-width="1.8" color="#545045" />
+              나에게 맞는 정책·금융 혜택을 추천해드려요
+            </p>
+            <div class="benefit-list">
+              <div
+                v-for="item in benefitMatchCriteria"
+                :key="item.title"
+                class="benefit-item"
+              >
+                <span class="benefit-badge" :class="item.type">{{
+                  item.type === 'policy' ? '정책' : '금융'
+                }}</span>
+                <div class="benefit-texts">
+                  <span class="benefit-title">{{ item.title }}</span>
+                  <span class="benefit-sub">{{ item.sub }}</span>
+                </div>
+              </div>
+            </div>
+            <button
+              type="button"
+              class="banner-cta"
+              @click="router.push('/benefits/policies')"
+            >
+              내 선호 지역 맞춤 혜택 보기
+            </button>
+          </section>
+          </div>
+          <!-- 비교함 AI 리포트 안내 -->
+          <div class="banner">
+          <section class="safety-card">
+            <p class="safety-title">
+              <Bot :size="16" :stroke-width="1.8" color="#545045" />
+              매물 2~3개, AI 리포트로 비교해요
+            </p>
+
+            <ul class="safety-list">
+              <li class="safety-item">
+                <span class="safety-icon">
+                  <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
+                    <path
+                      d="M2 14V7M6 14V3M10 14V9M14 14V5"
+                      stroke="#60584c"
+                      stroke-width="1.4"
+                      stroke-linecap="round"
+                    />
+                  </svg>
+                </span>
+                <span class="safety-texts">
+                  <span class="safety-item-title">가치관 우선순위로 점수 비교</span>
+                  <span class="safety-item-sub"
+                    >통근·비용·인프라 등을 내가 고른 기준으로 비교해요</span
+                  >
+                </span>
+              </li>
+              <li class="safety-item">
+                <span class="safety-icon ai-badge">AI</span>
+                <span class="safety-texts">
+                  <span class="safety-item-title">AI 추천 매물까지 확인</span>
+                  <span class="safety-item-sub"
+                    >가장 적합한 매물과 이유를 코칭 요약으로 알려드려요</span
+                  >
+                </span>
+              </li>
+            </ul>
+
+            <button
+              type="button"
+              class="banner-cta"
+              @click="router.push('/compare-box')"
+            >
+              비교함 담으러 가기
+            </button>
+          </section>
+          </div>
+        </div>
+        <button
+          type="button"
+          class="banner-nav prev"
+          aria-label="이전 배너"
+          @click="goPrev"
+        >
+          <ChevronLeft :size="18" :stroke-width="2.2" />
+        </button>
+        <button
+          type="button"
+          class="banner-nav next"
+          aria-label="다음 배너"
+          @click="goNext"
+        >
+          <ChevronRight :size="18" :stroke-width="2.2" />
+        </button>
         </div>
         <div class="dots">
           <button
@@ -445,7 +418,7 @@ function goNext() {
 function startAuto() {
   stopAuto();
   if (BANNERS.length < 2) return;
-  //if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
   autoTimer = setInterval(() => {
     slideTo((activeIndex.value + 1) % BANNERS.length);
