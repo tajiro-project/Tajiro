@@ -227,6 +227,7 @@
     <KakaoLocation
       :open="isLocationPickerOpen"
       :initial-location="preferredLocation"
+      :search-placeholder="preferredLocation?.name || undefined"
       @close="isLocationPickerOpen = false"
       @select="updatePreferredRegion"
     />
@@ -385,10 +386,19 @@ onBeforeUnmount(() => {
 });
 
 async function loadPreferredRegion() {
-  const profile = await userApi.getProfile();
-  preferredLocation.value = profile?.targetRegion
-    ? { name: profile.targetRegion, address: profile.targetRegion }
-    : null;
+  try {
+    const profile = await userApi.getProfile();
+    preferredLocation.value = profile?.targetRegion
+      ? {
+          name: profile.targetRegion,
+          address: profile.targetRegion,
+          lat: profile.targetRegionLat ?? profile.target_region_lat,
+          lng: profile.targetRegionLng ?? profile.target_region_lng,
+        }
+      : null;
+  } catch {
+    preferredLocation.value = null;
+  }
 }
 
 async function updatePreferredRegion(location) {
