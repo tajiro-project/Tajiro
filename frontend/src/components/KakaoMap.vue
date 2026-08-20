@@ -24,13 +24,13 @@ import iconApartment from '@/assets/img/pin/apartment.svg?raw';
 import iconOfficetel from '@/assets/img/pin/officetel.svg?raw';
 import iconOneroom from '@/assets/img/pin/oneroom.svg?raw';
 import iconHouse from '@/assets/img/pin/house.svg?raw';
-import iconWorkplaceFlag from '@/assets/img/pin/workplace-flag.svg?raw';
+import iconWorkplaceMarker from '@/assets/img/pin/workplace-marker.svg?raw';
 
 /**
- * 깃발 SVG 는 깃대가 왼쪽에 치우쳐 있다.
- * 깃대 밑동(viewBox 기준 x≈155/512)이 좌표에 오도록 앵커를 맞춘다.
+ * 도형이 viewBox 안쪽에만 그려져 있어 바닥이 끝에 닿지 않는다.
+ * 핀 끝(viewBox 기준 y≈460/512)이 좌표에 오도록 앵커를 맞춘다.
  */
-const REFERENCE_X_ANCHOR = 0.303;
+const REFERENCE_Y_ANCHOR = 0.9;
 
 // 매물 유형별 핀 배경(fill), 테두리(line), 아이콘 색(ink)
 const PIN_TYPES = {
@@ -289,7 +289,7 @@ function createReferenceLocationElement() {
   element.className = 'reference-location-marker';
   element.setAttribute('aria-hidden', 'true');
 
-  element.innerHTML = iconWorkplaceFlag;
+  element.innerHTML = iconWorkplaceMarker;
 
   return element;
 }
@@ -604,8 +604,7 @@ function redrawOverlays() {
     const overlay = new window.kakao.maps.CustomOverlay({
       position,
       content: createReferenceLocationElement(),
-      xAnchor: REFERENCE_X_ANCHOR,
-      yAnchor: 1,
+      yAnchor: REFERENCE_Y_ANCHOR,
       zIndex: 20,
     });
     overlay.setMap(map);
