@@ -18,7 +18,10 @@
 
     <!-- 2. 제목 및 탭 고정 -->
     <div class="title-area">
-      <p v-if="route.query.demo === '1'" class="demo-banner">
+      <p
+        v-if="route.query.demo === '1'"
+        class="demo-banner"
+      >
         예시 화면이에요 · 실제 인프라 데이터가 아니에요
       </p>
       <h1 class="main-title">{{ buildingName }} 기준 도보 거리예요</h1>
@@ -159,6 +162,7 @@ import { MapPin } from 'lucide-vue-next';
 const route = useRoute();
 
 const buildingName = ref(route.query.buildingName || '');
+const propertyType = ref(route.query.propertyType || '');
 
 const infras = ref([]);
 const activeDotKey = ref(null);
@@ -182,17 +186,60 @@ const categoryMap = computed(() => {
 // 온보딩 다시보기(?demo=1) — 실제 API를 안 타고 바로 예시 데이터로 채운다.
 const DEMO_CENTER = { lat: 36.3273128, lng: 127.4647872 };
 const DEMO_INFRAS = [
-  { category: 'SUBWAY', name: '용운역', distanceMeters: 420, walkMinutes: 6, lat: 36.3283, lng: 127.4652 },
-  { category: 'HOSPITAL', name: '대전대학교병원', distanceMeters: 680, walkMinutes: 9, lat: 36.3265, lng: 127.4638 },
-  { category: 'SCHOOL', name: '용운초등학교', distanceMeters: 350, walkMinutes: 5, lat: 36.3278, lng: 127.4655 },
-  { category: 'CONVENIENCE', name: 'GS25 용운점', distanceMeters: 150, walkMinutes: 2, lat: 36.3274, lng: 127.4649 },
-  { category: 'MART', name: '하나로마트 대전동구점', distanceMeters: 520, walkMinutes: 7, lat: 36.3268, lng: 127.4644 },
-  { category: 'CAFE', name: '스타벅스 대전대점', distanceMeters: 280, walkMinutes: 4, lat: 36.3276, lng: 127.4651 },
+  {
+    category: 'SUBWAY',
+    name: '용운역',
+    distanceMeters: 420,
+    walkMinutes: 6,
+    lat: 36.3283,
+    lng: 127.4652,
+  },
+  {
+    category: 'HOSPITAL',
+    name: '대전대학교병원',
+    distanceMeters: 680,
+    walkMinutes: 9,
+    lat: 36.3265,
+    lng: 127.4638,
+  },
+  {
+    category: 'SCHOOL',
+    name: '용운초등학교',
+    distanceMeters: 350,
+    walkMinutes: 5,
+    lat: 36.3278,
+    lng: 127.4655,
+  },
+  {
+    category: 'CONVENIENCE',
+    name: 'GS25 용운점',
+    distanceMeters: 150,
+    walkMinutes: 2,
+    lat: 36.3274,
+    lng: 127.4649,
+  },
+  {
+    category: 'MART',
+    name: '하나로마트 대전동구점',
+    distanceMeters: 520,
+    walkMinutes: 7,
+    lat: 36.3268,
+    lng: 127.4644,
+  },
+  {
+    category: 'CAFE',
+    name: '스타벅스 대전대점',
+    distanceMeters: 280,
+    walkMinutes: 4,
+    lat: 36.3276,
+    lng: 127.4651,
+  },
 ];
 
 onMounted(async () => {
   if (route.query.demo === '1') {
     buildingName.value = 'e편한세상대전에코포레';
+    propertyType.value = '아파트'; // 데모용 임시 타입 설정
     mapCenter.value = DEMO_CENTER;
     infras.value = DEMO_INFRAS;
     return;
@@ -201,16 +248,22 @@ onMounted(async () => {
   const propertyId = route.params.id;
   if (!propertyId) return;
 
-  if (!buildingName.value) {
+  // buildingName이나 propertyType 중 하나라도 없으면 상세 API 호출 (Fallback)
+  if (!buildingName.value || !propertyType.value) {
     try {
       const pRes = await propertyApi.getPropertyDetail(propertyId);
       const pData = pRes?.data || pRes;
       const rawTitle = pData?.title || pData?.buildingName || pData?.name || '';
-      buildingName.value =
-        rawTitle.replace(/\s*\d+호$/, '').trim() || '건물명 정보 없음';
+
+      if (!buildingName.value) {
+        buildingName.value =
+          rawTitle.replace(/\s*\d+호$/, '').trim() || '건물명 정보 없음';
+      }
+      if (!propertyType.value) {
+        propertyType.value = pData?.propertyType || pData?.realEstateType || '';
+      }
     } catch (err) {
-      console.error('건물명 조회 실패:', err);
-      buildingName.value = '건물명 정보 없음';
+      console.error('건물 정보 조회 실패:', err);
     }
   }
 
@@ -248,6 +301,7 @@ const markers = computed(() => {
       lng: mapCenter.value.lng,
       selected: true,
       count: 1,
+      propertyType: propertyType.value,
     },
   ];
 });

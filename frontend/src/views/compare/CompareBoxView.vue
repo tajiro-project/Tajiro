@@ -327,12 +327,10 @@ function formatMoney(value) {
   if (manwon >= 10000) {
     const eok = Math.floor(manwon / 10000);
     const rest = manwon % 10000;
-    return rest === 0
-      ? `${eok}억`
-      : `${eok}억 ${rest.toLocaleString('ko-KR')}만`;
+    return rest === 0 ? `${eok}억` : `${eok}억 ${rest}만`;
   }
 
-  return `${manwon.toLocaleString('ko-KR')}만`;
+  return `${manwon}만`;
 }
 
 
@@ -344,7 +342,7 @@ function formatArea(areaM2) {
 function formatFee(item) {
   const fee = item.maintenanceFee;
   if (fee === null || fee === undefined || fee === '') return '-';
-  return `${Number(fee).toLocaleString('ko-KR')}만`;
+  return `${Number(fee)}만`;
 }
 
 function formatFloorInfo(floorInfo) {
