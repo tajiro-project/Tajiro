@@ -1,21 +1,35 @@
 const PYEONG = 3.3058;
 
+/** 매물 상세(PropertyDetailView)의 formatKoreanMoney 와 같은 규칙 */
 export function manwon(value) {
   const number = Number(value);
-  if (!Number.isFinite(number)) return '-';
+  if (value == null || !Number.isFinite(number)) return '';
+  if (number === 0) return '0만원';
 
   const eok = Math.floor(number / 10000);
-  const rest = number % 10000;
+  const man = number % 10000;
 
-  if (eok === 0) return `${rest.toLocaleString('ko-KR')}`;
-  if (rest === 0) return `${eok}억`;
-  return `${eok}억 ${rest.toLocaleString('ko-KR')}`;
+  if (eok > 0 && man > 0) return `${eok}억 ${man}만원`;
+  if (eok > 0) return `${eok}억`;
+  return `${man}만원`;
 }
 
+/** 매물 상세의 formattedPrice 와 같은 규칙 */
 export function priceLabel(item) {
-  return item.tradeType === '월세'
-    ? `월세 ${manwon(item.deposit)}/${manwon(item.monthlyRent)}`
-    : `${item.tradeType} ${manwon(item.deposit)}`;
+  if (item.tradeType === '월세') {
+    const deposit = manwon(item.deposit).replace('만원', '');
+    return `월세 ${deposit}/${item.monthlyRent}만원`;
+  }
+  return `${item.tradeType} ${manwon(item.deposit)}`;
+}
+
+/** 매물 상세의 formattedPriceDetail 과 같은 규칙 */
+export function transactionPriceLabel(item) {
+  if (item.tradeType === '월세') {
+    const deposit = manwon(item.deposit).replace('만원', '');
+    return `월세 · ${deposit} / ${manwon(item.monthlyRent)}`;
+  }
+  return `${item.tradeType} · ${manwon(item.deposit)}`;
 }
 
 export function statusLabel(item) {

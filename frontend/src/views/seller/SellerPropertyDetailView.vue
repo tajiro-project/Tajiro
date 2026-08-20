@@ -14,7 +14,7 @@
               class="photo-img"
             />
             <button
-              v-if="images.length > 1"
+              v-if="images.length > 1 && isOpen"
               class="slide-btn left"
               type="button"
               aria-label="이전 사진"
@@ -23,7 +23,7 @@
               <ChevronLeft :size="20" />
             </button>
             <button
-              v-if="images.length > 1"
+              v-if="images.length > 1 && isOpen"
               class="slide-btn right"
               type="button"
               aria-label="다음 사진"
@@ -31,7 +31,7 @@
             >
               <ChevronRight :size="20" />
             </button>
-            <div v-if="images.length > 1" class="dots">
+            <div v-if="images.length > 1 && isOpen" class="dots">
               <button
                 v-for="(_, index) in images"
                 :key="index"
@@ -47,7 +47,14 @@
             <ImageIcon :size="44" color="#8a8477" />
             <p>등록된 이미지가 없습니다.</p>
           </div>
-          <div v-if="!isOpen" class="sold-overlay">거래 완료</div>
+          <!-- 거래 완료 오버레이 (transactionStatus가 false일 때 표시) -->
+          <div v-if="!isOpen" class="completed-overlay">
+            <div class="completed-badge">
+              <CheckCircle :size="18" stroke-width="2.5" />
+              <span>거래 완료</span>
+            </div>
+            <p class="completed-text">계약이 완료된 매물입니다</p>
+          </div>
         </div>
 
         <div class="head">
@@ -118,10 +125,19 @@
 import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import simplebar from 'simplebar-vue';
-import { ChevronLeft, ChevronRight, Image as ImageIcon } from 'lucide-vue-next';
+import {
+  CheckCircle,
+  ChevronLeft,
+  ChevronRight,
+  Image as ImageIcon,
+} from 'lucide-vue-next';
 import { getApiErrorMessage } from '@/api/client';
 import { sellerApi } from '@/api/services';
-import { manwon as manwonPlain } from '@/utils/sellerProperty';
+import {
+  manwon,
+  priceLabel,
+  transactionPriceLabel,
+} from '@/utils/sellerProperty';
 
 const PYEONG = 3.3058;
 
@@ -250,24 +266,6 @@ function countLabel(rooms, bathrooms) {
   if (rooms != null) parts.push(`${rooms}개`);
   if (bathrooms != null) parts.push(`${bathrooms}개`);
   return parts.length ? parts.join(' / ') : null;
-}
-
-function manwon(value) {
-  const label = manwonPlain(value);
-  return label === '-' ? label : `${label}만원`;
-}
-
-function priceLabel(item) {
-  return item.tradeType === '월세'
-    ? `월세 ${manwon(item.deposit)}/${manwon(item.monthlyRent)}`
-    : `${item.tradeType} ${manwon(item.deposit)}`;
-}
-
-function transactionPriceLabel(item) {
-  if (item.tradeType === '월세') {
-    return `월세 · ${manwon(item.deposit)} / ${manwon(item.monthlyRent)}`;
-  }
-  return `${item.tradeType} · ${manwon(item.deposit)}`;
 }
 
 function formatDate(value) {
@@ -448,17 +446,40 @@ function handleTouchEnd(event) {
   background: #ffbc00;
 }
 
-.sold-overlay {
+/* 거래 완료 상태 오버레이 (transactionStatus === false)
+   구매자 매물 상세(PropertyDetailView)와 같은 값을 쓴다 */
+.completed-overlay {
   position: absolute;
   inset: 0;
-  z-index: 2;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(2px);
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: rgba(33, 30, 24, 0.55);
-  color: #fff;
+  gap: 10px;
+  z-index: 5;
+}
+
+.completed-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  color: #222222;
+  padding: 8px 20px;
+  border-radius: 100px;
   font-size: 15px;
-  font-weight: 700;
+  font-weight: 800;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.completed-text {
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: -0.3px;
+  margin: 0;
 }
 
 .head {

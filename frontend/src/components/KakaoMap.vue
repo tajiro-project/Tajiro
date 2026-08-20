@@ -20,6 +20,47 @@ import {
   SAFETY_CATEGORIES,
 } from '@/constants/preferenceOptions';
 import { MapPin } from 'lucide-vue-next';
+import iconApartment from '@/assets/img/pin/apartment.svg?raw';
+import iconOfficetel from '@/assets/img/pin/officetel.svg?raw';
+import iconOneroom from '@/assets/img/pin/oneroom.svg?raw';
+import iconHouse from '@/assets/img/pin/house.svg?raw';
+import iconWorkplaceMarker from '@/assets/img/pin/workplace-marker.svg?raw';
+
+/**
+ * 도형이 viewBox 안쪽에만 그려져 있어 바닥이 끝에 닿지 않는다.
+ * 핀 끝(viewBox 기준 y≈460/512)이 좌표에 오도록 앵커를 맞춘다.
+ */
+const REFERENCE_Y_ANCHOR = 0.9;
+
+// 매물 유형별 핀 배경(fill), 테두리(line), 아이콘 색(ink)
+const PIN_TYPES = {
+  아파트: {
+    fill: '#1f9d95',
+    line: '#14706a',
+    ink: '#fff',
+    icon: iconApartment,
+  },
+  오피스텔: {
+    fill: '#3f72c9',
+    line: '#2a5197',
+    ink: '#fff',
+    icon: iconOfficetel,
+  },
+  원룸: { fill: '#f0899f', line: '#c25b74', ink: '#fff', icon: iconOneroom },
+  '주택/빌라': {
+    fill: '#62b14e',
+    line: '#428036',
+    ink: '#fff',
+    icon: iconHouse,
+  },
+};
+
+const PIN_FALLBACK = {
+  fill: '#8a8477',
+  line: '#605b51',
+  ink: '#fff',
+  icon: iconApartment,
+};
 
 const props = defineProps({
   mode: {
@@ -72,50 +113,170 @@ ALL_CATEGORIES.forEach((cat) => {
   }
 });
 
-function pinSvg(count, hasMedal) {
-  const showCount = props.mode === 'list' && count > 1 && !hasMedal;
-
-  const label = showCount
-    ? `
-      <text
-        x="9"
-        y="16"
-        text-anchor="middle"
-        font-size="7"
-        font-weight="500"
-        fill="#8a8477"
-      >+</text>
-      <text
-        x="15"
-        y="16"
-        text-anchor="middle"
-        font-size="10"
-        font-weight="700"
-        fill="#545045"
-      >${count}</text>
-    `
-    : '';
-
-  const fill = hasMedal ? '#fe7b00' : '#ffbc00';
-
-  return `<svg width="30" height="37" viewBox="0 0 26 32" fill="none">
+function pinSvg(fill, line) {
+  // paint-order="stroke" 로 테두리를 면 뒤에 깔아야 핀이 가늘어지지 않는다
+  return `<svg width="32" height="38" viewBox="0 0 44 52" fill="none">
     <path
-      d="M13 0C5.8 0 0 5.7 0 12.8C0 22.4 13 32 13 32s13-9.6 13-19.2C26 5.7 20.2 0 13 0z"
+      d="M22 51.5C15 41 3.5 33 3.5 21.5a18.5 18.5 0 1 1 37 0C40.5 33 29 41 22 51.5z"
       fill="${fill}"
+      stroke="${line}"
+      stroke-width="4"
+      stroke-linejoin="round"
+      paint-order="stroke"
     />
-    <circle cx="13" cy="12.5" r="7" fill="#fff"/>
-    ${label}
   </svg>`;
 }
 
-function createPinElement(marker) {
+/**
+ * 순위 안에 들면 메달, 아니면 매물 개수. 둘 다 아니면 배지 없음.
+ * 배지는 흰 바탕이라 글자에 핀 배경색(fill)을 쓴다
+ */
+function badgeHtml(marker, fill) {
+  if (marker.medalUrl) {
+    return `<img class="pin-badge medal" src="${marker.medalUrl}" alt="">`;
+  }
+  if (props.mode === 'list' && marker.count > 1) {
+    return `<span class="pin-badge" style="color:${fill}">${marker.count}+</span>`;
+  }
+  return '';
+}
+
+/**
+ * 이 레벨부터 핀을 묶는다. 카카오 지도는 레벨과 축척이 정해져 있다.
+ *   3 → 50m,  4 → 100m,  5 → 250m,  6 → 500m,  7 → 1km
+ * 축척 250m(레벨 5)까지는 건물별 핀을 보여주고, 500m부터 묶는다.
+ */
+const CLUSTER_FROM_LEVEL = 6;
+
+/** 묶을 때 기준이 되는 화면상 거리(px) */
+const CLUSTER_GAP_PX = 48;
+
+/**
+ * 현재 줌 기준으로 가까운 핀끼리 묶는다.
+ * 좌표가 아니라 화면 픽셀 거리로 판단하므로, 확대하면 자연히 흩어진다.
+ */
+function clusterMarkers(markers) {
+  const valid = markers.filter((m) => m.lat != null && m.lng != null);
+
+  // 기준 축척보다 확대돼 있으면 건물별 핀을 그대로 보여준다
+  if (map.getLevel() < CLUSTER_FROM_LEVEL) {
+    return valid.map((m) => ({
+      lat: m.lat,
+      lng: m.lng,
+      members: [m],
+      count: m.count || 1,
+      rank: m.rank,
+    }));
+  }
+
+  const projection = map.getProjection();
+
+  const points = valid
+    .map((m) => ({
+      marker: m,
+      point: projection.containerPointFromCoords(
+        new window.kakao.maps.LatLng(m.lat, m.lng),
+      ),
+      taken: false,
+    }))
+    // 배열 순서에 따라 묶음이 달라지지 않도록 화면 좌표로 정렬한다
+    .sort((a, b) => a.point.x - b.point.x || a.point.y - b.point.y);
+
+  const clusters = [];
+
+  for (const seed of points) {
+    if (seed.taken) continue;
+    seed.taken = true;
+
+    const members = [seed.marker];
+
+    // 씨앗 주변만 훑는다. 연쇄로 이으면 촘촘한 지역이 통째로 한 덩어리가 된다
+    for (const other of points) {
+      if (other.taken) continue;
+      const dx = other.point.x - seed.point.x;
+      const dy = other.point.y - seed.point.y;
+      if (Math.sqrt(dx * dx + dy * dy) > CLUSTER_GAP_PX) continue;
+
+      other.taken = true;
+      members.push(other.marker);
+    }
+
+    clusters.push({
+      // 씨앗이 아니라 묶음의 중심에 동그라미를 놓는다
+      lat: members.reduce((sum, m) => sum + Number(m.lat), 0) / members.length,
+      lng: members.reduce((sum, m) => sum + Number(m.lng), 0) / members.length,
+      members,
+      // 묶인 건물들이 가진 매물 수의 합
+      count: members.reduce((sum, m) => sum + (m.count || 1), 0),
+      // 묶음 안에 순위권이 있으면 그중 가장 높은 순위를 쓴다
+      rank: members.reduce(
+        (best, m) =>
+          m.rank != null && (best == null || m.rank < best) ? m.rank : best,
+        null,
+      ),
+    });
+  }
+
+  return clusters;
+}
+
+function createClusterElement(cluster) {
+  // 묶인 건물이 많을수록 원을 키운다
+  const size = Math.min(50, 30 + cluster.members.length * 4);
+
   const element = document.createElement('div');
-  element.className = 'property-pin';
+  element.className = 'pin-cluster';
+  element.style.width = `${size}px`;
+  element.style.height = `${size}px`;
+  element.style.fontSize = `${Math.round(size * 0.3)}px`;
+  element.innerHTML = `<span>${cluster.count}</span>`;
+
+  element.addEventListener('click', (e) => {
+    e.stopPropagation();
+
+    // 핀이 흩어지는 축척까지 한 번에 확대한다
+    const anchor = new window.kakao.maps.LatLng(cluster.lat, cluster.lng);
+    const target = Math.min(map.getLevel() - 1, CLUSTER_FROM_LEVEL - 1);
+    map.setLevel(Math.max(1, target), { anchor });
+  });
+
+  return element;
+}
+
+/**
+ * 인프라·안전 상세 화면의 기준점 핀.
+ * 유형 구분이 필요 없는 자리라 기존 노란 핀을 그대로 쓴다.
+ */
+function createAnchorPinElement(marker) {
+  const element = document.createElement('div');
+  element.className = 'property-pin anchor';
+  element.innerHTML = `<svg width="30" height="37" viewBox="0 0 26 32" fill="none">
+    <path
+      d="M13 0C5.8 0 0 5.7 0 12.8C0 22.4 13 32 13 32s13-9.6 13-19.2C26 5.7 20.2 0 13 0z"
+      fill="#ffbc00"
+    />
+    <circle cx="13" cy="12.5" r="7" fill="#fff"/>
+  </svg>`;
+
+  element.addEventListener('click', (e) => {
+    e.stopPropagation();
+    emit('marker-click', marker);
+  });
+  return element;
+}
+
+function createPinElement(marker) {
+  if (props.mode !== 'list') return createAnchorPinElement(marker);
+
+  const type = PIN_TYPES[marker.propertyType] ?? PIN_FALLBACK;
+
+  const element = document.createElement('div');
+  element.className = marker.selected ? 'property-pin selected' : 'property-pin';
   element.innerHTML =
-    pinSvg(marker.count, !!marker.medalUrl) +
-    (marker.medalUrl
-      ? `<img class="pin-medal" src="${marker.medalUrl}" alt="">`
-      : '');
+    pinSvg(type.fill, type.line) +
+    `<span class="pin-icon" style="color:${type.ink}">${type.icon}</span>` +
+    badgeHtml(marker, type.fill);
+
   element.addEventListener('click', (e) => {
     e.stopPropagation();
     emit('marker-click', marker);
@@ -128,13 +289,7 @@ function createReferenceLocationElement() {
   element.className = 'reference-location-marker';
   element.setAttribute('aria-hidden', 'true');
 
-  const pole = document.createElement('span');
-  pole.className = 'reference-location-pole';
-
-  const flag = document.createElement('span');
-  flag.className = 'reference-location-flag';
-
-  element.append(pole, flag);
+  element.innerHTML = iconWorkplaceMarker;
 
   return element;
 }
@@ -399,7 +554,11 @@ function applyViewMode(animateList = false) {
   }
 }
 
-function redraw() {
+/**
+ * 오버레이만 다시 그린다. 지도 시점은 건드리지 않는다.
+ * 줌이 바뀌면 묶이는 핀이 달라지므로 이 함수만 따로 호출한다.
+ */
+function redrawOverlays() {
   if (!map) return;
 
   overlays.forEach((o) => {
@@ -413,15 +572,21 @@ function redraw() {
   polygonOverlays.forEach((p) => p.setMap(null));
   polygonOverlays = [];
 
-  // 매물 핀
-  props.markers.forEach((marker) => {
-    if (marker.lat == null || marker.lng == null) return;
-    const latlng = new window.kakao.maps.LatLng(marker.lat, marker.lng);
+  // 매물 핀 — 화면상 가까운 것끼리 묶어서 그린다
+  clusterMarkers(props.markers).forEach((cluster) => {
+    const single = cluster.members.length === 1;
     const overlay = new window.kakao.maps.CustomOverlay({
-      position: latlng,
-      content: createPinElement(marker),
-      yAnchor: 1,
-      zIndex: marker.rank ? 10 - marker.rank : 5,
+      position: new window.kakao.maps.LatLng(cluster.lat, cluster.lng),
+      content: single
+        ? createPinElement(cluster.members[0])
+        : createClusterElement(cluster),
+      yAnchor: single ? 1 : 0.5,
+      // 선택된 핀은 인프라 도트 위로 올린다
+      zIndex: single && cluster.members[0].selected
+        ? 100
+        : cluster.rank
+          ? 10 - cluster.rank
+          : 5,
     });
     overlay.setMap(map);
     overlays.push(overlay);
@@ -439,7 +604,7 @@ function redraw() {
     const overlay = new window.kakao.maps.CustomOverlay({
       position,
       content: createReferenceLocationElement(),
-      yAnchor: 1,
+      yAnchor: REFERENCE_Y_ANCHOR,
       zIndex: 20,
     });
     overlay.setMap(map);
@@ -508,6 +673,14 @@ function redraw() {
     }
   });
 
+}
+
+/** 오버레이를 다시 그리고 지도 시점까지 맞춘다 */
+function redraw() {
+  if (!map) return;
+
+  redrawOverlays();
+
   const animateList =
     props.mode === 'list' &&
     previousListDotCount === 0 &&
@@ -528,6 +701,11 @@ function updateActiveDot(newKey, oldKey) {
 
 function handleIdle() {
   if (!map) return;
+
+  // 줌에 따라 묶음이 달라지는 건 매물 목록뿐이다.
+  // 지도가 멈춘 뒤라 화면 좌표가 정확하다
+  if (props.mode === 'list') redrawOverlays();
+
   const bounds = map.getBounds();
   const sw = bounds.getSouthWest();
   const ne = bounds.getNorthEast();
@@ -608,55 +786,111 @@ onUnmounted(() => {
 :deep(.property-pin) {
   position: relative;
   display: block;
+  width: 32px;
+  height: 38px;
   cursor: pointer;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.22));
+}
+
+/* 인프라·안전 화면의 기준점 핀은 기존 크기·그림자를 유지한다 */
+:deep(.property-pin.anchor) {
+  width: 30px;
+  height: 37px;
   filter: drop-shadow(0 2px 3px rgba(102, 77, 0, 0.35));
 }
 
-:deep(.property-pin svg) {
+/* 테두리가 viewBox 밖으로 나가므로 잘리지 않게 한다 */
+:deep(.property-pin > svg) {
   display: block;
+  overflow: visible;
+}
+
+:deep(.property-pin.selected) {
+  transform: scale(1.12);
+  transform-origin: bottom center;
+  filter: drop-shadow(0 4px 9px rgba(0, 0, 0, 0.55));
+}
+
+:deep(.pin-icon) {
+  position: absolute;
+  top: 5px;
+  left: 50%;
+  width: 19px;
+  height: 19px;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+/* SVG 안의 fill="currentColor" 가 부모 color 를 따라간다 */
+:deep(.pin-icon svg) {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 :deep(.reference-location-marker) {
   position: relative;
-  width: 24px;
-  height: 32px;
+  width: 44px;
+  height: 44px;
   padding: 0;
   border: 0;
   background: transparent;
-  filter: drop-shadow(0 1px 1px rgba(51, 48, 42, 0.2));
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.28));
   pointer-events: none;
 }
 
-:deep(.reference-location-pole) {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  width: 2px;
-  height: 32px;
-  transform: translateX(-50%);
-  background: #161616;
+:deep(.reference-location-marker svg) {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
-:deep(.reference-location-flag) {
+/* 배지는 박스 밖으로 나가지만 요소 너비는 44px 그대로라 핀 끝점이 안 밀린다 */
+:deep(.pin-badge) {
   position: absolute;
-  top: 3px;
-  left: 50%;
-  width: 18px;
-  height: 12px;
-  background: #e91608;
-  clip-path: polygon(0 0, 100% 50%, 0 100%);
-}
-
-:deep(.pin-medal) {
-  position: absolute;
-  top: 14.5px;
-  left: 15px;
-  transform: translate(-50%, -50%);
-  width: 16.2px;
-  height: 16.2px;
-  pointer-events: none;
+  top: -1px;
+  right: -5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  box-sizing: border-box;
+  background: #fff;
   border-radius: 50%;
-  box-shadow: 0 0 0 1px #ffffff;
+  font-size: 9px;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+:deep(.pin-cluster) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  background: rgba(59, 148, 217, 0.42);
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    transform 0.15s ease;
+}
+
+:deep(.pin-cluster:hover) {
+  background: rgba(59, 148, 217, 0.58);
+  transform: scale(1.06);
+}
+
+:deep(.pin-badge.medal) {
+  padding: 0;
+  background: transparent;
+  object-fit: contain;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px #fff;
 }
 
 :deep(.infra-dot) {

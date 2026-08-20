@@ -170,7 +170,12 @@
             @click="onCardClick(p)"
           >
             <span class="thumb">
-              <img v-if="p.rank" :src="MEDALS[p.rank]" :alt="`추천 ${p.rank}위`"" class="medal"/>
+              <img
+                v-if="p.rank"
+                :src="MEDALS[p.rank]"
+                :alt="`추천 ${p.rank}위`"
+                class="medal"
+              />
               <span v-if="p.transactionStatus === false" class="sold-overlay">
                 거래 완료
               </span>
@@ -1122,6 +1127,7 @@ const markers = computed(() => {
         lat: Number(p.latitude),
         lng: Number(p.longitude),
         name: p.buildingName,
+        propertyType: p.propertyType,
         count: 0,
         rank: null,
       });
