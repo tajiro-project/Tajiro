@@ -1,5 +1,8 @@
 <template>
-  <div ref="mapElement" class="kakao-map"></div>
+  <div
+    ref="mapElement"
+    class="kakao-map"
+  ></div>
 </template>
 
 <script setup>
@@ -266,12 +269,12 @@ function createAnchorPinElement(marker) {
 }
 
 function createPinElement(marker) {
-  if (props.mode !== 'list') return createAnchorPinElement(marker);
-
   const type = PIN_TYPES[marker.propertyType] ?? PIN_FALLBACK;
 
   const element = document.createElement('div');
-  element.className = marker.selected ? 'property-pin selected' : 'property-pin';
+  element.className = marker.selected
+    ? 'property-pin selected'
+    : 'property-pin';
   element.innerHTML =
     pinSvg(type.fill, type.line) +
     `<span class="pin-icon" style="color:${type.ink}">${type.icon}</span>` +
@@ -582,11 +585,12 @@ function redrawOverlays() {
         : createClusterElement(cluster),
       yAnchor: single ? 1 : 0.5,
       // 선택된 핀은 인프라 도트 위로 올린다
-      zIndex: single && cluster.members[0].selected
-        ? 100
-        : cluster.rank
-          ? 10 - cluster.rank
-          : 5,
+      zIndex:
+        single && cluster.members[0].selected
+          ? 100
+          : cluster.rank
+            ? 10 - cluster.rank
+            : 5,
     });
     overlay.setMap(map);
     overlays.push(overlay);
@@ -672,7 +676,6 @@ function redrawOverlays() {
       polygonOverlays.push(polygonOverlay);
     }
   });
-
 }
 
 /** 오버레이를 다시 그리고 지도 시점까지 맞춘다 */

@@ -758,6 +758,7 @@ const goToInfra = () => {
     params: { id: p.value.id },
     query: {
       buildingName: buildingName.value,
+      propertyType: p.value.propertyType,
       ...(route.query.demo === '1' ? { demo: '1' } : {}),
     },
   });
@@ -769,6 +770,7 @@ const goToSafety = () => {
     params: { id: p.value.id },
     query: {
       buildingName: buildingName.value,
+      propertyType: p.value.propertyType,
       ...(route.query.demo === '1' ? { demo: '1' } : {}),
     },
   });
