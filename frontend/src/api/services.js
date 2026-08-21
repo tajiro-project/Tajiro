@@ -31,8 +31,6 @@ export const preferenceApi = {
 
 // ---------- finance ----------
 export const financeApi = {
-  list: async (keyword) =>
-    (await client.get('/financial-products', { params: { keyword } })).data,
   matches: async (keyword) =>
     (await client.get('/financial-products/matches', { params: { keyword } }))
       .data,
