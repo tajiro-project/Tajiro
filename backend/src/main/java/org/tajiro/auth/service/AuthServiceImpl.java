@@ -83,17 +83,19 @@ public class AuthServiceImpl implements AuthService {
                 .build();
         authMapper.insertUser(user);
 
-        UserProfileVO profile = UserProfileVO.builder()
-                .userId(user.getId())
-                .targetRegion(request.getTargetRegion())
-                .birthDate(request.getBirthDate())
-                .monthlyIncome(0)
-                .assetAmount(0)
-                .jobStatus("")
-                .targetSggCode(request.getTargetSggCode() != null ? request.getTargetSggCode() : "")
-                .updatedAt(LocalDateTime.now())
-                .build();
-        userProfileMapper.upsertProfile(profile);
+        if (!isSeller) {
+            UserProfileVO profile = UserProfileVO.builder()
+                    .userId(user.getId())
+                    .targetRegion(request.getTargetRegion())
+                    .birthDate(request.getBirthDate())
+                    .monthlyIncome(0)
+                    .assetAmount(0)
+                    .jobStatus("")
+                    .targetSggCode(request.getTargetSggCode() != null ? request.getTargetSggCode() : "")
+                    .updatedAt(LocalDateTime.now())
+                    .build();
+            userProfileMapper.upsertProfile(profile);
+        }
 
         for (RegisterRequest.AgreementRequest agreement : request.getAgreements()) {
             authMapper.insertTermsConsent(user.getId(), agreement.getTermsId(), Boolean.TRUE.equals(agreement.getAgreed()));
@@ -158,11 +160,12 @@ public class AuthServiceImpl implements AuthService {
     }
 
     private void validateRegisterRequest(RegisterRequest request) {
+        boolean isSeller = Boolean.TRUE.equals(request.getIsSeller());
         if (request.getName() == null || request.getName().isBlank()
                 || request.getEmail() == null || !EMAIL_PATTERN.matcher(request.getEmail()).matches()
                 || request.getPassword() == null || !PASSWORD_PATTERN.matcher(request.getPassword()).matches()
-                || request.getTargetRegion() == null || request.getTargetRegion().isBlank()
-                || request.getBirthDate() == null) {
+                || (!isSeller && (request.getTargetRegion() == null || request.getTargetRegion().isBlank()))
+                || (!isSeller && request.getBirthDate() == null)) {
             throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
         }
     }
