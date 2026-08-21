@@ -412,6 +412,7 @@ async function updatePreferredRegion(location) {
     });
     preferredLocation.value = { ...location, name: targetRegion };
     isLocationPickerOpen.value = false;
+    currentPage.value = 1;
     await loadMatches();
   } catch (error) {
     window.alert(
