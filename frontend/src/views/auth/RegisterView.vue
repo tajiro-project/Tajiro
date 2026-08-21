@@ -106,32 +106,34 @@
           </p>
         </div>
 
-        <div class="field">
-          <label
-            class="field-label"
-            for="targetRegion"
-            >선호 지역</label
-          >
-          <input
-            id="targetRegion"
-            class="field-input"
-            type="text"
-            readonly
-            :value="targetRegion"
-            placeholder="예) 서울특별시 강남구"
-            required
-            @click="isLocationPickerOpen = true"
-            @keydown.enter.prevent="isLocationPickerOpen = true"
-          />
-        </div>
-        <div class="field">
-          <label
-            class="field-label"
-            for="birthDate"
-            >생년월일</label
-          >
-          <BirthDatePicker v-model="birthDate" />
-        </div>
+        <template v-if="accountType === 'USER'">
+          <div class="field">
+            <label
+              class="field-label"
+              for="targetRegion"
+              >선호 지역</label
+            >
+            <input
+              id="targetRegion"
+              class="field-input"
+              type="text"
+              readonly
+              :value="targetRegion"
+              placeholder="예) 서울특별시 강남구"
+              required
+              @click="isLocationPickerOpen = true"
+              @keydown.enter.prevent="isLocationPickerOpen = true"
+            />
+          </div>
+          <div class="field">
+            <label
+              class="field-label"
+              for="birthDate"
+              >생년월일</label
+            >
+            <BirthDatePicker v-model="birthDate" />
+          </div>
+        </template>
 
         <template v-if="accountType === 'SELLER'">
           <div class="field">
@@ -394,11 +396,10 @@ const canSubmit = computed(() => {
     EMAIL_PATTERN.test(email.value) &&
     PASSWORD_PATTERN.test(password.value) &&
     password.value === passwordConfirm.value &&
-    targetRegion.value.trim() !== '' &&
-    birthDate.value !== '' &&
     requiredAgreed.value &&
-    (accountType.value !== 'SELLER' ||
-      (phone.value.trim() !== '' && agencyName.value.trim() !== ''))
+    (accountType.value === 'SELLER'
+      ? phone.value.trim() !== '' && agencyName.value.trim() !== ''
+      : targetRegion.value.trim() !== '' && birthDate.value !== '')
   );
 });
 
@@ -488,9 +489,9 @@ async function handleRegister() {
         isSeller,
         phone: isSeller ? phone.value : undefined,
         agencyName: isSeller ? agencyName.value : undefined,
-        targetRegion: targetRegion.value,
-        target_sgg_code: targetSggCode.value,
-        birthDate: birthDate.value,
+        targetRegion: isSeller ? undefined : targetRegion.value,
+        target_sgg_code: isSeller ? undefined : targetSggCode.value,
+        birthDate: isSeller ? undefined : birthDate.value,
         agreements: termsList.value.map((term) => ({
           termsId: term.id,
           agreed: isAgreed(term.id),
