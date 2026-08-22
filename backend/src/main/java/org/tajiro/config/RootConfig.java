@@ -98,7 +98,7 @@ public class RootConfig {
         config.setJdbcUrl(url);
         config.setUsername(username);
         config.setPassword(password);
-        config.setMaximumPoolSize(10);
+        config.setMaximumPoolSize(30);
         config.setMinimumIdle(2);
         config.setPoolName("tajiro-hikari-pool");
         return new HikariDataSource(config);
