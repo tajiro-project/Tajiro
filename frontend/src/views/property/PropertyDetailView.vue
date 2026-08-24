@@ -707,9 +707,6 @@ const fetchDetailAndRecommendations = async () => {
   try {
     const res = await propertyApi.getPropertyDetail(propertyId);
     p.value = res?.data || res;
-
-    p.value.agencyName = '강남 프라임 공인중개사사무소';
-    p.value.agentPhone = '010-1234-5678';
   } catch (e) {
     console.error('매물 정보 로드 실패:', e);
   } finally {

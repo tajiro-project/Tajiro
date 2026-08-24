@@ -59,12 +59,12 @@
             @mouseenter="onRowHover(item)"
             @mouseleave="onRowHover(null)"
           >
-            <!-- 좌측: 아이콘 + 카테고리 라벨 영역 (색상 커스텀 적용) -->
+            <!-- 좌측: 아이콘 + 카테고리 라벨 영역 -->
             <div class="r-icon-col">
               <span
                 class="r-icon"
                 :style="{
-                  backgroundColor: item.color + '1f' /* 12% 투명도 배경 */,
+                  backgroundColor: item.color + '1f',
                   color: item.color,
                   borderColor: item.color + '40',
                 }"
@@ -86,35 +86,34 @@
             <div class="r-main">
               <div class="r-header">
                 <p class="r-name">{{ item.name }}</p>
-                <p class="r-dist">{{ item.dist }} · 도보 {{ item.walk }}분</p>
+                <!-- item.walkText에 '약 X분' 또는 '정보 없음' 등이 들어가도록 연동 -->
+                <p class="r-dist">{{ item.dist }} · 도보 {{ item.walkText }}</p>
               </div>
 
               <!-- 게이지 바 + 500m 단위 눈금 영역 -->
               <div class="r-bar-wrapper">
                 <div class="r-track">
                   <!-- 500m 단위 눈금선 -->
-                  <div class="r-ticks">
-                    <span
-                      class="r-tick"
-                      style="left: 0%"
-                    ></span>
-                    <span
-                      class="r-tick"
-                      style="left: 25%"
-                    ></span>
-                    <span
-                      class="r-tick"
-                      style="left: 50%"
-                    ></span>
-                    <span
-                      class="r-tick"
-                      style="left: 75%"
-                    ></span>
-                    <span
-                      class="r-tick"
-                      style="left: 100%"
-                    ></span>
-                  </div>
+                  <div
+                    class="r-tick"
+                    style="left: 0%"
+                  ></div>
+                  <div
+                    class="r-tick"
+                    style="left: 25%"
+                  ></div>
+                  <div
+                    class="r-tick"
+                    style="left: 50%"
+                  ></div>
+                  <div
+                    class="r-tick"
+                    style="left: 75%"
+                  ></div>
+                  <div
+                    class="r-tick"
+                    style="left: 100%"
+                  ></div>
                   <div
                     class="r-fill"
                     :style="{ width: item.pct + '%' }"
@@ -183,54 +182,67 @@ const categoryMap = computed(() => {
   return map;
 });
 
-// 온보딩 다시보기(?demo=1) — 실제 API를 안 타고 바로 예시 데이터로 채운다.
+// 도보 계산 함수
+const formatCommuteTime = (data) => {
+  // 값이 null이나 undefined인 경우 예외 처리
+  if (data === null || data === undefined) return '정보 없음';
+
+  // 평균 도보 분속
+  const SPEED_PER_MINUTE = 85;
+
+  // 굴곡도 1.25배 적용
+  const actualDistance = data * 1.25;
+
+  // 도보 분속 계산 (올림 처리하여 최소 1분 이상 표시)
+  const minutes = Math.ceil(actualDistance / SPEED_PER_MINUTE);
+
+  if (minutes === 0) return '1분 미만';
+
+  return `${minutes}분`;
+};
+
+// 온보딩 다시보기(?demo=1) — 예시 데이터에도 distanceM 추가
 const DEMO_CENTER = { lat: 36.3273128, lng: 127.4647872 };
 const DEMO_INFRAS = [
   {
     category: 'SUBWAY',
     name: '용운역',
-    distanceMeters: 420,
-    walkMinutes: 6,
+    distanceM: 420,
     lat: 36.3283,
     lng: 127.4652,
   },
   {
     category: 'HOSPITAL',
     name: '대전대학교병원',
-    distanceMeters: 680,
-    walkMinutes: 9,
+    distanceM: 680,
     lat: 36.3265,
     lng: 127.4638,
   },
   {
     category: 'SCHOOL',
     name: '용운초등학교',
-    distanceMeters: 350,
-    walkMinutes: 5,
+    distanceM: 350,
     lat: 36.3278,
     lng: 127.4655,
   },
   {
     category: 'CONVENIENCE',
     name: 'GS25 용운점',
-    distanceMeters: 150,
-    walkMinutes: 2,
+    distanceM: 150,
     lat: 36.3274,
     lng: 127.4649,
   },
   {
     category: 'MART',
     name: '하나로마트 대전동구점',
-    distanceMeters: 520,
-    walkMinutes: 7,
+    distanceM: 520,
     lat: 36.3268,
     lng: 127.4644,
   },
   {
     category: 'CAFE',
     name: '스타벅스 대전대점',
-    distanceMeters: 280,
-    walkMinutes: 4,
+    distanceM: 280,
     lat: 36.3276,
     lng: 127.4651,
   },
@@ -239,7 +251,7 @@ const DEMO_INFRAS = [
 onMounted(async () => {
   if (route.query.demo === '1') {
     buildingName.value = 'e편한세상대전에코포레';
-    propertyType.value = '아파트'; // 데모용 임시 타입 설정
+    propertyType.value = '아파트';
     mapCenter.value = DEMO_CENTER;
     infras.value = DEMO_INFRAS;
     return;
@@ -248,7 +260,6 @@ onMounted(async () => {
   const propertyId = route.params.id;
   if (!propertyId) return;
 
-  // buildingName이나 propertyType 중 하나라도 없으면 상세 API 호출 (Fallback)
   if (!buildingName.value || !propertyType.value) {
     try {
       const pRes = await propertyApi.getPropertyDetail(propertyId);
@@ -282,8 +293,8 @@ onMounted(async () => {
       infras.value = rawData.infrastructures.map((infra) => ({
         category: infra.infraCategory,
         name: infra.infraName,
-        distanceMeters: infra.distanceM ?? infra.distanceMeters,
-        walkMinutes: infra.walkMinutes,
+        // distanceM을 먼저 확인하고 없으면 distanceMeters, 그래도 없으면 null
+        distanceM: infra.distanceM ?? infra.distanceMeters ?? null,
         lat: Number(infra.latitude),
         lng: Number(infra.longitude),
       }));
@@ -310,25 +321,30 @@ function formatRowItem(item) {
   const catConfig = categoryMap.value[item.category];
   const categoryLabel = catConfig?.label || item.category;
   const categoryIcon = catConfig?.icon || MapPin;
-  // 💡 카테고리 정의된 고유 색상값 매핑 (없을 경우 기본 gray)
   const categoryColor = catConfig?.color || '#475569';
 
   const MAX_DISTANCE = 2000;
-  const distMeters = item.distanceMeters ?? 0;
+  const distMeters = item.distanceM;
 
-  const rawPct = (distMeters / MAX_DISTANCE) * 100;
+  // distanceM 값이 없는 경우 예외 처리
+  const isInvalidDist = distMeters === null || distMeters === undefined;
+  const rawPct = isInvalidDist ? 0 : (distMeters / MAX_DISTANCE) * 100;
   const calculatedPct = Math.min(100, Math.max(0, Math.round(rawPct)));
+
+  // formatCommuteTime 활용하여 도보 시간 문자열 생성
+  const walkText = formatCommuteTime(distMeters);
 
   return {
     icon: categoryIcon,
     categoryLabel: categoryLabel,
-    color: categoryColor, // 💡 객체에 색상값 추가
+    color: categoryColor,
     name: item.name,
-    dist:
-      distMeters >= 1000
+    dist: isInvalidDist
+      ? '거리 정보 없음'
+      : distMeters >= 1000
         ? (distMeters / 1000).toFixed(1) + 'km'
         : distMeters + 'm',
-    walk: item.walkMinutes,
+    walkText: walkText,
     pct: calculatedPct,
     lat: item.lat,
     lng: item.lng,
@@ -339,14 +355,14 @@ function formatRowItem(item) {
 const infraRows = computed(() => {
   return infras.value
     .filter((i) => infraKeySet.has(i.category))
-    .sort((a, b) => a.distanceMeters - b.distanceMeters)
+    .sort((a, b) => (a.distanceM ?? 0) - (b.distanceM ?? 0))
     .map(formatRowItem);
 });
 
 const amenityRows = computed(() => {
   return infras.value
     .filter((i) => amenityKeySet.has(i.category))
-    .sort((a, b) => a.distanceMeters - b.distanceMeters)
+    .sort((a, b) => (a.distanceM ?? 0) - (b.distanceM ?? 0))
     .map(formatRowItem);
 });
 
@@ -523,7 +539,6 @@ const onBoundsChange = () => {};
   box-shadow: inset 0 0 0 2px #ffb703;
 }
 
-/* 좌측 아이콘 + 카테고리 레이아웃 */
 .r-icon-col {
   display: flex;
   flex-direction: column;
@@ -540,14 +555,13 @@ const onBoundsChange = () => {};
   width: 34px;
   height: 34px;
   border-radius: 100px;
-  /* 💡 동적 입체감을 위한 테두리 및 트랜지션 추가 */
   border: 1px solid transparent;
   transition: all 0.2s ease;
 }
 
 .r-cat-label {
   font-size: 10.5px;
-  font-weight: 700; /* 가독성을 위해 600 -> 700으로 상향 */
+  font-weight: 700;
   text-align: center;
   line-height: 1.1;
   word-break: keep-all;
@@ -600,20 +614,12 @@ const onBoundsChange = () => {};
   overflow: visible;
 }
 
-.r-ticks {
+.r-tick {
   position: absolute;
   top: -2px;
   bottom: -2px;
-  left: 0;
-  right: 0;
-  pointer-events: none;
-}
-
-.r-tick {
-  position: absolute;
-  top: 0;
   width: 2px;
-  height: 100%;
+  height: calc(100% + 4px);
   background-color: #cbd5e1;
   transform: translateX(-50%);
   z-index: 1;
