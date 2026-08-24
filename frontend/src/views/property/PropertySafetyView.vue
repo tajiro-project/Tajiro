@@ -2,6 +2,7 @@
   <div class="safety-page">
     <div class="map-section">
       <div class="map-container">
+        <!-- fixed-center를 제거하여 모든 좌표가 지도 안에 들어오도록 자동 조절 -->
         <KakaoMap
           :center="propertyCenter"
           :markers="mapMarkers"
@@ -33,8 +34,7 @@
               v-else
               class="sub-title"
             >
-              반경 500m 공공데이터 기준 ·
-              {{ formatDate(updateDate) }}
+              반경 500m 공공데이터 기준 · {{ formatDate(updateDate) }}
             </p>
           </div>
 
@@ -63,6 +63,7 @@
                 @click="toggleItemSelection(item)"
               >
                 <div class="item-left">
+                  <!-- 💡 동적 색상을 반영한 아이콘 뱃지 -->
                   <div
                     class="icon-badge"
                     :style="{
@@ -80,7 +81,7 @@
                       :style="{ color: item.color || '#d97706' }"
                     />
                   </div>
-                  <!-- 💡 라벨에 (반경 2km)가 깔끔하게 포함되어 노출됩니다 -->
+                  <!-- 💡 동적 색상을 반영한 라벨 -->
                   <span
                     class="item-label"
                     :style="{ color: item.color || '#222222' }"
@@ -88,7 +89,6 @@
                     {{ item.label }}
                   </span>
                 </div>
-                <!-- 💡 우측 텍스트는 숫자와 단위만 깔끔하게 표시됩니다 -->
                 <span
                   class="item-value"
                   :class="{ 'text-muted': item.count === 0 }"
@@ -169,7 +169,7 @@ const tabs = ref([
   },
 ]);
 
-// 온보딩 다시보기(?demo=1) — 예시 데이터
+// 온보딩 다시보기(?demo=1) — 실제 API를 안 타고 바로 예시 데이터로 채운다.
 const DEMO_CENTER = { lat: 36.3273128, lng: 127.4647872 };
 const DEMO_SAFETY_DATA = {
   crimeSafetyCount: 4,
@@ -250,7 +250,7 @@ const DEMO_SAFETY_DATA = {
 onMounted(async () => {
   if (route.query.demo === '1') {
     buildingName.value = 'e편한세상대전에코포레';
-    propertyType.value = '아파트';
+    propertyType.value = '아파트'; // 데모용 임시 타입 설정
     propertyCenter.value = DEMO_CENTER;
     rawSafetyData.value = DEMO_SAFETY_DATA;
     updateDate.value = DEMO_SAFETY_DATA.updatedAt;
@@ -285,6 +285,7 @@ onMounted(async () => {
 
     if (actualData) {
       rawSafetyData.value = actualData;
+
       updateDate.value = actualData.updatedAt;
 
       const lat = Number(actualData.latitude);
@@ -302,6 +303,7 @@ onMounted(async () => {
 
 const formatDate = (dateStr) => {
   if (!dateStr) return '';
+
   return dateStr.slice(0, 10).replaceAll('-', '.');
 };
 
@@ -338,26 +340,15 @@ const activeTabItems = computed(() => {
       return mappedKey === key;
     });
 
-    const count =
-      apiItem?.countWithin2km ??
-      apiItem?.countWithin500m ??
-      apiItem?.count ??
-      0;
+    const count = apiItem?.countWithin500m || 0;
     const unit = key === 'CCTV' ? '대' : '곳';
-    const isPolice = key === 'POLICE';
-
-    // 💡 라벨명에 (반경 2km) 분기 처리
-    const baseLabel = categoryMeta.label || key;
-    const label = isPolice ? `${baseLabel} (반경 2km)` : baseLabel;
-
-    // 💡 우측 표시는 깔끔하게 숫자+단위로 정돈
-    const displayValue = `${count}${unit}`;
+    const displayValue = `반경 내 ${count}${unit}`;
 
     return {
       key,
-      label,
+      label: categoryMeta.label || key,
       icon: categoryMeta.icon,
-      color: categoryMeta.color,
+      color: categoryMeta.color, // 💡 SAFETY_CATEGORIES에서 정의된 색상 주입
       value: displayValue,
       count,
       apiCategoryKey: apiItem?.safeCategory,
@@ -622,12 +613,7 @@ const toggleItemSelection = (item) => {
   gap: 12px;
 }
 
-.label-wrap {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
+/* 💡 동적 입체감을 주는 테두리와 부드러운 전환 효과 추가 */
 .icon-badge {
   width: 38px;
   height: 38px;
@@ -650,18 +636,6 @@ const toggleItemSelection = (item) => {
   font-weight: 700;
   transition: color 0.2s ease;
 }
-
-/* 💡 경찰서 등 전용 반경 표시 뱃지 CSS 추가 */
-.radius-tag {
-  font-size: 10px;
-  font-weight: 600;
-  color: #3b82f6;
-  background-color: #eff6ff;
-  border: 1px solid #bfdbfe;
-  padding: 1px 5px;
-  border-radius: 4px;
-}
-
 .item-value {
   font-size: 13px;
   font-weight: 600;

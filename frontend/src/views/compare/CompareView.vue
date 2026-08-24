@@ -17,10 +17,7 @@
         <p class="loading-title">{{ currentLoadingStep.title }}</p>
         <p class="loading-text">데이터 양에 따라 잠시 시간이 걸릴 수 있어요</p>
 
-        <ol
-          class="loading-steps"
-          aria-label="AI 비교 리포트 생성 단계"
-        >
+        <ol class="loading-steps" aria-label="AI 비교 리포트 생성 단계">
           <li
             v-for="(step, index) in LOADING_STEPS"
             :key="step.title"
@@ -29,40 +26,25 @@
               current: index === loadingStage,
             }"
           >
-            <span
-              class="loading-step-icon"
-              aria-hidden="true"
-            >
+            <span class="loading-step-icon" aria-hidden="true">
               <span v-if="index < loadingStage">✓</span>
             </span>
             <span>{{ loadingStepText(step, index) }}</span>
           </li>
         </ol>
       </div>
-      <div
-        v-else-if="loading"
-        class="state"
-      >
+      <div v-else-if="loading" class="state">
         저장된 리포트를 불러오는 중이에요.
       </div>
-      <div
-        v-else-if="errorMessage"
-        class="state error"
-      >
+      <div v-else-if="errorMessage" class="state error">
         {{ errorMessage }}
       </div>
-      <div
-        v-else-if="items.length < 2"
-        class="state"
-      >
+      <div v-else-if="items.length < 2" class="state">
         비교할 매물이 부족해요. 비교함에서 2개 이상 선택해주세요.
       </div>
 
       <template v-else>
-        <p
-          v-if="isDemoMode"
-          class="demo-banner"
-        >
+        <p v-if="isDemoMode" class="demo-banner">
           예시 화면이에요 · 실제 내 비교 데이터가 아니에요
         </p>
         <div class="target-row">
@@ -87,17 +69,9 @@
           </div>
         </div>
 
-        <section
-          class="ai-card"
-          data-tour="compare-ai-card"
-        >
+        <section class="ai-card" data-tour="compare-ai-card">
           <p class="ai-head">
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 16 16"
-              fill="none"
-            >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <path
                 d="M8 1L9.9 6.1L15 8L9.9 9.9L8 15L6.1 9.9L1 8L6.1 6.1L8 1Z"
                 fill="#ffbc00"
@@ -106,10 +80,7 @@
             AI 의사결정 코치
           </p>
 
-          <p
-            v-if="aiRecommendationLine"
-            class="ai-recommendation-line"
-          >
+          <p v-if="aiRecommendationLine" class="ai-recommendation-line">
             {{ aiRecommendationLine }}
           </p>
           <p
@@ -119,25 +90,14 @@
           >
             {{ aiPrimaryText }}
           </p>
-          <div
-            v-if="aiSecondaryText"
-            class="ai-summary-box"
-          >
+          <div v-if="aiSecondaryText" class="ai-summary-box">
             <span class="ai-summary-label">코칭 요약</span>
             <p>{{ aiSecondaryText }}</p>
           </div>
         </section>
 
-        <p
-          v-if="warningText"
-          class="warn"
-        >
-          <svg
-            width="15"
-            height="15"
-            viewBox="0 0 15 15"
-            fill="none"
-          >
+        <p v-if="warningText" class="warn">
+          <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
             <path
               d="M7.5 1.8L14 13H1L7.5 1.8z"
               stroke="#8a7a55"
@@ -161,12 +121,7 @@
             @click="showOverall = !showOverall"
           >
             <span class="ph-left">
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 16 16"
-                fill="none"
-              >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                 <path
                   d="M2 14V7M6 14V3M10 14V9M14 14V5"
                   stroke="#85714D"
@@ -195,10 +150,7 @@
               </svg>
             </span>
           </button>
-          <div
-            v-show="showOverall"
-            class="panel-body"
-          >
+          <div v-show="showOverall" class="panel-body">
             <div
               class="score-tabs"
               role="tablist"
@@ -223,32 +175,20 @@
               class="score-notice market-status-notice"
               aria-live="polite"
             >
-              <li
-                v-for="item in marketStatusItems"
-                :key="item"
-              >
+              <li v-for="item in marketStatusItems" :key="item">
                 {{ item }}
               </li>
             </ul>
             <!-- 세로 막대그래프 템플릿 -->
-            <div
-              v-if="selectedScoreSpec"
-              class="metric-chart"
-            >
+            <div v-if="selectedScoreSpec" class="metric-chart">
               <div class="score-section-head">
                 <strong>{{ selectedScoreTitle }}</strong>
                 <span>높을수록 좋아요</span>
               </div>
-              <p
-                v-if="selectedScoreDescription"
-                class="score-guidance"
-              >
+              <p v-if="selectedScoreDescription" class="score-guidance">
                 {{ selectedScoreDescription }}
               </p>
-              <div
-                class="metric-chart-navigation"
-                data-tour="compare-metric-tabs"
-              >
+              <div class="metric-chart-navigation" data-tour="compare-metric-tabs">
                 <!-- 터치 스와이프 처리 -->
                 <div
                   class="metric-slide-viewport"
@@ -257,10 +197,7 @@
                 >
                   <!-- 지표 전환 애니메이션 -->
                   <Transition :name="slideTransitionName">
-                    <div
-                      :key="selectedScoreSpec.key"
-                      class="metric-bars"
-                    >
+                    <div :key="selectedScoreSpec.key" class="metric-bars">
                       <div
                         v-for="bar in selectedMetricBars"
                         :key="bar.propertyId"
@@ -326,12 +263,8 @@
               </div>
             </div>
 
-            <p
-              v-if="showRecommendationMismatch"
-              class="score-notice"
-            >
-              AI 추천이 종합 점수와 다를 수 있으며, 그 이유는 코칭 요약에 함께
-              설명돼요.
+            <p v-if="showRecommendationMismatch" class="score-notice">
+              AI 추천이 종합 점수와 다를 수 있으며, 그 이유는 코칭 요약에 함께 설명돼요.
             </p>
           </div>
         </section>
@@ -343,12 +276,7 @@
             @click="showSafety = !showSafety"
           >
             <span class="ph-left">
-              <svg
-                width="15"
-                height="15"
-                viewBox="0 0 15 15"
-                fill="none"
-              >
+              <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
                 <path
                   d="M7.5 1.5l5 2.2v3.6c0 3.2-2.1 5-5 6.2-2.9-1.2-5-3-5-6.2V3.7l5-2.2z"
                   stroke="#85714D"
@@ -385,40 +313,21 @@
               </svg>
             </span>
           </button>
-          <div
-            v-show="showSafety"
-            class="panel-body"
-          >
-            <table
-              class="safety-table"
-              data-tour="compare-safety-table"
-            >
+          <div v-show="showSafety" class="panel-body">
+            <table class="safety-table" data-tour="compare-safety-table">
               <thead>
                 <tr>
                   <th></th>
-                  <th
-                    v-for="(item, i) in items"
-                    :key="i"
-                  >
+                  <th v-for="(item, i) in items" :key="i">
                     {{ letters[i] }}
                   </th>
                 </tr>
               </thead>
               <tbody>
-                <tr
-                  v-for="row in safetyRows"
-                  :key="row.label"
-                >
+                <tr v-for="row in safetyRows" :key="row.label">
                   <td class="row-label">{{ row.label }}</td>
-                  <td
-                    v-for="(cell, i) in row.cells"
-                    :key="i"
-                  >
-                    <span
-                      class="cell"
-                      :class="cell.tone"
-                      >{{ cell.text }}</span
-                    >
+                  <td v-for="(cell, i) in row.cells" :key="i">
+                    <span class="cell" :class="cell.tone">{{ cell.text }}</span>
                   </td>
                 </tr>
               </tbody>
@@ -435,21 +344,14 @@
         >
           리포트 보관
         </button>
-        <p
-          v-if="savedMsg"
-          class="saved-msg"
-          :class="{ error: savedMsgError }"
-        >
+        <p v-if="savedMsg" class="saved-msg" :class="{ error: savedMsgError }">
           {{ savedMsg }}
         </p>
       </template>
     </simplebar>
 
     <Teleport to="body">
-      <div
-        v-if="showAiRefreshModal"
-        class="modal-overlay"
-      >
+      <div v-if="showAiRefreshModal" class="modal-overlay">
         <div
           class="modal"
           role="dialog"
@@ -457,12 +359,7 @@
           aria-labelledby="ai-refresh-title"
         >
           <span class="m-icon">
-            <svg
-              width="22"
-              height="22"
-              viewBox="0 0 22 22"
-              fill="none"
-            >
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
               <rect
                 x="5"
                 y="2.5"
@@ -480,10 +377,7 @@
               />
             </svg>
           </span>
-          <p
-            id="ai-refresh-title"
-            class="m-title"
-          >
+          <p id="ai-refresh-title" class="m-title">
             AI 코칭 업데이트가 필요해요
           </p>
           <p class="m-text">
@@ -513,11 +407,7 @@
       </div>
     </Teleport>
 
-    <OnboardingSpotlight
-      group-name="compare"
-      :steps="ONBOARDING_STEPS.compare"
-      return-to="/mypage"
-    />
+    <OnboardingSpotlight group-name="compare" :steps="ONBOARDING_STEPS.compare" return-to="/mypage" />
   </div>
 </template>
 
@@ -819,9 +709,7 @@ const selectedScoreTitle = computed(() => {
 });
 const selectedScoreDescription = computed(() => {
   const description = selectedScoreSpec.value?.description;
-  return typeof description === 'function'
-    ? description()
-    : (description ?? '');
+  return typeof description === 'function' ? description() : (description ?? '');
 });
 const selectedMetricBars = computed(() => {
   if (!selectedScoreSpec.value) return [];
@@ -1289,7 +1177,11 @@ async function refreshAiCoaching() {
   refreshingCoaching.value = true;
   coachingError.value = '';
   try {
-    const updatedCoaching = await getCoaching(currentPropertyIds.value);
+    const updatedCoaching = await getCoaching(
+      currentPropertyIds.value,
+      activeWorkplace.value,
+      activePriorities.value,
+    );
     const updatedMetrics = await getMetrics(
       currentPropertyIds.value,
       activeWorkplace.value,
@@ -1324,9 +1216,11 @@ async function getMetrics(propertyIds, workplace, refreshMarketScore = true) {
   }
 }
 
-async function getCoaching(propertyIds) {
+async function getCoaching(propertyIds, workplace, priorities) {
   try {
-    return unwrapApiData(await comparisonApi.analyze(propertyIds));
+    return unwrapApiData(
+      await comparisonApi.analyze(propertyIds, workplace, priorities),
+    );
   } catch (error) {
     const message =
       error.response?.data?.message ?? AI_COACHING_UNAVAILABLE_MESSAGE;

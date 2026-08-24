@@ -55,7 +55,9 @@ public class ComparisonAiServiceImpl implements ComparisonAiService {
             ComparisonAnalysisRequestDTO request) {
         if (request == null
                 || request.getPropertyIds() == null
-                || request.getPropertyIds().isEmpty()) {
+                || request.getPropertyIds().isEmpty()
+                || (request.getWorkplaceLat() == null)
+                    != (request.getWorkplaceLng() == null)) {
             throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
         }
 
@@ -63,8 +65,12 @@ public class ComparisonAiServiceImpl implements ComparisonAiService {
         if (preference == null) {
             throw new BusinessException(ErrorCode.PREFERENCE_NOT_FOUND);
         }
-        Double workplaceLat = toDouble(preference.getWorkplaceLatitude());
-        Double workplaceLng = toDouble(preference.getWorkplaceLongitude());
+        Double workplaceLat = request.getWorkplaceLat() == null
+                ? toDouble(preference.getWorkplaceLatitude())
+                : request.getWorkplaceLat();
+        Double workplaceLng = request.getWorkplaceLng() == null
+                ? toDouble(preference.getWorkplaceLongitude())
+                : request.getWorkplaceLng();
         validateWorkplace(workplaceLat, workplaceLng);
 
         List<Long> propertyIds = request.getPropertyIds().stream()
@@ -72,7 +78,9 @@ public class ComparisonAiServiceImpl implements ComparisonAiService {
                 .distinct()
                 .sorted()
                 .collect(Collectors.toList());
-        List<String> priorities = resolvePriorities(userId);
+        List<String> priorities = resolvePriorities(
+                userId,
+                request.getPriorities());
 
         String propertyIdsJson = toLongJson(propertyIds);
         LocalDateTime latestMarketCalculatedAt =
@@ -266,7 +274,10 @@ public class ComparisonAiServiceImpl implements ComparisonAiService {
         return context;
     }
 
-    private List<String> resolvePriorities(Long userId) {
+    private List<String> resolvePriorities(
+            Long userId,
+            List<String> requestedPriorities) {
+        List<String> validatedRequest = validatePriorities(requestedPriorities);
         List<String> storedPriorities = preferenceMapper.findPrioritiesByUserId(userId)
                 .stream()
                 .sorted((left, right) -> left.getPriorityOrder()
@@ -274,6 +285,11 @@ public class ComparisonAiServiceImpl implements ComparisonAiService {
                 .map(PreferencePriorityVO::getCriterion)
                 .collect(Collectors.toList());
         validatePriorities(storedPriorities);
+
+        if (!validatedRequest.isEmpty()
+                && !validatedRequest.equals(storedPriorities)) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
+        }
         return storedPriorities;
     }
 

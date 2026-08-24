@@ -26,26 +26,17 @@ public class PolicyServiceImpl implements PolicyService{
     public List<PolicyDTO> getList(String keyword, String categoryCode, Long userId) {
 
         UserProfileDTO userProfile= userProfileService.getUserProfileById(userId);
-        String region = userProfile != null ? userProfile.getTargetSggCode() : null;
-        Integer age = calculateAge(userProfile);
+        String region = userProfile.getTargetSggCode();
+        int age = Period.between(userProfile.getBirthDate(), LocalDate.now()).getYears();
         return mapper.getList(region,age,keyword,categoryCode).stream().map(PolicyDTO::of).toList();
     }
 
     @Override
     public PolicyDTO get(Long policyid, Long userId) {
         UserProfileDTO userProfile= userProfileService.getUserProfileById(userId);
-        String region = userProfile != null ? userProfile.getTargetSggCode() : null;
-        Integer age = calculateAge(userProfile);
+        String region = userProfile.getTargetSggCode();
+        int age = Period.between(userProfile.getBirthDate(), LocalDate.now()).getYears();
         return PolicyDTO.of(mapper.get(policyid,region,age));
-    }
-
-    // 매도자 등 프로필(user_profile)이 없는 계정은 지역/나이 기준 매칭이 불가능하므로
-    // null을 넘겨서 매칭 결과 없음으로 자연스럽게 처리한다(NPE 방지).
-    private Integer calculateAge(UserProfileDTO userProfile) {
-        if (userProfile == null || userProfile.getBirthDate() == null) {
-            return null;
-        }
-        return Period.between(userProfile.getBirthDate(), LocalDate.now()).getYears();
     }
 
     @Override
@@ -59,8 +50,12 @@ public class PolicyServiceImpl implements PolicyService{
                 userProfileService
                         .getUserProfileById(userId);
 
-        // 2. 사용자 나이 계산(프로필 없는 계정은 null)
-        Integer age = calculateAge(userProfile);
+        // 2. 사용자 나이 계산
+        int age =
+                Period.between(
+                        userProfile.getBirthDate(),
+                        LocalDate.now()
+                ).getYears();
 
 
         // 3. propertyId로 매물 조회
