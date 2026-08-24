@@ -13,7 +13,11 @@
         >
           청년 정책
         </button>
-        <button class="tab" :class="{ on: tab === 'kb' }" @click="tab = 'kb'">
+        <button
+          class="tab"
+          :class="{ on: tab === 'kb' }"
+          @click="tab = 'kb'"
+        >
           KB 금융 상품
         </button>
       </div>
@@ -21,8 +25,19 @@
       <!-- 검색창 및 대상 필터 -->
       <div class="search-row">
         <div class="search-box">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <circle cx="7" cy="7" r="5" stroke="#8a8d8f" stroke-width="1.5" />
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 16 16"
+            fill="none"
+          >
+            <circle
+              cx="7"
+              cy="7"
+              r="5"
+              stroke="#8a8d8f"
+              stroke-width="1.5"
+            />
             <path
               d="M11 11L14.5 14.5"
               stroke="#8a8d8f"
@@ -53,12 +68,19 @@
             @click="toggleFilterDropdown"
           >
             <span>{{ selectedTargetSummary }}</span>
-            <span class="filter-toggle-arrow" aria-hidden="true">▾</span>
+            <span
+              class="filter-toggle-arrow"
+              aria-hidden="true"
+              >▾</span
+            >
           </button>
         </div>
       </div>
 
-      <div v-if="tab === 'kb'" class="finance-filter-wrap">
+      <div
+        v-if="tab === 'kb'"
+        class="finance-filter-wrap"
+      >
         <button
           type="button"
           class="finance-filter-toggle"
@@ -83,11 +105,18 @@
               />
             </svg>
             필터
-            <span v-if="activeFinanceFilterCount" class="filter-count">
+            <span
+              v-if="activeFinanceFilterCount"
+              class="filter-count"
+            >
               {{ activeFinanceFilterCount }}
             </span>
           </span>
-          <span class="finance-filter-chevron" aria-hidden="true">▾</span>
+          <span
+            class="finance-filter-chevron"
+            aria-hidden="true"
+            >▾</span
+          >
         </button>
 
         <section
@@ -116,7 +145,11 @@
                 "
                 @click="toggleFinanceFilter(group.key, option.value)"
               >
-                <span class="chip-check" aria-hidden="true">✓</span>
+                <span
+                  class="chip-check"
+                  aria-hidden="true"
+                  >✓</span
+                >
                 {{ option.label }}
               </button>
             </div>
@@ -125,10 +158,19 @@
       </div>
 
       <!-- 청년 정책 리스트 -->
-      <ul v-if="tab === 'policy'" class="list">
+      <ul
+        v-if="tab === 'policy'"
+        class="list"
+      >
         <!-- <li v-for="p in filteredPolicies" :key="p.id"> -->
-        <li v-for="p in paginatedPolicies" :key="p.id">
-          <button class="item-card" @click="$router.push(`/policies/${p.id}`)">
+        <li
+          v-for="p in paginatedPolicies"
+          :key="p.id"
+        >
+          <button
+            class="item-card"
+            @click="$router.push(`/policies/${p.id}`)"
+          >
             <p class="item-title">{{ p.title }}</p>
             <p class="item-amount">{{ shortAmount(p.sumDescription) }}</p>
           </button>
@@ -136,8 +178,14 @@
       </ul>
 
       <!-- KB 금융 상품 리스트 -->
-      <ul v-else class="list">
-        <li v-for="f in paginatedProducts" :key="f.id">
+      <ul
+        v-else
+        class="list"
+      >
+        <li
+          v-for="f in paginatedProducts"
+          :key="f.id"
+        >
           <!-- <li v-for="f in filteredProducts" :key="f.id"> -->
           <button
             class="item-card finance-card"
@@ -145,20 +193,37 @@
           >
             <p class="item-title">{{ f.productName }}</p>
             <p class="finance-summary">
-              <span v-if="formatRateRange(f)" class="rate-range">
+              <span
+                v-if="formatRateRange(f)"
+                class="rate-range"
+              >
                 연 {{ formatRateRange(f) }}
               </span>
-              <span v-if="formatLoanLimit(f.loanLimit)" class="loan-limit">
+              <span
+                v-if="formatLoanLimit(f.loanLimit)"
+                class="loan-limit"
+              >
                 {{ formatLoanLimit(f.loanLimit) }}
               </span>
             </p>
           </button>
         </li>
       </ul>
-      <div v-if="activeItems.length === 0" class="empty-result">
-        <span class="empty-result-icon" aria-hidden="true">⌕</span>
+      <div
+        v-if="activeItems.length === 0"
+        class="empty-result"
+      >
+        <span
+          class="empty-result-icon"
+          aria-hidden="true"
+          >⌕</span
+        >
         <p>선택한 조건에 맞는 상품이 없어요</p>
-        <button v-if="tab === 'kb'" type="button" @click="resetFinanceFilters">
+        <button
+          v-if="tab === 'kb'"
+          type="button"
+          @click="resetFinanceFilters"
+        >
           필터 초기화
         </button>
       </div>
@@ -412,6 +477,7 @@ async function updatePreferredRegion(location) {
     });
     preferredLocation.value = { ...location, name: targetRegion };
     isLocationPickerOpen.value = false;
+    currentPage.value = 1;
     await loadMatches();
   } catch (error) {
     window.alert(
@@ -610,11 +676,9 @@ watch(
   },
 );
 
-watch(
-  currentLocationLabel,
-  (label) => benefitHeader?.setLocationLabel(label),
-  { immediate: true },
-);
+watch(currentLocationLabel, (label) => benefitHeader?.setLocationLabel(label), {
+  immediate: true,
+});
 
 watch(
   [tab, keyword, selectedTargetCodes, selectedFinanceFilters],
