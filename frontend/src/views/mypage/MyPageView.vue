@@ -38,7 +38,7 @@
           @click="router.push('/favorites')"
         >
           <p class="stat-value">{{ dashboard.favoriteCount }}</p>
-          <p class="stat-label">찜한 매물</p>
+          <p class="stat-label">스크랩 매물</p>
         </button>
         <button
           class="stat-box"
@@ -88,16 +88,44 @@
         </div>
       </section>
 
-      <nav class="menu-list">
+      <section class="location-card">
+        <span class="location-icon">
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 18 18"
+            fill="none"
+          >
+            <path
+              d="M9 16.5s6-5.2 6-9.8A6 6 0 0 0 3 6.7c0 4.6 6 9.8 6 9.8z"
+              stroke="#60584c"
+              stroke-width="1.6"
+              stroke-linejoin="round"
+            />
+            <circle
+              cx="9"
+              cy="6.7"
+              r="2"
+              stroke="#60584c"
+              stroke-width="1.6"
+            />
+          </svg>
+        </span>
+        <span class="location-texts">
+          <span class="location-title">선호 위치</span>
+          <span class="location-value">
+            {{ dashboard.targetRegion || '아직 설정하지 않았어요' }}
+          </span>
+        </span>
         <button
-          class="menu-row"
+          class="location-change-btn"
           type="button"
           @click="isLocationPickerOpen = true"
         >
-          <span>선호 위치</span>
+          변경
           <svg
-            width="16"
-            height="16"
+            width="14"
+            height="14"
             viewBox="0 0 16 16"
             fill="none"
           >
@@ -110,7 +138,7 @@
             />
           </svg>
         </button>
-      </nav>
+      </section>
 
       <p
         v-if="errorMessage"
@@ -436,24 +464,62 @@ async function handleWithdraw() {
   grid-column: 1 / -1;
 }
 
-.menu-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.menu-row {
+.location-card {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 12px;
   padding: 16px;
   background: var(--white);
   border: 1px solid var(--border);
   border-radius: var(--radius-card);
-  font-size: 13.5px;
-  font-weight: 500;
+}
+
+.location-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  background: var(--yellow-tint);
+  border-radius: 100px;
+}
+
+.location-texts {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.location-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--kb-silver);
+}
+
+.location-value {
+  font-size: 14.5px;
+  font-weight: 700;
   color: var(--text-primary);
-  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.location-change-btn {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+  padding: 8px 10px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
 }
 
 .error-message {
