@@ -2,6 +2,7 @@ package org.tajiro.dashboard.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.tajiro.dashboard.dto.DashboardDTO;
 import org.tajiro.dashboard.mapper.DashboardMapper;
 import org.tajiro.user.dto.UserProfileDTO;
@@ -15,6 +16,7 @@ public class DashboardServiceImpl implements DashboardService {
     private final UserProfileService userProfileService;
 
     @Override
+    @Transactional(readOnly = true)
     public DashboardDTO getDashboard(Long userId) {
         UserProfileDTO profile = userProfileService.getUserProfileById(userId);
 
