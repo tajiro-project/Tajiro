@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class MarketPriceConverterTest {
 
     private final MarketPriceConverter converter =
-            new MarketPriceConverter(new BigDecimal("0.05"));
+            new MarketPriceConverter(new BigDecimal("0.0475"));
 
     @Test
     void convertsSaleJeonseAndMonthlyRentToComparablePrices() {
