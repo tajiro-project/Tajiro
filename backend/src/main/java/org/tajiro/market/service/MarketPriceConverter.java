@@ -17,7 +17,7 @@ public class MarketPriceConverter {
     private final BigDecimal rentConversionRate;
 
     public MarketPriceConverter(
-            @Value("${market.rent-conversion-rate:0.05}") BigDecimal rentConversionRate) {
+            @Value("${market.rent-conversion-rate:0.0475}") BigDecimal rentConversionRate) {
         if (rentConversionRate == null
                 || rentConversionRate.compareTo(BigDecimal.ZERO) <= 0
                 || rentConversionRate.compareTo(BigDecimal.ONE) > 0) {
