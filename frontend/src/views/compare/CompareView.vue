@@ -140,13 +140,13 @@
           >
             <path
               d="M7.5 1.8L14 13H1L7.5 1.8z"
-              stroke="#8a7a55"
+              stroke="currentColor"
               stroke-width="1.2"
               stroke-linejoin="round"
             />
             <path
               d="M7.5 6v3.2M7.5 11v.2"
-              stroke="#8a7a55"
+              stroke="currentColor"
               stroke-width="1.3"
               stroke-linecap="round"
             />
@@ -1794,11 +1794,12 @@ function goBack() {
   gap: 8px;
   margin-top: 12px;
   padding: 12px 14px;
-  background: var(--yellow-tint);
+  background: #fff1f2;
+  border: 1px solid #ffe4e6;
   border-radius: 12px;
   font-size: 12px;
   line-height: 1.55;
-  color: var(--kb-gray);
+  color: #9f1239;
 }
 .panel {
   margin-top: 14px;
