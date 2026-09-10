@@ -33,6 +33,32 @@
 | 정책·금융 매칭 | 청년 정책 및 금융상품 검색·상세 조회·조건 기반 추천 |
 | 매도자 기능 | 매물 등록, 이미지 업로드, 등록 매물 조회·상태 변경·삭제 |
 
+## 실행 화면
+
+<table>
+  <tr>
+    <th width="33%">홈</th>
+    <th width="33%">맞춤 매물 탐색</th>
+    <th width="33%">AI 매물 비교</th>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="docs/images/home.png" alt="타지로 홈 화면" width="270" />
+    </td>
+    <td align="center">
+      <img src="docs/images/property-list.png" alt="타지로 맞춤 매물 목록 화면" width="270" />
+    </td>
+    <td align="center">
+      <img src="docs/images/ai-comparison.png" alt="타지로 AI 매물 비교 화면" width="270" />
+    </td>
+  </tr>
+  <tr>
+    <td align="center">핵심 기능과 정착 지원 정보</td>
+    <td align="center">조건·우선순위 기반 추천 결과</td>
+    <td align="center">정량 지표와 AI 코칭 요약</td>
+  </tr>
+</table>
+
 ## 서비스 흐름
 
 ```mermaid
